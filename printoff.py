@@ -1,7 +1,8 @@
 from firedrake import *
+from settings import *
 from misc import color
 
-def initPrintoff(L1,L2,L3,A,B,C,ep,ksp_type,pc_type,dt,end,visualize,manufactured,meshsize,init_meshsize,max_meshsize):
+def initPrintoff():
     print()
     print(f"{color.uline}PRELIMINARY INFO:{color.end}")
     print()
@@ -37,12 +38,12 @@ def initPrintoff(L1,L2,L3,A,B,C,ep,ksp_type,pc_type,dt,end,visualize,manufacture
     if manufactured == 0:
         print(f"Manufactured solution? No")
         print()
-        print(f"Mesh size: {meshsize}")
+        print(f"Mesh size: {meshsize_max} x {meshsize_max} x {meshsize_max}")
     elif manufactured == 1:
         print(f"Manufactured solution? Yes")
         print()
-        print(f"Init mesh size: {init_meshsize} x {init_meshsize} x {init_meshsize}")
-        print(f"Max mesh size:  {max_meshsize} x {max_meshsize} x {max_meshsize}")
+        print(f"Init mesh size: {meshsize_init} x {meshsize_init} x {meshsize_init}")
+        print(f"Max mesh size:  {meshsize_max} x {meshsize_max} x {meshsize_max}")
     else:
         raise ValueError("Variable 'manufactured' must be 0 or 1.")
     print()
@@ -50,9 +51,9 @@ def initPrintoff(L1,L2,L3,A,B,C,ep,ksp_type,pc_type,dt,end,visualize,manufacture
     print(f"{color.uline}ERROR CALCULATIONS:{color.end}")
     print()
 
-def errorPrintoff(meshsize,q_soln,g,calctime):
+def errorPrintoff(meshsize,H1_error,L2_error,calctime):
     print(f"Mesh size:    {meshsize} x {meshsize} x {meshsize}")
-    print(f"L2 error:     {sqrt(assemble(dot(q_soln - g, q_soln - g) * dx)):0.15f}")
-    print(f"H1 error:     {sqrt(assemble( (inner(grad(q_soln-g),grad(q_soln-g)) + dot(q_soln - g, q_soln - g) ) * dx)):0.15f}")
+    print(f"H1 error:     {H1_error:0.15f}")
+    print(f"L2 error:     {L2_error:0.15f}")
     print(f"Time elapsed: {calctime:0.2f} seconds")
     print()

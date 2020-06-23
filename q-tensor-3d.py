@@ -16,36 +16,41 @@ from time import time
 
 # User-made modules
 
+import compute
 from eigen import *
 from settings import *
-from sympyext import *
+from firedrakeplus import *
+from sympyplus import uflfy
 from printoff import *
 
 # Compute
 
-exec(open('compute.py').read())
+boundary = compute.boundary()
+bilinearform = compute.bilinear()
+linearform = compute.linear()
 
 # Initialize mesh size settings
 
-max_meshsize = meshsize
-
 if manufactured == 1:
-    meshsize = init_meshsize    
+    meshsize = meshsize_init
+else:
+    meshsize = meshsize_max
 
-# Info printoff
+# Initial preliminary info printoff
 
-initPrintoff(L1,L2,L3,A,B,C,ep,ksp_type,pc_type,dt,end,visualize,manufactured,meshsize,init_meshsize,max_meshsize)
+initPrintoff()
 
 # Loop through mesh sizes
 
-while (meshsize <= max_meshsize):
+while (meshsize <= meshsize_max):
     start = time()
     
     mesh = UnitCubeMesh(meshsize,meshsize,meshsize)
     
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
-
+    
     H1_ten = TensorFunctionSpace(mesh, "CG", 1)
+    # H1_ten = TensorFunctionSpace(mesh, "CG", 1, shape = (3,3), symmetry = True)
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
     
     EigenvectorArray = TensorFunctionSpace(mesh, "CG", 1)
@@ -81,13 +86,13 @@ while (meshsize <= max_meshsize):
     
     # set g to be the boundary condition
     
-    g.interpolate(eval(uflfy(gv)))
+    g.interpolate(eval(boundary))
     bc = DirichletBC(H1_vec, g, "on_boundary")
     
     # define bilinear form a(q,p), and linear form L(p)
     
-    a = eval(uflfy(bilinear_a)) * dx
-    L = eval(uflfy(linear_L)) * dx
+    a = eval(bilinearform) * dx
+    L = eval(linearform) * dx
     
     ###################
     # INITIALIZE LOOP #
@@ -139,14 +144,21 @@ while (meshsize <= max_meshsize):
         
         t += dt
     
+    # Calculate the H1 and L2 errors
+    
+    H1_error = errorH1(q_soln,g)
+    L2_error = errorL2(q_soln,g)
+    
+    # Record the time elapsed
+    
     stop = time()
     calctime = stop - start
     
     # Print a summary
     
-    errorPrintoff(meshsize,q_soln,g,calctime)
+    errorPrintoff(meshsize,H1_error,L2_error,calctime)
     
-    # Double mesh size
+    # Double the mesh size
     
     meshsize *= 2
 

@@ -111,7 +111,7 @@ for ii in range(5):
 Qt = zeros(2,2)
 Pt = zeros(2,2)
 
-F = [1/sqrt(2)*Matrix([[1,0],[0,-1]]), 1/sqrt(2)*Matrix([[0,1],[1,0]])]
+F = [1/sqrt(2.0)*Matrix([[1,0],[0,-1]]), 1/sqrt(2.0)*Matrix([[0,1],[1,0]])]
 
 for ii in range(2):
     Qt += qv[ii]*F[ii]
@@ -128,6 +128,8 @@ c0,c1,c2,c3 = symbols('c0:4')
 A = Matrix([[a0,a1],[a2,a3]])
 B = Matrix([[b0,b1],[b2,b3]])
 C = Matrix([[c0,c1],[c2,c3]])
+
+M_SQRT2 = 'sqrt(2)'
 
 # bilinear_a = (1/dt) * qv.dot(pv) + L1*term_L1 + L2*term_L2 + L3*term_L3 + (L0/ep)*qv.dot(pv)
 # linear_L   = (1/dt) * qpv.dot(pv) + (1/ep) * ( (A + L0) * term_A - B * term_B - C * term_C ) + fv.dot(pv)

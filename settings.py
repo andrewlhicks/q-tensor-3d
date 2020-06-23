@@ -12,7 +12,7 @@ bound_cond = sp.Matrix([sp.sin(x+y+z),sp.cos(x+y+z),0])
 
 # Mesh size
 
-meshsize = 10
+meshsize_max = 10
 
 # Visualize?
 
@@ -22,7 +22,7 @@ outfilepath = "paraview/q-tensor-3d.pvd"
 # Manufactured solution?
 
 manufactured = 1
-init_meshsize = 10 # only used if 'manufactured' is set to 1.
+meshsize_init = 10 # only used if 'manufactured' is set to 1.
 
 # Convex splitting constant
 
