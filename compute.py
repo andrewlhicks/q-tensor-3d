@@ -1,11 +1,10 @@
+# We must re-import "settings" here, because Python is weird like that and it won't work otherwise
 
-# set boundary conditions
+from settings import *
 
-x,y,z = sp.symbols('x0 x1 x2')
 vrs = [x,y,z]
 
-# n = sp.Matrix([x-0.5,y-0.5,z-0.5])/sp.sqrt((x-0.5)**2 + (y-0.5)**2 + (z-0.5)**2 + 1e-10)
-n = sp.Matrix([sp.sin(x+y+z),sp.cos(x+y+z),0])
+n = bound_cond
 Gt = outerp(n,n) - (1/3.0) * sp.eye(3)
 gv = vectorfy(Gt)
 
