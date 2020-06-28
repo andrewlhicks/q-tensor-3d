@@ -7,3 +7,28 @@ class color:
     end = '\033[0m'
     bold = '\033[1m'
     uline = '\033[4m'
+
+class TimeError(Exception):
+    """ A custom time error """
+
+class timer: # adapted from 'https://realpython.com/python-timer/' on 6/24/20
+    def __init__(self):
+        self._start_time = None
+    
+    def start(self):
+        from time import time
+        if self._start_time is not None:
+            raise TimeError(f"Timer is running. Use .stop() to stop it.")
+        
+        self._start_time = time()
+    
+    def stop(self):
+        from time import time
+        if self._start_time is None:
+            raise TimerError(f"Timer is not running. Use .start() to start it")
+        
+        elapsed_time = time() - self._start_time
+        self._start_time = None
+        return elapsed_time
+
+# END OF CODE

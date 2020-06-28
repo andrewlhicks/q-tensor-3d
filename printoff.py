@@ -1,8 +1,9 @@
-from firedrake import *
 from settings import *
 from misc import color
 
 def initPrintoff():
+    if omit_initial_printoff == 1:
+        return
     print()
     print(f"{color.uline}PRELIMINARY INFO:{color.end}")
     print()
@@ -46,14 +47,17 @@ def initPrintoff():
         print(f"Max mesh size:  {meshsize_max} x {meshsize_max} x {meshsize_max}")
     else:
         raise ValueError("Variable 'manufactured' must be 0 or 1.")
+
+def initPrintoff2():
     print()
-    
     print(f"{color.uline}ERROR CALCULATIONS:{color.end}")
     print()
 
-def errorPrintoff(meshsize,H1_error,L2_error,calctime):
+def summaryPrintoff(meshsize,H1_error,L2_error,time_elapsed):
     print(f"Mesh size:    {meshsize} x {meshsize} x {meshsize}")
     print(f"H1 error:     {H1_error:0.15f}")
     print(f"L2 error:     {L2_error:0.15f}")
-    print(f"Time elapsed: {calctime:0.2f} seconds")
+    print(f"Time elapsed: {time_elapsed:0.2f} seconds")
     print()
+
+# END OF CODE

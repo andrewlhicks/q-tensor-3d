@@ -86,6 +86,7 @@ E2 = as_tensor([[0,d,0],[d,0,0],[0,0,0]])
 E3 = as_tensor([[0,0,d],[0,0,0],[d,0,0]])
 E4 = as_tensor([[0,0,0],[0,0,d],[0,d,0]])
 
-
 def tensorfy(vector):
     return vector[0] * E0 + vector[1] * E1 + vector[2] * E2 + vector[3] * E3 + vector[4] * E4
+
+# END OF CODE

@@ -12,22 +12,23 @@
 
 from firedrake import *
 from firedrake.slate.slac.compiler import PETSC_ARCH
-from time import time
 
 # User-made modules
 
-import compute
-from eigen import *
 from settings import *
+from compute import *
+from eigen import *
+
 from firedrakeplus import *
-from sympyplus import uflfy
 from printoff import *
+from misc import timer
 
 # Compute
 
-boundary = compute.boundary()
-bilinearform = compute.bilinear()
-linearform = compute.linear()
+initial_guess = computeInitialGuess()
+boundary = computeBoundary()
+bilinear_form = computeBilinear()
+linear_form = computeLinear()
 
 # Initialize mesh size settings
 
@@ -39,11 +40,21 @@ else:
 # Initial preliminary info printoff
 
 initPrintoff()
+initPrintoff2()
+
+# Create a timer object to time the calculation
+
+time = timer()
 
 # Loop through mesh sizes
 
 while (meshsize <= meshsize_max):
-    start = time()
+    
+    # Start the timer
+    
+    time.start()
+    
+    # Define our mesh
     
     mesh = UnitCubeMesh(meshsize,meshsize,meshsize)
     
@@ -91,16 +102,12 @@ while (meshsize <= meshsize_max):
     
     # define bilinear form a(q,p), and linear form L(p)
     
-    a = eval(bilinearform) * dx
-    L = eval(linearform) * dx
-    
-    ###################
-    # INITIALIZE LOOP #
-    ###################
+    a = eval(bilinear_form) * dx
+    L = eval(linear_form) * dx
     
     # for the 0th time step, we define the solution to be the initial guess
     
-    q_init.interpolate(eval(uflfy(qiv)))
+    q_init.interpolate(eval(initial_guess))
     q_soln.assign(q_init)
 
     # Calculate eigenvectors and eigenvalues
@@ -151,12 +158,11 @@ while (meshsize <= meshsize_max):
     
     # Record the time elapsed
     
-    stop = time()
-    calctime = stop - start
+    time_elapsed = time.stop()
     
     # Print a summary
     
-    errorPrintoff(meshsize,H1_error,L2_error,calctime)
+    summaryPrintoff(meshsize,H1_error,L2_error,time_elapsed)
     
     # Double the mesh size
     

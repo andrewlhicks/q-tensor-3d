@@ -1,14 +1,16 @@
-import sympy as sp
-x,y,z = sp.symbols('x0 x1 x2')
-
 # Initial guess
 
-qiv = sp.Matrix([0,0,0,0,0])
+def initialGuess():
+    from sympy import Matrix
+    return Matrix([0,0,0,0,0])
 
 # Desired boundary conditions
 
-# bound_cond = sp.Matrix([x-0.5,y-0.5,z-0.5])/sp.sqrt((x-0.5)**2 + (y-0.5)**2 + (z-0.5)**2 + 1e-10)
-bound_cond = sp.Matrix([sp.sin(x+y+z),sp.cos(x+y+z),0])
+def boundary():
+    from sympy import symbols, Matrix, sin, cos
+    x0,x1,x2 = symbols('x0 x1 x2')
+    # return Matrix([x-0.5,y-0.5,z-0.5])/sp.sqrt((x-0.5)**2 + (y-0.5)**2 + (z-0.5)**2 + 1e-10)
+    return Matrix([sin(x0+x1+x2),cos(x0+x1+x2),0])
 
 # Mesh size
 
@@ -18,6 +20,10 @@ meshsize_max = 10
 
 visualize = 0
 outfilepath = "paraview/q-tensor-3d.pvd"
+
+# Omit initial printoff?
+
+omit_initial_printoff = 1
 
 # Manufactured solution?
 
