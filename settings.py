@@ -7,7 +7,7 @@ def initialGuess():
 # Desired boundary conditions
 
 def boundary():
-    from sympy import symbols, Matrix, sin, cos
+    from sympy import symbols, Matrix, sin, cos, sqrt
     x0,x1,x2 = symbols('x0 x1 x2')
     # return Matrix([x-0.5,y-0.5,z-0.5])/sp.sqrt((x-0.5)**2 + (y-0.5)**2 + (z-0.5)**2 + 1e-10)
     return Matrix([sin(x0+x1+x2),cos(x0+x1+x2),0])

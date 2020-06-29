@@ -2,49 +2,16 @@ import settings
 
 def computeBilinear():
     from settings import dt, ep, L0, L1, L2, L3
-    from sympy import symbols, Matrix
     from sympyplus import uflfy
     
-    q0, q1, q2, q3, q4 = symbols('q[0:5]')
-
-    d0q0, d1q0, d2q0, \
-    d0q1, d1q1, d2q1, \
-    d0q2, d1q2, d2q2, \
-    d0q3, d1q3, d2q3, \
-    d0q4, d1q4, d2q4 = symbols('q[0:5].dx((0:3))')
-
-    p0, p1, p2, p3, p4 = symbols('p[0:5]')
-
-    d0p0, d1p0, d2p0, \
-    d0p1, d1p1, d2p1, \
-    d0p2, d1p2, d2p2, \
-    d0p3, d1p3, d2p3, \
-    d0p4, d1p4, d2p4 = symbols('p[0:5].dx((0:3))')
+    # Create vector objects
     
-    qv = Matrix([q0,q1,q2,q3,q4])
-    pv = Matrix([p0,p1,p2,p3,p4])
-    
-    grad_q = Matrix([[d0q0,d1q0,d2q0],
-                     [d0q1,d1q1,d2q1],
-                     [d0q2,d1q2,d2q2],
-                     [d0q3,d1q3,d2q3],
-                     [d0q4,d1q4,d2q4]])
-                         
-    grad_p = Matrix([[d0p0,d1p0,d2p0],
-                     [d0p1,d1p1,d2p1],
-                     [d0p2,d1p2,d2p2],
-                     [d0p3,d1p3,d2p3],
-                     [d0p4,d1p4,d2p4]])
-    
-    # Computations
-    
-    term_L1 = termL1(grad_q,grad_p)
-    term_L2 = termL2(grad_q,grad_p)
-    term_L3 = termL3(grad_q,grad_p)
+    q = Vector('q')
+    p = Vector('p')
     
     # Combine
-    
-    expression = (1/dt) * qv.dot(pv) + L1*term_L1 + L2*term_L2 + L3*term_L3 + (L0/ep)*qv.dot(pv)
+        
+    expression = (1/dt) * q.vec.dot(p.vec) + L1*termL1(q.grad,p.grad) + L2*termL2(q.grad,p.grad) + L3*termL3(q.grad,p.grad) + (L0/ep)*q.vec.dot(p.vec)
     
     return uflfy(expression)
 
@@ -63,50 +30,32 @@ def computeInitialGuess():
 
 def computeLinear():
     from settings import dt, ep, L0, A, B, C
-    from sympy import symbols, sqrt, diff, diag, Matrix, zeros, eye
-    from sympyplus import uflfy, innerp, outerp, vectorfy, E
-    
-    qp0, qp1, qp2, qp3, qp4 = symbols('q_prev[0:5]')
-    qpv = Matrix([qp0,qp1,qp2,qp3,qp4])
-    
-    p0, p1, p2, p3, p4 = symbols('p[0:5]')
-    pv = Matrix([p0,p1,p2,p3,p4])
-    
-    fv = strongForm()
-        
-    term_A = termA(qpv,pv)
-    term_B = termB(qpv,pv)
-    term_C = termC(qpv,pv)
-    
-    return uflfy((1/dt) * qpv.dot(pv) + (1/ep) * ( (A + L0) * term_A + B * term_B - C * term_C ) + fv.dot(pv))
-
-######################################################################################################################################################################################
-######################################################################################################################################################################################
-######################################################################################################################################################################################
-
-def strongForm():
-    from settings import ep, L1, L2, L3, A, B, C
     from sympy import Matrix, eye
-    from sympyplus import outerp, vectorfy
+    from sympyplus import uflfy, outerp, vectorfy
+    
+    q_prev = Vector('q_prev')
+    p = Vector('p')
     
     if settings.manufactured == 0:
-        return Matrix([0,0,0,0,0])
+        f = Matrix([0,0,0,0,0])
     elif settings.manufactured == 1:
         n = settings.boundary()
         G = outerp(n,n) - (1.0/3.0) * eye(3)
-        
-        strong_L1 = strongL1(G)
-        strong_L2 = strongL2(G)
-        strong_L3 = strongL3(G)
-        strong_A = strongA(G)
-        strong_B = strongB(G)
-        strong_C = strongC(G)
-        
-        F = L1*strong_L1 + L2*strong_L2 + L3*strong_L3 + (1/ep)*(-A*strong_A - B*strong_B + C*strong_C)
-        
-        return vectorfy(F)
-    else:
-        raise ValueError("Variable 'manufactured' must be 0 or 1.")
+        F = strongForm(G)
+        f = vectorfy(F)
+    
+    expression = (1/dt) * q_prev.vec.dot(p.vec) + (1/ep) * ( (A + L0) * termA(q_prev.vec,p.vec) + B * termB(q_prev.vec,p.vec) - C * termC(q_prev.vec,p.vec) ) + f.dot(p.vec)
+    
+    return uflfy(expression)
+
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+
+def strongForm(G): # plugs G into the strong form PDE
+    from settings import ep, L1, L2, L3, A, B, C
+    
+    return L1*strongL1(G) + L2*strongL2(G) + L3*strongL3(G) + (1/ep)*(-A*strongA(G) - B*strongB(G) + C*strongC(G))
 
 def termA(vec1,vec2):
     return vec1.dot(vec2)
@@ -210,5 +159,30 @@ def strongC(Q):
     from sympyplus import innerp
     
     return innerp(Q,Q)*Q
+
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+
+class Vector: # creates a Vector object, which symbolically represents a 5-dimensional vector in 3 spatial dimensions, and its gradient matrix
+    def __init__(self,name):
+        self.name = name # For 'name', choose the variable name that Firedrake will later use
+        
+        from sympy import symbols, Matrix        
+        v0, v1, v2, v3, v4 = symbols(f'{name}[0:5]')
+        
+        d0v0, d1v0, d2v0, \
+        d0v1, d1v1, d2v1, \
+        d0v2, d1v2, d2v2, \
+        d0v3, d1v3, d2v3, \
+        d0v4, d1v4, d2v4 = symbols(f'{name}[0:5].dx((0:3))')
+        
+        self.vec = Matrix([v0,v1,v2,v3,v4]) # the vector itself
+        
+        self.grad = Matrix([[d0v0,d1v0,d2v0],
+                            [d0v1,d1v1,d2v1],
+                            [d0v2,d1v2,d2v2],
+                            [d0v3,d1v3,d2v3],
+                            [d0v4,d1v4,d2v4]]) # the vector's gradient matrix
 
 # END OF CODE
