@@ -4,14 +4,10 @@ from misc import color
 def initPrintoff():
     if omit_initial_printoff == 1:
         return
+    
     print()
     print(f"{color.uline}PRELIMINARY INFO:{color.end}")
     print()
-    
-    if 0>=L1 or -L1>=L3 or L3>=2*L1 or -3/5*L1-1/10*L3>=L2:
-        print(f"{color.warning}WARNING: L1, L2, and L3 do not satisfy the proper inequalities{color.end}")
-        print()
-    
     print(f"Constants: L1 = {L1},")
     print(f"           L2 = {L2},")
     print(f"           L3 = {L3},")
@@ -29,24 +25,21 @@ def initPrintoff():
     print()
     
     if visualize == 0:
-        print(f"Visualize in Paraview? No")
+        print("Visualize in Paraview? No")
     elif visualize == 1:
-        print(f"Visualize in Paraview? Yes")
-    else:
-        raise ValueError("Variable 'visualize' must be 0 or 1.")
+        print("Visualize in Paraview? Yes")
+    
     print()
     
     if manufactured == 0:
-        print(f"Manufactured solution? No")
+        print("Manufactured solution? No")
         print()
         print(f"Mesh size: {meshsize_max} x {meshsize_max} x {meshsize_max}")
     elif manufactured == 1:
-        print(f"Manufactured solution? Yes")
+        print("Manufactured solution? Yes")
         print()
         print(f"Init mesh size: {meshsize_init} x {meshsize_init} x {meshsize_init}")
         print(f"Max mesh size:  {meshsize_max} x {meshsize_max} x {meshsize_max}")
-    else:
-        raise ValueError("Variable 'manufactured' must be 0 or 1.")
 
 def initPrintoff2():
     print()

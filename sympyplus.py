@@ -1,4 +1,3 @@
-from firedrake import *
 import sympy as sp
 
 a = (sp.sqrt(3.0)-3.0)/6.0

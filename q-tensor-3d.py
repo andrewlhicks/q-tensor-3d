@@ -22,6 +22,11 @@ from eigen import *
 from firedrakeplus import *
 from printoff import *
 from misc import timer
+from valuecheck import valueCheck
+
+# Check to see if the variables were set properly
+
+valueCheck()
 
 # Compute
 
