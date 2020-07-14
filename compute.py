@@ -1,19 +1,6 @@
 import settings
 
-def computeBilinear():
-    from settings import dt, ep, L0, L1, L2, L3
-    from sympyplus import uflfy
-    
-    # Create vector objects
-    
-    q = Vector('q')
-    p = Vector('p')
-    
-    # Combine
-        
-    expression = (1/dt) * q.vec.dot(p.vec) + L1*termL1(q.grad,p.grad) + L2*termL2(q.grad,p.grad) + L3*termL3(q.grad,p.grad) + (L0/ep)*q.vec.dot(p.vec)
-    
-    return uflfy(expression)
+# Compute boundary and initial guess
 
 def computeBoundary():
     from sympy import eye
@@ -28,13 +15,130 @@ def computeInitialGuess():
     from sympyplus import uflfy
     return uflfy(settings.initialGuess())
 
+#  Compute bilinear forms integrated over the volume and on the boundary, then the linear form
+
+def computeBilinear():
+    from sympyplus import uflfy
+    
+    # Combine
+        
+    expression = bFormTimeStep() + bFormElastic() + bFormBulk()
+    
+    # Convert to UFL and return
+    
+    return uflfy(expression)
+
+def computeBilinearOnBoundary():
+    from sympyplus import uflfy
+    
+    # Combine
+    
+    expression = bFormSurface()
+    
+    # Convert to UFL and return
+    
+    return uflfy(expression)
+
 def computeLinear():
-    from settings import dt, ep, L0, A, B, C
-    from sympy import Matrix, eye
-    from sympyplus import uflfy, outerp, vectorfy
+    from sympyplus import uflfy
+    
+    # Combine
+    
+    expression = lFormTimeStep() + lFormBulk() + lFormForcing()
+    
+    # Convert to UFL and return
+    
+    return uflfy(expression)
+
+def computeLinearOnBoundary():
+    from sympyplus import uflfy
+    
+    # Combine
+    
+    expression = lFormSurface()
+    
+    # Convert to UFL and return
+    
+    return uflfy(expression)
+
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+
+# BILINEAR FORMS
+
+def bFormElastic():
+    from settings import L1, L2, L3
+    from sympyplus import uflfy
+    
+    # Create vector objects
+    
+    q = Vector('q')
+    p = Vector('p')
+    
+    # Combine and return
+    
+    return L1*termL1(q.grad,p.grad) + L2*termL2(q.grad,p.grad) + L3*termL3(q.grad,p.grad)
+
+def bFormBulk():
+    from settings import dt, ep, L0
+    from sympyplus import uflfy
+    
+    # Create vector objects
+    
+    q = Vector('q')
+    p = Vector('p')
+    
+    # Combine and return
+        
+    return (L0/ep)*q.vec.dot(p.vec)
+
+def bFormSurface():    
+    # Create vector objects
+    
+    q = Vector('q')
+    p = Vector('p')
+    
+    # Combine and return
+    
+    return q.vec.dot(p.vec)
+
+def bFormTimeStep():
+    from settings import dt
+    
+    # Create vector objects
+    
+    q = Vector('q')
+    p = Vector('p')
+    
+    # Combine and return
+    
+    return (1/dt) * q.vec.dot(p.vec)
+
+# LINEAR FORMS
+
+def lFormBulk():
+    from settings import ep, L0, A, B, C
+    from sympyplus import uflfy
+    
+    # Create vector objects
     
     q_prev = Vector('q_prev')
     p = Vector('p')
+    
+    # Combine and return
+    
+    return (1/ep) * ( (A + L0) * termA(q_prev.vec,p.vec) + B * termB(q_prev.vec,p.vec) - C * termC(q_prev.vec,p.vec) )
+
+def lFormForcing():
+    from sympy import Matrix, eye
+    from sympyplus import uflfy, outerp, vectorfy
+    
+    # Create vector object
+    
+    p = Vector('p')
+    
+    # Create a forcing if the manufactured solution is set
     
     if settings.manufactured == 0:
         f = Matrix([0,0,0,0,0])
@@ -44,9 +148,40 @@ def computeLinear():
         F = strongForm(G)
         f = vectorfy(F)
     
-    expression = (1/dt) * q_prev.vec.dot(p.vec) + (1/ep) * ( (A + L0) * termA(q_prev.vec,p.vec) + B * termB(q_prev.vec,p.vec) - C * termC(q_prev.vec,p.vec) ) + f.dot(p.vec)
+    # Combine and return
     
-    return uflfy(expression)
+    return f.dot(p.vec)
+
+def lFormSurface():
+    from sympy import eye
+    from sympyplus import vectorfy, outerp
+    
+    # Create vector object
+    
+    p = Vector('p')
+    
+    # Compute Q_0 boundary tensor and q_0 vector
+    
+    n = settings.boundary()
+    Q_0 = outerp(n,n) - (1.0/3.0) * eye(3)
+    q_0 = vectorfy(Q_0)
+    
+    # Combine and return
+    
+    return q_0.dot(p.vec)
+
+def lFormTimeStep():
+    from settings import dt
+    from sympyplus import uflfy
+    
+    # Create vector object
+    
+    q_prev = Vector('q_prev')
+    p = Vector('p')
+    
+    # Combine and return
+    
+    return (1/dt) * q_prev.vec.dot(p.vec)
 
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################

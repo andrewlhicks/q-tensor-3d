@@ -33,14 +33,16 @@ valueCheck()
 initial_guess = computeInitialGuess()
 boundary = computeBoundary()
 bilinear_form = computeBilinear()
+bilinear_form_on_boundary = computeBilinearOnBoundary()
 linear_form = computeLinear()
+linear_form_on_boundary = computeLinearOnBoundary()
 
 # Initialize mesh size settings
 
+if manufactured == 0:
+    meshsize = meshsize_max
 if manufactured == 1:
     meshsize = meshsize_init
-else:
-    meshsize = meshsize_max
 
 # Initial preliminary info printoff
 
@@ -61,7 +63,10 @@ while (meshsize <= meshsize_max):
     
     # Define our mesh
     
-    mesh = UnitCubeMesh(meshsize,meshsize,meshsize)
+    if manufactured == 0:
+        mesh = Mesh(mesh_path)
+    elif manufactured == 1:
+        mesh = UnitCubeMesh(meshsize,meshsize,meshsize)
     
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
     
@@ -107,6 +112,8 @@ while (meshsize <= meshsize_max):
     
     # define bilinear form a(q,p), and linear form L(p)
     
+    # a = eval(bilinear_form) * dx + eval(bilinear_form_on_boundary) * ds(101)
+    # L = eval(linear_form) * dx + eval(linear_form_on_boundary) * ds(101)
     a = eval(bilinear_form) * dx
     L = eval(linear_form) * dx
     
@@ -125,7 +132,7 @@ while (meshsize <= meshsize_max):
     # outfile is the pvd file that will be written to visualize this
     
     if visualize == 1:
-        outfile = File(outfilepath)
+        outfile = File(outfile_path)
         outfile.write(eigvec, eigval)
     
     # Time loop

@@ -9,17 +9,18 @@ def initialGuess():
 def boundary():
     from sympy import symbols, Matrix, sin, cos, sqrt
     x0,x1,x2 = symbols('x0 x1 x2')
-    # return Matrix([x-0.5,y-0.5,z-0.5])/sp.sqrt((x-0.5)**2 + (y-0.5)**2 + (z-0.5)**2 + 1e-10)
+    # return Matrix([x0-10,x1-10,x2-10])/sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)
     return Matrix([sin(x0+x1+x2),cos(x0+x1+x2),0])
 
-# Mesh size
+# Mesh settings
 
 meshsize_max = 10
+mesh_path = 'meshes/shell.msh'
 
 # Visualize?
 
 visualize = 0
-outfilepath = "paraview/q-tensor-3d.pvd"
+outfile_path = 'paraview/q-tensor-3d.pvd'
 
 # Omit initial printoff?
 
