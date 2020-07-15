@@ -1,12 +1,12 @@
 def valueCheck():
-    from settings import L1, L2, L3, manufactured, omit_initial_printoff, visualize
+    from settings import L1, L2, L3, manufactured, omit_init_printoff, visualize
     from misc import color
 
     if manufactured != 0 and manufactured != 1:
         raise ValueError("Variable 'manufactured' must be set to 0 or 1.")
 
-    if omit_initial_printoff != 0 and omit_initial_printoff != 1:
-        raise ValueError("Variable 'omit_initial_printoff' must be set to 0 or 1.")
+    if omit_init_printoff != 0 and omit_init_printoff != 1:
+        raise ValueError("Variable 'omit_init_printoff' must be set to 0 or 1.")
 
     if visualize != 0 and visualize != 1:
         raise ValueError("Variable 'visualize' must be set to 0 or 1.")

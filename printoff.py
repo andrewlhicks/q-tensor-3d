@@ -1,56 +1,91 @@
-from settings import *
-from misc import color
+# This python program is meant to print off any relevant information to the user in a visually pleasing way. For the initial printoff, we first print a blank line to create visual
+# separation between the regular command line and the information printed off here. Then the program checks to see if the initial printoff should be omitted or not. From this point
+# forward, if a blank line is needed for visual separation, it will be printed after the previous print and not before.
 
 def initPrintoff():
-    if omit_initial_printoff == 1:
-        return
+    from settings import A, B, C, dt, end, ep, ksp_type, L1, L2, L3, manufactured, mesh_numnodes_init, mesh_numnodes_max, mesh_path, omit_init_printoff, outfile_path, pc_type, visualize
+    from misc import color
+    from time import sleep
+    
+    # Print a blank line to create a better visual
     
     print()
+    
+    # Check to see if we should omit this printoff altogether
+    
+    if omit_init_printoff == 1:
+        return
+    
+    # Print a new section
+    
     print(f"{color.uline}PRELIMINARY INFO:{color.end}")
     print()
-    print(f"Constants: L1 = {L1},")
-    print(f"           L2 = {L2},")
-    print(f"           L3 = {L3},")
+    
+    # Begin to print the preliminary information
+    
+    print(f"Constants: L1 = {L1},                   Time step: {dt}                         KSP type: \"{ksp_type}\"")
+    print(f"           L2 = {L2},                   End time: {end}                         PC type:  \"{pc_type}\"")
+    print(f"           L3 = {L3},                   No. time steps: {end/dt:0.0f}")
     print(f"            A = {A},")
     print(f"            B = {B},")
     print(f"            C = {C}")
     print(f"      epsilon = {ep}")
     print()
-    print(f"KSP type: \"{ksp_type}\"")
-    print(f"PC type:  \"{pc_type}\"")
-    print()
-    print(f"Time step: {dt}")
-    print(f"End time: {end}")
-    print(f"No. time steps: {end/dt:0.0f}")
-    print()
     
-    if visualize == 0:
-        print("Visualize in Paraview? No")
-    elif visualize == 1:
-        print("Visualize in Paraview? Yes")
+    # If we are visualizing this in Paraview, print the path to the Paraview file
     
-    print()
+    if visualize == 1:
+        print(f"Paraview file: {outfile_path}")
+        print()
+    
+    # Unless we are manufacturing a solution, print the path to the mesh file; otherwise print the information for the unit cube meshes we will cycle through
     
     if manufactured == 0:
-        print("Manufactured solution? No")
+        print(f"Mesh: {mesh_path}")
         print()
-        print(f"Mesh size: {meshsize_max} x {meshsize_max} x {meshsize_max}")
     elif manufactured == 1:
-        print("Manufactured solution? Yes")
+        print("Manufactured solution")
+        print("Mesh: unit cube mesh")
         print()
-        print(f"Init mesh size: {meshsize_init} x {meshsize_init} x {meshsize_init}")
-        print(f"Max mesh size:  {meshsize_max} x {meshsize_max} x {meshsize_max}")
-
-def initPrintoff2():
+        print(f"     Init mesh node struc: {mesh_numnodes_init} x {mesh_numnodes_init} x {mesh_numnodes_init}")
+        print(f"     Max mesh node struc:  {mesh_numnodes_max} x {mesh_numnodes_max} x {mesh_numnodes_max}")
+        print()
+    
+    # Wait for 1 second, it looks nicer
+    
+    sleep(1)
+    
+    # Print a new section
+    
+    print(f"{color.uline}PRELIMINARY CALCULATIONS:{color.end}")
     print()
-    print(f"{color.uline}ERROR CALCULATIONS:{color.end}")
+
+def calctimePrintoff(time_elapsed):
+    from settings import manufactured
+    from misc import color
+    from time import sleep
+    
+    print(f"Finished preliminary calculations in {time_elapsed:0.2f} seconds.")
+    print()
+    
+    # Wait for 1 second
+    
+    sleep(1)
+    
+    # Print a new section
+    
+    print(f"{color.uline}PDE SOLVE:{color.end}")
     print()
 
-def summaryPrintoff(meshsize,H1_error,L2_error,time_elapsed):
-    print(f"Mesh size:    {meshsize} x {meshsize} x {meshsize}")
-    print(f"H1 error:     {H1_error:0.15f}")
-    print(f"L2 error:     {L2_error:0.15f}")
-    print(f"Time elapsed: {time_elapsed:0.2f} seconds")
+def summaryPrintoff(time_elapsed):
+    print(f"Finished PDE solve in {time_elapsed:0.2f} seconds.")
+    print()
+
+def summaryPrintoffManufactured(mesh_numnodes,H1_error,L2_error,time_elapsed):
+    print(f"     Mesh node struc: {mesh_numnodes} x {mesh_numnodes} x {mesh_numnodes}")
+    print(f"     H1 error:        {H1_error:0.15f}")
+    print(f"     L2 error:        {L2_error:0.15f}")
+    print(f"     Time elapsed:    {time_elapsed:0.2f} seconds")
     print()
 
 # END OF CODE

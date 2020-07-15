@@ -3,17 +3,20 @@ import settings
 # Compute boundary and initial guess
 
 def computeBoundary():
+    from settings import boundary
     from sympy import eye
     from sympyplus import outerp, uflfy, vectorfy
     
-    n = settings.boundary()
+    n = boundary()
     G = outerp(n,n) - (1.0/3.0) * eye(3)
     
     return uflfy(vectorfy(G))
 
 def computeInitialGuess():
+    from settings import initialGuess
     from sympyplus import uflfy
-    return uflfy(settings.initialGuess())
+    
+    return uflfy(initialGuess())
 
 #  Compute bilinear forms integrated over the volume and on the boundary, then the linear form
 
@@ -131,6 +134,7 @@ def lFormBulk():
     return (1/ep) * ( (A + L0) * termA(q_prev.vec,p.vec) + B * termB(q_prev.vec,p.vec) - C * termC(q_prev.vec,p.vec) )
 
 def lFormForcing():
+    from settings import boundary, manufactured
     from sympy import Matrix, eye
     from sympyplus import uflfy, outerp, vectorfy
     
@@ -140,10 +144,10 @@ def lFormForcing():
     
     # Create a forcing if the manufactured solution is set
     
-    if settings.manufactured == 0:
+    if manufactured == 0:
         f = Matrix([0,0,0,0,0])
-    elif settings.manufactured == 1:
-        n = settings.boundary()
+    elif manufactured == 1:
+        n = boundary()
         G = outerp(n,n) - (1.0/3.0) * eye(3)
         F = strongForm(G)
         f = vectorfy(F)
@@ -153,6 +157,7 @@ def lFormForcing():
     return f.dot(p.vec)
 
 def lFormSurface():
+    from settings import boundary
     from sympy import eye
     from sympyplus import vectorfy, outerp
     
@@ -162,7 +167,7 @@ def lFormSurface():
     
     # Compute Q_0 boundary tensor and q_0 vector
     
-    n = settings.boundary()
+    n = boundary()
     Q_0 = outerp(n,n) - (1.0/3.0) * eye(3)
     q_0 = vectorfy(Q_0)
     

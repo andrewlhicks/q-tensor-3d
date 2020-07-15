@@ -9,12 +9,10 @@ def initialGuess():
 def boundary():
     from sympy import symbols, Matrix, sin, cos, sqrt
     x0,x1,x2 = symbols('x0 x1 x2')
-    # return Matrix([x0-10,x1-10,x2-10])/sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)
-    return Matrix([sin(x0+x1+x2),cos(x0+x1+x2),0])
+    return Matrix([x0-10,x1-10,x2-10])/sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)
 
 # Mesh settings
 
-meshsize_max = 10
 mesh_path = 'meshes/shell.msh'
 
 # Visualize?
@@ -24,12 +22,13 @@ outfile_path = 'paraview/q-tensor-3d.pvd'
 
 # Omit initial printoff?
 
-omit_initial_printoff = 1
+omit_init_printoff = 0
 
 # Manufactured solution?
 
-manufactured = 1
-meshsize_init = 10 # only used if 'manufactured' is set to 1.
+manufactured = 1 # Creates a UnitCubeMesh and loops through different numbers of degrees of freedom
+mesh_numnodes_init = 10 # only used if 'manufactured' is set to 1
+mesh_numnodes_max = 10 # only used if 'manufactured' is set to 1
 
 # Convex splitting constant
 

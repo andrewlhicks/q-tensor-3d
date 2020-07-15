@@ -8,27 +8,35 @@
 # 3: plane y == -1
 # 4: plane y == 1
 
-# Imported modules
-
 from firedrake import *
 from firedrake.slate.slac.compiler import PETSC_ARCH
+from firedrakeplus import *
+from valuecheck import valueCheck
+from printoff import *
 
-# User-made modules
-
-from settings import *
 from compute import *
 from eigen import *
 
-from firedrakeplus import *
-from printoff import *
+# Create timer object which will be used to time the various calculations
+
 from misc import timer
-from valuecheck import valueCheck
+time = timer()
+
+# Settings
+
+from settings import dt, end, ksp_type, manufactured, mesh_path, pc_type, visualize
 
 # Check to see if the variables were set properly
 
 valueCheck()
 
+# Print preliminary information (set 'omit_init_printoff = 1' to skip this)
+
+initPrintoff()
+
 # Compute
+
+time.start()
 
 initial_guess = computeInitialGuess()
 boundary = computeBoundary()
@@ -37,25 +45,24 @@ bilinear_form_on_boundary = computeBilinearOnBoundary()
 linear_form = computeLinear()
 linear_form_on_boundary = computeLinearOnBoundary()
 
-# Initialize mesh size settings
-
-if manufactured == 0:
-    meshsize = meshsize_max
-if manufactured == 1:
-    meshsize = meshsize_init
+time_elapsed = time.stop()
 
 # Initial preliminary info printoff
 
-initPrintoff()
-initPrintoff2()
+calctimePrintoff(time_elapsed)
 
-# Create a timer object to time the calculation
+# Initialize loop
 
-time = timer()
+loop = True
 
-# Loop through mesh sizes
+if manufactured == 1:
+    from settings import mesh_numnodes_init, mesh_numnodes_max
+    mesh_numnodes = mesh_numnodes_init
 
-while (meshsize <= meshsize_max):
+while loop:
+    # Set loop to be false; turn back on if needed
+    
+    loop = False
     
     # Start the timer
     
@@ -66,7 +73,7 @@ while (meshsize <= meshsize_max):
     if manufactured == 0:
         mesh = Mesh(mesh_path)
     elif manufactured == 1:
-        mesh = UnitCubeMesh(meshsize,meshsize,meshsize)
+        mesh = UnitCubeMesh(mesh_numnodes,mesh_numnodes,mesh_numnodes)
     
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
     
@@ -163,21 +170,35 @@ while (meshsize <= meshsize_max):
         
         t += dt
     
-    # Calculate the H1 and L2 errors
-    
-    H1_error = errorH1(q_soln,g)
-    L2_error = errorL2(q_soln,g)
-    
-    # Record the time elapsed
-    
-    time_elapsed = time.stop()
-    
-    # Print a summary
-    
-    summaryPrintoff(meshsize,H1_error,L2_error,time_elapsed)
-    
-    # Double the mesh size
-    
-    meshsize *= 2
-
+    if manufactured == 0:
+        # Record the time elapsed
+        
+        time_elapsed = time.stop()
+        
+        # Print a summary
+        
+        summaryPrintoff(time_elapsed)
+        
+    elif manufactured == 1:
+        # Calculate the H1 and L2 errors
+        
+        H1_error = errorH1(q_soln,g)
+        L2_error = errorL2(q_soln,g)
+        
+        # Record the time elapsed
+        
+        time_elapsed = time.stop()
+        
+        # Print a summary
+        
+        summaryPrintoffManufactured(mesh_numnodes,H1_error,L2_error,time_elapsed)
+        
+        # Double the mesh size
+        
+        mesh_numnodes *= 2
+        
+        # If less than or equal to maximum number of nodes, turn loop back on
+        
+        if mesh_numnodes <= mesh_numnodes_max:
+            loop = True
 # END OF CODE
