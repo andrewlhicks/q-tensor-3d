@@ -19,12 +19,12 @@ from eigen import *
 
 # Create timer object which will be used to time the various calculations
 
-from misc import timer
-time = timer()
+from misc import Timer
+time = Timer()
 
 # Settings
 
-from settings import dt, end, ksp_type, manufactured, mesh_path, pc_type, visualize
+from settings import dt, end, ksp_type, manufactured, mesh_filepath, paraview_filepath, pc_type, visualize
 
 # Check to see if the variables were set properly
 
@@ -45,17 +45,17 @@ bilinear_form_on_boundary = computeBilinearOnBoundary()
 linear_form = computeLinear()
 linear_form_on_boundary = computeLinearOnBoundary()
 
-time_elapsed = time.stop()
+time.stop()
 
 # Initial preliminary info printoff
 
-calctimePrintoff(time_elapsed)
+calctimePrintoff(time.elapsed)
 
 # Initialize loop
 
 loop = True
 
-if manufactured == 1:
+if manufactured:
     from settings import mesh_numnodes_init, mesh_numnodes_max
     mesh_numnodes = mesh_numnodes_init
 
@@ -70,10 +70,10 @@ while loop:
     
     # Define our mesh
     
-    if manufactured == 0:
-        mesh = Mesh(mesh_path)
-    elif manufactured == 1:
+    if manufactured:
         mesh = UnitCubeMesh(mesh_numnodes,mesh_numnodes,mesh_numnodes)
+    else:
+        mesh = Mesh(mesh_filepath)
     
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
     
@@ -138,8 +138,8 @@ while loop:
     
     # outfile is the pvd file that will be written to visualize this
     
-    if visualize == 1:
-        outfile = File(outfile_path)
+    if visualize:
+        outfile = File(paraview_filepath)
         outfile.write(eigvec, eigval)
     
     # Time loop
@@ -165,21 +165,12 @@ while loop:
         
         # Write eigenvectors and eigenvalues to Paraview
         
-        if visualize == 1:
+        if visualize:
             outfile.write(eigvec, eigval)
         
         t += dt
     
-    if manufactured == 0:
-        # Record the time elapsed
-        
-        time_elapsed = time.stop()
-        
-        # Print a summary
-        
-        summaryPrintoff(time_elapsed)
-        
-    elif manufactured == 1:
+    if manufactured:
         # Calculate the H1 and L2 errors
         
         H1_error = errorH1(q_soln,g)
@@ -187,11 +178,11 @@ while loop:
         
         # Record the time elapsed
         
-        time_elapsed = time.stop()
+        time.stop()
         
         # Print a summary
         
-        summaryPrintoffManufactured(mesh_numnodes,H1_error,L2_error,time_elapsed)
+        summaryPrintoffManufactured(mesh_numnodes,H1_error,L2_error,time.elapsed)
         
         # Double the mesh size
         
@@ -201,4 +192,12 @@ while loop:
         
         if mesh_numnodes <= mesh_numnodes_max:
             loop = True
+    else:
+        # Record the time elapsed
+        
+        time.stop()
+        
+        # Print a summary
+        
+        summaryPrintoff(time.elapsed)
 # END OF CODE

@@ -144,13 +144,13 @@ def lFormForcing():
     
     # Create a forcing if the manufactured solution is set
     
-    if manufactured == 0:
-        f = Matrix([0,0,0,0,0])
-    elif manufactured == 1:
+    if manufactured:
         n = boundary()
         G = outerp(n,n) - (1.0/3.0) * eye(3)
         F = strongForm(G)
         f = vectorfy(F)
+    else:
+        f = Matrix([0,0,0,0,0])
     
     # Combine and return
     
