@@ -13,9 +13,9 @@ def boundary():
 
 # General settings
 
-omit_init_printoff = True # If 'True', omits the initial printoff of the settings
-visualize          = False # If 'True', creates a Paraview file to visualize the data
-manufactured       = False # If 'True', manufactures a solution, creates a UnitCubeMesh, and loops through different numbers of degrees of freedom
+omit_init_printoff = False # If 'True', omits the initial printoff of the settings
+visualize          = True # If 'True', creates a Paraview file to visualize the data
+manufactured       = True # If 'True', manufactures a solution, creates a UnitCubeMesh, and loops through different numbers of degrees of freedom
 
 # Mesh settings
 

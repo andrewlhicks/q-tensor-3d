@@ -12,10 +12,11 @@
 
 from firedrake import *
 from firedrake.slate.slac.compiler import PETSC_ARCH
+from firedrakeplus import *
+from eigen import *
+from compute import *
 from valuecheck import valueCheck
 import printoff
-from compute import *
-from eigen import *
 
 # Create timer object which will be used to time the various calculations
 
@@ -182,9 +183,7 @@ while loop:
         
         t += dt
     
-    if manufactured:
-        from firedrakeplus import errorH1, errorL2
-        
+    if manufactured:    
         # Calculate the H1 and L2 errors
         
         H1_error = errorH1(q_soln,g)
