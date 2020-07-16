@@ -1,12 +1,12 @@
 # Initial guess
 
-def initialGuess():
+def userInitialGuess():
     from sympy import Matrix
     return Matrix([0,0,0,0,0])
 
 # Desired boundary conditions
 
-def boundary():
+def userBoundary():
     from sympy import symbols, Matrix, sin, cos, sqrt
     x0,x1,x2 = symbols('x0 x1 x2')
     return Matrix([x0-10,x1-10,x2-10])/sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)
@@ -14,8 +14,8 @@ def boundary():
 # General settings
 
 omit_init_printoff = False # If 'True', omits the initial printoff of the settings
-visualize          = True # If 'True', creates a Paraview file to visualize the data
-manufactured       = True # If 'True', manufactures a solution, creates a UnitCubeMesh, and loops through different numbers of degrees of freedom
+visualize          = False # If 'True', creates a Paraview file to visualize the data
+manufactured       = False # If 'True', manufactures a solution, creates a UnitCubeMesh, and loops through different numbers of degrees of freedom
 
 # Mesh settings
 

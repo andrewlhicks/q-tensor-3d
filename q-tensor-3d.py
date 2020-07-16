@@ -14,7 +14,7 @@ from firedrake import *
 from firedrake.slate.slac.compiler import PETSC_ARCH
 from firedrakeplus import *
 from eigen import *
-from compute import *
+import compute
 from valuecheck import valueCheck
 import printoff
 
@@ -39,26 +39,26 @@ printoff.prelimTitle()
 
 printoff.prelimInfo()
 
-# Print the title 'PRELIMINARY CALCULATIONS'
+# Print the title 'PRELIMINARY COMPUTATIONS'
 
-printoff.prelimCalcTitle()
+printoff.prelimCompTitle()
 
-# Preliminary calculations
+# Preliminary computations
 
 time.start()
 
-initial_guess = computeInitialGuess()
-boundary = computeBoundary()
-bilinear_form = computeBilinear()
-bilinear_form_on_boundary = computeBilinearOnBoundary()
-linear_form = computeLinear()
-linear_form_on_boundary = computeLinearOnBoundary()
+initial_guess = compute.initialGuess()
+boundary = compute.boundary()
+bilinear_form = compute.bilinear()
+bilinear_form_on_boundary = compute.bilinearOnBoundary()
+linear_form = compute.linear()
+linear_form_on_boundary = compute.linearOnBoundary()
 
 time.stop()
 
-# Print the time it took to do the preliminary calculations
+# Print the time it took to do the preliminary computations
 
-printoff.prelimCalcInfo(time.elapsed)
+printoff.prelimCompInfo(time.elapsed)
 
 # Print the title 'PDE SOLVE'
 

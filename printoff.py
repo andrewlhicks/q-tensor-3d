@@ -64,7 +64,7 @@ def prelimInfo():
         print(f"Mesh: {mesh_filepath}")
         print()
 
-def prelimCalcTitle():
+def prelimCompTitle():
     from misc import color
     from time import sleep
     
@@ -74,14 +74,14 @@ def prelimCalcTitle():
     
     # Print a new section
     
-    print(f"{color.uline}PRELIMINARY CALCULATIONS:{color.end}")
+    print(f"{color.uline}PRELIMINARY COMPUTATIONS:{color.end}")
     print()
 
-def prelimCalcInfo(time_elapsed):
+def prelimCompInfo(time_elapsed):
     from misc import color
     from time import sleep
     
-    print(f"Finished preliminary calculations in {time_elapsed:0.2f} seconds.")
+    print(f"Finished preliminary computations in {time_elapsed:0.2f} seconds.")
     print()
 
 def pdeSolveTitle():
