@@ -2,24 +2,37 @@
 # separation between the regular command line and the information printed off here. Then the program checks to see if the initial printoff should be omitted or not. From this point
 # forward, if a blank line is needed for visual separation, it will be printed after the previous print and not before.
 
-def initPrintoff():
-    from settings import A, B, C, dt, end, ep, ksp_type, L1, L2, L3, manufactured, mesh_numnodes_init, mesh_numnodes_max, mesh_filepath, omit_init_printoff, paraview_filepath, pc_type, visualize
-    from misc import color
-    from time import sleep
-    
+def prelimTitle():
     # Print a blank line to create a better visual
     
     print()
     
     # Check to see if we should omit this printoff altogether
     
+    from settings import omit_init_printoff
+    
     if omit_init_printoff:
         return
     
     # Print a new section
     
+    from misc import color
+    
     print(f"{color.uline}PRELIMINARY INFO:{color.end}")
     print()
+
+def prelimInfo():
+    # Check to see if we should omit this printoff altogether
+    
+    from settings import omit_init_printoff
+    
+    if omit_init_printoff:
+        return
+    
+    # Import variables
+    
+    from settings import A, B, C, dt, end, ep, ksp_type, L1, L2, L3, manufactured, mesh_numnodes_init, mesh_numnodes_max, mesh_filepath, paraview_filepath, pc_type, visualize
+    from time import sleep
     
     # Begin to print the preliminary information
     
@@ -51,7 +64,7 @@ def initPrintoff():
         print(f"Mesh: {mesh_filepath}")
         print()
 
-def calctimePrintoff(time_elapsed):
+def prelimCalcTitle():
     from misc import color
     from time import sleep
     
@@ -63,8 +76,17 @@ def calctimePrintoff(time_elapsed):
     
     print(f"{color.uline}PRELIMINARY CALCULATIONS:{color.end}")
     print()
+
+def prelimCalcInfo(time_elapsed):
+    from misc import color
+    from time import sleep
+    
     print(f"Finished preliminary calculations in {time_elapsed:0.2f} seconds.")
     print()
+
+def pdeSolveTitle():
+    from misc import color
+    from time import sleep
     
     # Wait for 1 second
     
@@ -75,11 +97,11 @@ def calctimePrintoff(time_elapsed):
     print(f"{color.uline}PDE SOLVE:{color.end}")
     print()
 
-def summaryPrintoff(time_elapsed):
+def pdeSolveInfo(time_elapsed):
     print(f"Finished PDE solve in {time_elapsed:0.2f} seconds.")
     print()
 
-def summaryPrintoffManufactured(mesh_numnodes,H1_error,L2_error,time_elapsed):
+def pdeSolveInfoManufactured(mesh_numnodes,H1_error,L2_error,time_elapsed):
     print(f"Mesh node struc: {mesh_numnodes} x {mesh_numnodes} x {mesh_numnodes}")
     print(f"H1 error:        {H1_error:0.15f}")
     print(f"L2 error:        {L2_error:0.15f}")

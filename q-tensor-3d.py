@@ -8,12 +8,12 @@
 # 3: plane y == -1
 # 4: plane y == 1
 
+# Import modules
+
 from firedrake import *
 from firedrake.slate.slac.compiler import PETSC_ARCH
-from firedrakeplus import *
 from valuecheck import valueCheck
-from printoff import *
-
+import printoff
 from compute import *
 from eigen import *
 
@@ -30,11 +30,19 @@ from settings import dt, end, ksp_type, manufactured, mesh_filepath, paraview_fi
 
 valueCheck()
 
-# Print preliminary information (set 'omit_init_printoff = 1' to skip this)
+# Print the title 'PRELIMINARY INFO' (set 'omit_init_printoff = True' to skip this)
 
-initPrintoff()
+printoff.prelimTitle()
 
-# Compute
+# Print preliminary information (set 'omit_init_printoff = True' to skip this)
+
+printoff.prelimInfo()
+
+# Print the title 'PRELIMINARY CALCULATIONS'
+
+printoff.prelimCalcTitle()
+
+# Preliminary calculations
 
 time.start()
 
@@ -47,9 +55,13 @@ linear_form_on_boundary = computeLinearOnBoundary()
 
 time.stop()
 
-# Initial preliminary info printoff
+# Print the time it took to do the preliminary calculations
 
-calctimePrintoff(time.elapsed)
+printoff.prelimCalcInfo(time.elapsed)
+
+# Print the title 'PDE SOLVE'
+
+printoff.pdeSolveTitle()
 
 # Initialize loop
 
@@ -171,6 +183,8 @@ while loop:
         t += dt
     
     if manufactured:
+        from firedrakeplus import errorH1, errorL2
+        
         # Calculate the H1 and L2 errors
         
         H1_error = errorH1(q_soln,g)
@@ -182,7 +196,7 @@ while loop:
         
         # Print a summary
         
-        summaryPrintoffManufactured(mesh_numnodes,H1_error,L2_error,time.elapsed)
+        printoff.pdeSolveInfoManufactured(mesh_numnodes,H1_error,L2_error,time.elapsed)
         
         # Double the mesh size
         
@@ -199,5 +213,5 @@ while loop:
         
         # Print a summary
         
-        summaryPrintoff(time.elapsed)
+        printoff.pdeSolveInfo(time.elapsed)
 # END OF CODE
