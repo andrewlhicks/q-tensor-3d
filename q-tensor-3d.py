@@ -132,11 +132,13 @@ while loop:
     
     # define bilinear form a(q,p), and linear form L(p)
     
-    # a = eval(bilinear_form) * dx + eval(bilinear_form_on_boundary) * ds(101)
-    # L = eval(linear_form) * dx + eval(linear_form_on_boundary) * ds(101)
-    a = eval(bilinear_form) * dx
-    L = eval(linear_form) * dx
-    
+    nu = FacetNormal(mesh)
+
+    a = eval(bilinear_form) * dx + eval(bilinear_form_on_boundary) * ds
+    L = eval(linear_form) * dx + eval(linear_form_on_boundary) * ds
+    # a = eval(bilinear_form) * dx
+    # L = eval(linear_form) * dx
+
     # for the 0th time step, we define the solution to be the initial guess
     
     q_init.interpolate(eval(initial_guess))

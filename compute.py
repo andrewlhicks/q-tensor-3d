@@ -167,10 +167,14 @@ def lFormSurface():
     
     # Compute Q_0 boundary tensor and q_0 vector
     
-    n = userBoundary()
-    Q_0 = outerp(n,n) - (1.0/3.0) * eye(3)
-    q_0 = vectorfy(Q_0)
+    # n = userBoundary()
+    # Q_0 = outerp(n,n) - (1.0/3.0) * eye(3)
+    # q_0 = vectorfy(Q_0)
     
+    nu = Vector3d('nu')
+    Q_0 = outerp(nu.vec,nu.vec) - (1.0/3.0) * eye(3) # Should be multiplied by s_0 value (min point for double well)
+    q_0 = vectorfy(Q_0)
+
     # Combine and return
     
     return q_0.dot(p.vec)
@@ -324,5 +328,12 @@ class Vector: # creates a Vector object, which symbolically represents a 5-dimen
                             [d0v2,d1v2,d2v2],
                             [d0v3,d1v3,d2v3],
                             [d0v4,d1v4,d2v4]]) # the vector's gradient matrix
+
+class Vector3d: # Temporary class until I can generalize the Vector class to handle this case
+    def __init__(self,name):
+        self.name = name
+        from sympy import symbols, Matrix
+        v0, v1, v2 = symbols(f'{name}[0:3]')
+        self.vec = Matrix([v0,v1,v2])
 
 # END OF CODE
