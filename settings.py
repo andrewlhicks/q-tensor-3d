@@ -1,15 +1,7 @@
-# Initial guess
+from sympyplus import UserDefinedFunction
 
-def userInitialGuess():
-    from sympy import Matrix
-    return Matrix([0,0,0,0,0])
-
-# Desired boundary conditions
-
-def userBoundary():
-    from sympy import symbols, Matrix, sin, cos, sqrt
-    x0,x1,x2 = symbols('x0 x1 x2')
-    return Matrix([x0-10,x1-10,x2-10])/sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)
+userInitialGuess = UserDefinedFunction('sp.Matrix([0,0,0,0,0])')
+userBoundary = UserDefinedFunction('sp.Matrix([x0-10,x1-10,x2-10])/sp.sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)')
 
 # General settings
 
