@@ -70,4 +70,27 @@ class UserDefinedFunction:
         x0, x1, x2 = sp.symbols('x0 x1 x2')
         return eval(self.func_string)
 
+class Vector(Matrix):
+    def __new__(cls,name,dim=5):
+        from sympy import symbols
+        vector = []
+        for ii in range(dim):
+            vector.append(symbols(f'{name}[{ii}]'))
+        
+        return super(Vector,cls).__new__(cls,vector)
+    def __init__(self,name,dim=5):
+        from sympy import symbols
+        self.name = name # For 'name', choose the variable name that Firedrake will later use
+
+        grad = []
+        grad_row = []
+
+        for ii in range(dim):
+            for jj in range(3):
+                grad_row.append(symbols(f'{name}[{ii}].dx({jj})'))
+            grad.append(grad_row)
+            grad_row = []
+
+        self.grad = Matrix(grad)
+
 # END OF CODE

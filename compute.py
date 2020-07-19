@@ -1,4 +1,5 @@
 import settings
+from sympyplus import Vector
 
 # Compute boundary and initial guess
 
@@ -94,7 +95,7 @@ def bFormBulk():
     
     # Combine and return
         
-    return (L0/ep)*q.vec.dot(p.vec)
+    return (L0/ep)*q.dot(p)
 
 def bFormSurface():    
     # Create vector objects
@@ -104,7 +105,7 @@ def bFormSurface():
     
     # Combine and return
     
-    return q.vec.dot(p.vec)
+    return q.dot(p)
 
 def bFormTimeStep():
     from settings import dt
@@ -116,7 +117,7 @@ def bFormTimeStep():
     
     # Combine and return
     
-    return (1/dt) * q.vec.dot(p.vec)
+    return (1/dt) * q.dot(p)
 
 # LINEAR FORMS
 
@@ -131,7 +132,7 @@ def lFormBulk():
     
     # Combine and return
     
-    return (1/ep) * ( (A + L0) * termA(q_prev.vec,p.vec) + B * termB(q_prev.vec,p.vec) - C * termC(q_prev.vec,p.vec) )
+    return (1/ep) * ( (A + L0) * termA(q_prev,p) + B * termB(q_prev,p) - C * termC(q_prev,p) )
 
 def lFormForcing():
     from settings import userBoundary, manufactured
@@ -154,7 +155,7 @@ def lFormForcing():
     
     # Combine and return
     
-    return f.dot(p.vec)
+    return f.dot(p)
 
 def lFormSurface():
     from settings import userBoundary
@@ -171,13 +172,13 @@ def lFormSurface():
     # Q_0 = outerp(n,n) - (1.0/3.0) * eye(3)
     # q_0 = vectorfy(Q_0)
     
-    nu = Vector3d('nu')
-    Q_0 = outerp(nu.vec,nu.vec) - (1.0/3.0) * eye(3) # Should be multiplied by s_0 value (min point for double well)
+    nu = Vector('nu',3)
+    Q_0 = outerp(nu,nu) - (1.0/3.0) * eye(3) # Should be multiplied by s_0 value (min point for double well)
     q_0 = vectorfy(Q_0)
 
     # Combine and return
     
-    return q_0.dot(p.vec)
+    return q_0.dot(p)
 
 def lFormTimeStep():
     from settings import dt
@@ -190,7 +191,7 @@ def lFormTimeStep():
     
     # Combine and return
     
-    return (1/dt) * q_prev.vec.dot(p.vec)
+    return (1/dt) * q_prev.dot(p)
 
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
@@ -303,37 +304,5 @@ def strongC(Q):
     from sympyplus import innerp
     
     return innerp(Q,Q)*Q
-
-######################################################################################################################################################################################
-######################################################################################################################################################################################
-######################################################################################################################################################################################
-
-class Vector: # creates a Vector object, which symbolically represents a 5-dimensional vector in 3 spatial dimensions, and its gradient matrix
-    def __init__(self,name):
-        self.name = name # For 'name', choose the variable name that Firedrake will later use
-        
-        from sympy import symbols, Matrix        
-        v0, v1, v2, v3, v4 = symbols(f'{name}[0:5]')
-        
-        d0v0, d1v0, d2v0, \
-        d0v1, d1v1, d2v1, \
-        d0v2, d1v2, d2v2, \
-        d0v3, d1v3, d2v3, \
-        d0v4, d1v4, d2v4 = symbols(f'{name}[0:5].dx((0:3))')
-        
-        self.vec = Matrix([v0,v1,v2,v3,v4]) # the vector itself
-        
-        self.grad = Matrix([[d0v0,d1v0,d2v0],
-                            [d0v1,d1v1,d2v1],
-                            [d0v2,d1v2,d2v2],
-                            [d0v3,d1v3,d2v3],
-                            [d0v4,d1v4,d2v4]]) # the vector's gradient matrix
-
-class Vector3d: # Temporary class until I can generalize the Vector class to handle this case
-    def __init__(self,name):
-        self.name = name
-        from sympy import symbols, Matrix
-        v0, v1, v2 = symbols(f'{name}[0:3]')
-        self.vec = Matrix([v0,v1,v2])
 
 # END OF CODE
