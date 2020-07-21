@@ -1,3 +1,14 @@
+def getValues(dictionary,keys):
+    keys = keys.split(' ')
+    values = []
+    for key in keys:
+        values.append(dictionary[key])
+    if len(values) == 1:
+        return values[0]
+    else:
+        values = tuple(values)
+        return values
+
 class color:
     header = '\033[95m'
     blue = '\033[94m'

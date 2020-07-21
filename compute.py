@@ -1,4 +1,5 @@
 from sympyplus import Vector
+from misc import getValues
 
 # Compute boundary and initial guess
 
@@ -74,7 +75,7 @@ def bFormElastic():
     from settings import const
     from sympyplus import uflfy
     
-    L1, L2, L3 = const['L1'], const['L2'], const['L3']
+    L1, L2, L3 = getValues(const,'L1 L2 L3')
 
     # Create vector objects
     
@@ -89,7 +90,7 @@ def bFormBulk():
     from settings import const
     from sympyplus import uflfy
     
-    ep, L0 = const['ep'], const['L0']
+    ep, L0 = getValues(const,'ep L0')
 
     # Create vector objects
     
@@ -112,8 +113,8 @@ def bFormSurface():
 
 def bFormTimeStep():
     from settings import const
-
-    dt = const['dt']
+    
+    dt = getValues(const,'dt')
     
     # Create vector objects
     
@@ -130,7 +131,7 @@ def lFormBulk():
     from settings import const
     from sympyplus import uflfy
     
-    A, B, C, ep, L0 = const['A'], const['B'], const['C'], const['ep'], const['L0']
+    A, B, C, ep, L0 = getValues(const,'A B C ep L0')
 
     # Create vector objects
     
@@ -176,10 +177,6 @@ def lFormSurface():
     
     # Compute Q_0 boundary tensor and q_0 vector
     
-    # n = userBoundary()
-    # Q_0 = outerp(n,n) - (1.0/3.0) * eye(3)
-    # q_0 = vectorfy(Q_0)
-    
     nu = Vector('nu',3)
     Q_0 = outerp(nu,nu) - (1.0/3.0) * eye(3) # Should be multiplied by s_0 value (min point for double well)
     q_0 = vectorfy(Q_0)
@@ -192,7 +189,7 @@ def lFormTimeStep():
     from settings import const
     from sympyplus import uflfy
     
-    dt = const['dt']
+    dt = getValues(const,'dt')
 
     # Create vector object
     
@@ -210,7 +207,7 @@ def lFormTimeStep():
 def strongForm(G): # plugs G into the strong form PDE
     from settings import const
 
-    A, B, C, ep, L1, L2, L3 = const['A'], const['B'], const['C'], const['ep'], const['L1'], const['L2'], const['L3']
+    A, B, C, ep, L1, L2, L3 = getValues(const,'A B C ep L1 L2 L3')
     
     return L1*strongL1(G) + L2*strongL2(G) + L3*strongL3(G) + (1/ep)*(-A*strongA(G) - B*strongB(G) + C*strongC(G))
 

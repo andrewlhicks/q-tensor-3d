@@ -1,3 +1,4 @@
+from misc import getValues
 from sympyplus import UserDefinedFunction
 import yaml
 
@@ -6,13 +7,7 @@ settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 # Set all of the settings dictionaries
 
-const = settings['const']
-options = settings['options']
-meshdata = settings['meshdata']
-paraview = settings['paraview']
-solverdata = settings['solverdata']
-timedata = settings['timedata']
-userfunc = settings['userfunc']
+const, options, meshdata, paraview, solverdata, timedata, userfunc = getValues(settings,'const options meshdata paraview solverdata timedata userfunc')
 
 # Add 'dt' entry to 'const' dictionary
 
