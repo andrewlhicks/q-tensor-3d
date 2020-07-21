@@ -1,53 +1,26 @@
 from sympyplus import UserDefinedFunction
+import yaml
 
-userInitialGuess = UserDefinedFunction('sp.Matrix([0,0,0,0,0])')
-userBoundary = UserDefinedFunction('sp.Matrix([x0-10,x1-10,x2-10])/sp.sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)')
+settings_file = open('settings/settings.yml')
+settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
-# General settings
+# Set all of the settings dictionaries
 
-omit_init_printoff = False # If 'True', omits the initial printoff of the settings
-visualize          = False # If 'True', creates a Paraview file to visualize the data
-manufactured       = False # If 'True', manufactures a solution, creates a UnitCubeMesh, and loops through different numbers of degrees of freedom
+const = settings['const']
+options = settings['options']
+meshdata = settings['meshdata']
+paraview = settings['paraview']
+solverdata = settings['solverdata']
+timedata = settings['timedata']
+userfunc = settings['userfunc']
 
-# Mesh settings
+# Add 'dt' entry to 'const' dictionary
 
-mesh_filepath = 'meshes/shell.msh'
+const['dt'] = timedata['time_step']
 
-# Paraview file settings
+# Add the user-defined functions
 
-paraview_filepath = 'paraview/q-tensor-3d.pvd'
+userInitialGuess = UserDefinedFunction(userfunc['initialGuess'])
+userBoundary = UserDefinedFunction(userfunc['boundary'])
 
-# Manufactured solution settings
-
-mesh_numnodes_init = 10 # only used if 'manufactured' is set to 'True'
-mesh_numnodes_max = 20 # only used if 'manufactured' is set to 'True'
-
-# Solver settings
-
-ksp_type = 'cg'  # Kylov subspace method ### CG is for symmetric positive definite matrices
-pc_type  = 'gamg'    # preconditioner type
-
-# Convex splitting constant
-
-L0 = 10.0
-
-# Elastic energy constants
-
-L1 = 1
-L2 = 2
-L3 = 1
-
-# Bulk energy constants
-
-A = 2
-B = 1
-C = 4
-
-# epsilon
-
-ep = 10 # as ep gets smaller, need the end time to be greater
-
-# Time step and end time
-
-dt = 25
-end = 100
+# END OF CODE

@@ -21,11 +21,11 @@ import printoff
 # Create timer object which will be used to time the various calculations
 
 from misc import Timer
-time = Timer()
+timer = Timer()
 
 # Settings
 
-from settings import dt, end, ksp_type, manufactured, mesh_filepath, paraview_filepath, pc_type, visualize
+from settings import options, meshdata, paraview, solverdata, timedata
 
 # Check to see if the variables were set properly
 
@@ -45,7 +45,7 @@ printoff.prelimCompTitle()
 
 # Preliminary computations
 
-time.start()
+timer.start()
 
 initial_guess = compute.initialGuess()
 boundary = compute.boundary()
@@ -54,11 +54,11 @@ bilinear_form_on_boundary = compute.bilinearOnBoundary()
 linear_form = compute.linear()
 linear_form_on_boundary = compute.linearOnBoundary()
 
-time.stop()
+timer.stop()
 
 # Print the time it took to do the preliminary computations
 
-printoff.prelimCompInfo(time.elapsed)
+printoff.prelimCompInfo(timer.time_elapsed)
 
 # Print the title 'PDE SOLVE'
 
@@ -68,9 +68,8 @@ printoff.pdeSolveTitle()
 
 loop = True
 
-if manufactured:
-    from settings import mesh_numnodes_init, mesh_numnodes_max
-    mesh_numnodes = mesh_numnodes_init
+if options['manufactured']:
+    mesh_numnodes = meshdata['numnodes_init']
 
 while loop:
     # Set loop to be false; turn back on if needed
@@ -79,14 +78,14 @@ while loop:
     
     # Start the timer
     
-    time.start()
+    timer.start()
     
     # Define our mesh
     
-    if manufactured:
+    if options['manufactured']:
         mesh = UnitCubeMesh(mesh_numnodes,mesh_numnodes,mesh_numnodes)
     else:
-        mesh = Mesh(mesh_filepath)
+        mesh = Mesh(meshdata['file_path'])
     
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
     
@@ -153,22 +152,27 @@ while loop:
     
     # outfile is the pvd file that will be written to visualize this
     
-    if visualize:
-        outfile = File(paraview_filepath)
+    if options['visualize']:
+        outfile = File(paraview['file_path'])
         outfile.write(eigvec, eigval)
     
-    # Time loop
+    # Initialize time loop
     
-    t = 0.0
-    while (t <= end):
+    current_time = 0.0
+    time_step = timedata['time_step']
+    end_time = timedata['end_time']
+
+    # Time loop
+
+    while (current_time <= end_time):
         # Assign the solution from the previous loop to q_prev
         
         q_prev.assign(q_soln)
         
         # Solve
         
-        solve(a == L, q_soln, bcs=[bc], solver_parameters={'ksp_type' : ksp_type,        # Krylov subspace type
-                                                           'pc_type'  : pc_type,         # preconditioner type
+        solve(a == L, q_soln, bcs=[bc], solver_parameters={'ksp_type' : solverdata['ksp_type'],        # Krylov subspace type
+                                                           'pc_type'  : solverdata['pc_type'],         # preconditioner type
                                                            'mat_type' : 'aij' })
         
         # Calculate eigenvectors and eigenvalues
@@ -180,12 +184,12 @@ while loop:
         
         # Write eigenvectors and eigenvalues to Paraview
         
-        if visualize:
+        if options['visualize']:
             outfile.write(eigvec, eigval)
         
-        t += dt
+        current_time += time_step
     
-    if manufactured:    
+    if options['manufactured']:    
         # Calculate the H1 and L2 errors
         
         H1_error = errorH1(q_soln,g)
@@ -193,11 +197,11 @@ while loop:
         
         # Record the time elapsed
         
-        time.stop()
+        timer.stop()
         
         # Print a summary
         
-        printoff.pdeSolveInfoManufactured(mesh_numnodes,H1_error,L2_error,time.elapsed)
+        printoff.pdeSolveInfoManufactured(mesh_numnodes,H1_error,L2_error,timer.time_elapsed)
         
         # Double the mesh size
         
@@ -205,14 +209,14 @@ while loop:
         
         # If less than or equal to maximum number of nodes, turn loop back on
         
-        if mesh_numnodes <= mesh_numnodes_max:
+        if mesh_numnodes <= meshdata['numnodes_max']:
             loop = True
     else:
         # Record the time elapsed
         
-        time.stop()
+        timer.stop()
         
         # Print a summary
         
-        printoff.pdeSolveInfo(time.elapsed)
+        printoff.pdeSolveInfo(timer.time_elapsed)
 # END OF CODE

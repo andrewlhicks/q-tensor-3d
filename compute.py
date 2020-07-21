@@ -1,4 +1,3 @@
-import settings
 from sympyplus import Vector
 
 # Compute boundary and initial guess
@@ -72,9 +71,11 @@ def linearOnBoundary():
 # BILINEAR FORMS
 
 def bFormElastic():
-    from settings import L1, L2, L3
+    from settings import const
     from sympyplus import uflfy
     
+    L1, L2, L3 = const['L1'], const['L2'], const['L3']
+
     # Create vector objects
     
     q = Vector('q')
@@ -85,9 +86,11 @@ def bFormElastic():
     return L1*termL1(q.grad,p.grad) + L2*termL2(q.grad,p.grad) + L3*termL3(q.grad,p.grad)
 
 def bFormBulk():
-    from settings import dt, ep, L0
+    from settings import const
     from sympyplus import uflfy
     
+    ep, L0 = const['ep'], const['L0']
+
     # Create vector objects
     
     q = Vector('q')
@@ -108,7 +111,9 @@ def bFormSurface():
     return q.dot(p)
 
 def bFormTimeStep():
-    from settings import dt
+    from settings import const
+
+    dt = const['dt']
     
     # Create vector objects
     
@@ -122,9 +127,11 @@ def bFormTimeStep():
 # LINEAR FORMS
 
 def lFormBulk():
-    from settings import ep, L0, A, B, C
+    from settings import const
     from sympyplus import uflfy
     
+    A, B, C, ep, L0 = const['A'], const['B'], const['C'], const['ep'], const['L0']
+
     # Create vector objects
     
     q_prev = Vector('q_prev')
@@ -135,7 +142,8 @@ def lFormBulk():
     return (1/ep) * ( (A + L0) * termA(q_prev,p) + B * termB(q_prev,p) - C * termC(q_prev,p) )
 
 def lFormForcing():
-    from settings import userBoundary, manufactured
+    from settings import options
+    from settings import userBoundary
     from sympy import Matrix, eye
     from sympyplus import uflfy, outerp, vectorfy
     
@@ -145,7 +153,7 @@ def lFormForcing():
     
     # Create a forcing if the manufactured solution is set
     
-    if manufactured:
+    if options['manufactured']:
         n = userBoundary()
         G = outerp(n,n) - (1.0/3.0) * eye(3)
         F = strongForm(G)
@@ -181,9 +189,11 @@ def lFormSurface():
     return q_0.dot(p)
 
 def lFormTimeStep():
-    from settings import dt
+    from settings import const
     from sympyplus import uflfy
     
+    dt = const['dt']
+
     # Create vector object
     
     q_prev = Vector('q_prev')
@@ -198,7 +208,9 @@ def lFormTimeStep():
 ######################################################################################################################################################################################
 
 def strongForm(G): # plugs G into the strong form PDE
-    from settings import ep, L1, L2, L3, A, B, C
+    from settings import const
+
+    A, B, C, ep, L1, L2, L3 = const['A'], const['B'], const['C'], const['ep'], const['L1'], const['L2'], const['L3']
     
     return L1*strongL1(G) + L2*strongL2(G) + L3*strongL3(G) + (1/ep)*(-A*strongA(G) - B*strongB(G) + C*strongC(G))
 
