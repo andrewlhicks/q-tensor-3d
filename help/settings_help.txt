@@ -1,0 +1,38 @@
+The purpose of this file is to explain how to configure settings files.
+All settings files are contained in the folder 'settings'.
+Settings files are in the '.yml' format. Visit 'https://pyyaml.org/wiki/PyYAMLDocumentation' for more information.
+
+const - The constants that will be used in the PDE itself
+  L0 - Convex splitting constant
+  L1 - Elastic energy constant L1
+  L2 - Elastic energy constant L2
+  L3 - Elastic energy constant L3
+  A - Bulk energy constant A
+  B - Bulk energy constant B
+  C - Bulk energy constant C
+  ep - The bulk energy is scaled by a factor of 1/ep^2. So as ep gets smaller, the end time needs to be increased
+
+meshdata - Specific data corresponding to the mesh being used
+  file_path - Specify the path to the mesh .msh file
+  numnodes_init - For manufactured solution, the number of nodes in each dimension of the unit cube mesh
+  numnodes_max - For manufactured solution, the maximum allowable number of nodes in each dimension of the unit cube mesh
+
+options - Take boolean values
+  omit_init_printoff - If 'true', omits the initial printoff of the settings
+  visualize - If 'true', creates a Paraview file to visualize the data
+  manufactured - If 'true', manufactures a solution, creates a unit cube mesh, and loops through different numbers of degrees of freedom
+
+paraview - Specifies any paraview settings that need to be configured
+  file_path - paraview/q-tensor-3d.pvd
+
+solverdata - Settings specific to the PDE solver being used
+  ksp_type - Krylov subspace method, use 'cg' (conjugate gradient) for symmetric positive definite matrices
+  pc_type - Preconditioner type
+
+timedata - Specifies the time step of the time-dependent PDE and the end time
+  time_step
+  end_time
+
+userfunc - Allows the user to enter custom functions using Sympy notation with the 'sp.' prefix
+  boundary - Where do we want the vector to physically point on the boundary? Example: sp.Matrix([x0-10,x1-10,x2-10])/sp.sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)
+  initialGuess - What is our initial guess for the solution to the PDE?

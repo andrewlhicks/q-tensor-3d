@@ -2,7 +2,15 @@ from misc import getValues
 from sympyplus import UserDefinedFunction
 import yaml
 
-settings_file = open('settings/settings.yml')
+# Change the filename to choose a different settings file
+
+####################################
+settings_filename = 'settings.yml'
+####################################
+
+# Open the file and load it using YAML
+
+settings_file = open(f'settings/{settings_filename}')
 settings = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 # Set all of the settings dictionaries
