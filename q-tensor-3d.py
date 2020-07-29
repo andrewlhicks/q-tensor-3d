@@ -90,7 +90,6 @@ while loop:
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
     
     H1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    # H1_ten = TensorFunctionSpace(mesh, "CG", 1, shape = (3,3), symmetry = True)
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
     
     EigenvectorArray = TensorFunctionSpace(mesh, "CG", 1)
@@ -133,10 +132,10 @@ while loop:
     
     nu = FacetNormal(mesh)
 
-    a = eval(bilinear_form) * dx + eval(bilinear_form_on_boundary) * ds
-    L = eval(linear_form) * dx + eval(linear_form_on_boundary) * ds
-    # a = eval(bilinear_form) * dx
-    # L = eval(linear_form) * dx
+    # a = eval(bilinear_form) * dx + eval(bilinear_form_on_boundary) * ds
+    # L = eval(linear_form) * dx + eval(linear_form_on_boundary) * ds
+    a = eval(bilinear_form) * dx
+    L = eval(linear_form) * dx
 
     # for the 0th time step, we define the solution to be the initial guess
     

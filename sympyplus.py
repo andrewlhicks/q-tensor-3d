@@ -79,7 +79,8 @@ class Vector(Matrix):
         
         return super(Vector,cls).__new__(cls,vector)
     def __init__(self,name,dim=5):
-        from sympy import symbols
+        from sympy import symbols, zeros
+        from sympyplus import E
         self.name = name # For 'name', choose the variable name that Firedrake will later use
 
         grad = []
@@ -92,5 +93,13 @@ class Vector(Matrix):
             grad_row = []
 
         self.grad = Matrix(grad)
+
+        tensor = zeros(3,3)
+
+        for ii in range(dim):
+            tensor += self[ii]*E[ii]
+
+        self.ten = tensor
+
 
 # END OF CODE
