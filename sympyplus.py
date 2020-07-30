@@ -71,22 +71,29 @@ class UserDefinedFunction:
         return eval(self.func_string)
 
 class Vector(Matrix):
-    def __new__(cls,name,dim=5):
+    def __new__(cls,name,dim=3):
         from sympy import symbols
         vector = []
         for ii in range(dim):
             vector.append(symbols(f'{name}[{ii}]'))
         
         return super(Vector,cls).__new__(cls,vector)
-    def __init__(self,name,dim=5):
-        from sympy import symbols, zeros
-        from sympyplus import E
+    def __init__(self,name,dim=3):
         self.name = name # For 'name', choose the variable name that Firedrake will later use
+        self.dim = 5
+
+class QVector(Vector):
+    def __new__(cls,name):
+        return super(QVector,cls).__new__(cls,name,5)
+    def __init__(self,name):
+        super().__init__(name,5)
+
+        from sympy import symbols, zeros
 
         grad = []
         grad_row = []
 
-        for ii in range(dim):
+        for ii in range(5):
             for jj in range(3):
                 grad_row.append(symbols(f'{name}[{ii}].dx({jj})'))
             grad.append(grad_row)
@@ -96,10 +103,9 @@ class Vector(Matrix):
 
         tensor = zeros(3,3)
 
-        for ii in range(dim):
+        for ii in range(5):
             tensor += self[ii]*E[ii]
 
         self.ten = tensor
-
 
 # END OF CODE

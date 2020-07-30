@@ -1,4 +1,4 @@
-from sympyplus import Vector
+from sympyplus import Vector, QVector
 from misc import getValues
 
 # Compute boundary and initial guess
@@ -27,7 +27,7 @@ def bilinear():
     # Combine
         
     expression = bFormTimeStep() + bFormElastic() + bFormBulk()
-    
+
     # Convert to UFL and return
     
     return uflfy(expression)
@@ -79,8 +79,8 @@ def bFormElastic():
 
     # Create vector objects
     
-    q = Vector('q')
-    p = Vector('p')
+    q = QVector('q')
+    p = QVector('p')
     
     # Combine and return
     
@@ -94,8 +94,8 @@ def bFormBulk():
 
     # Create vector objects
     
-    q = Vector('q')
-    p = Vector('p')
+    q = QVector('q')
+    p = QVector('p')
     
     # Combine and return
         
@@ -104,8 +104,8 @@ def bFormBulk():
 def bFormSurface():    
     # Create vector objects
     
-    q = Vector('q')
-    p = Vector('p')
+    q = QVector('q')
+    p = QVector('p')
     
     # Combine and return
     
@@ -118,8 +118,8 @@ def bFormTimeStep():
     
     # Create vector objects
     
-    q = Vector('q')
-    p = Vector('p')
+    q = QVector('q')
+    p = QVector('p')
     
     # Combine and return
     
@@ -135,8 +135,8 @@ def lFormBulk():
 
     # Create vector objects
     
-    q_prev = Vector('q_prev')
-    p = Vector('p')
+    q_prev = QVector('q_prev')
+    p = QVector('p')
     
     # Combine and return
     
@@ -150,7 +150,7 @@ def lFormForcing():
     
     # Create vector object
     
-    p = Vector('p')
+    p = QVector('p')
     
     # Create a forcing if the manufactured solution is set
     
@@ -173,11 +173,11 @@ def lFormSurface():
     
     # Create vector object
     
-    p = Vector('p')
+    p = QVector('p')
     
     # Compute Q_0 boundary tensor and q_0 vector
     
-    nu = Vector('nu',3)
+    nu = Vector('nu')
     Q_0 = outerp(nu,nu) - (1.0/3.0) * eye(3) # Should be multiplied by s_0 value (min point for double well)
     q_0 = vectorfy(Q_0)
 
@@ -193,8 +193,8 @@ def lFormTimeStep():
 
     # Create vector object
     
-    q_prev = Vector('q_prev')
-    p = Vector('p')
+    q_prev = QVector('q_prev')
+    p = QVector('p')
     
     # Combine and return
     
@@ -216,16 +216,9 @@ def termA(vec1,vec2):
 
 def termB(vec1,vec2):
     from sympy import zeros
-    from sympyplus import E, innerp
+    from sympyplus import innerp
     
-    ten1 = zeros(3,3)
-    ten2 = zeros(3,3)
-    
-    for ii in range(5):
-        ten1 += vec1[ii]*E[ii]
-        ten2 += vec2[ii]*E[ii]
-    
-    return innerp(ten1*ten1,ten2)
+    return innerp(vec1.ten*vec1.ten,vec2.ten)
 
 def termC(vec1,vec2):
     return vec1.dot(vec1) * vec1.dot(vec2)
