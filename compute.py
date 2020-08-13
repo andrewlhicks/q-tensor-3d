@@ -1,5 +1,28 @@
-from sympyplus import Vector, QVector
+from sympyplus import *
 from misc import getValues
+from settings import const, options, userBoundary
+
+# Configure constants (Might want to take care of this in settings.py)
+
+L1,L2,L3 = getValues(const,'L1 L2 L3') # Elastic constants
+A,B,C = getValues(const,'A B C') # Bulk constants
+L0 = getValues(const,'L0')  # Convex splitting constant
+ep = getValues(const,'ep') # Epsilon
+dt = getValues(const,'dt') # Time step
+
+# Set up Qvector objects
+
+q = QVector('q')
+Dq = q.grad
+Q = q.tens
+
+qp = QVector('q_prev')
+Dqp = qp.grad
+QP = qp.tens
+
+p = QVector('p')
+Dp = p.grad
+P = p.tens
 
 # Compute boundary and initial guess
 
@@ -19,26 +42,19 @@ def initialGuess():
     
     return uflfy(userInitialGuess())
 
-#  Compute bilinear forms integrated over the volume and on the boundary, then the linear form
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+
+#  Bilinear and linear to be integrated in the domain and on the boundary
 
 def bilinear():
     from sympyplus import uflfy
     
     # Combine
         
-    expression = bFormTimeStep() + bFormElastic() + bFormBulk()
+    expression = (1/dt) * q.dot(p) + bilinearFormElastic(Dq,q,Dp,p) + (1/ep) * bilinearFormBulkC(Dq,q,Dp,p)
 
-    # Convert to UFL and return
-    
-    return uflfy(expression)
-
-def bilinearOnBoundary():
-    from sympyplus import uflfy
-    
-    # Combine
-    
-    expression = bFormSurface()
-    
     # Convert to UFL and return
     
     return uflfy(expression)
@@ -48,180 +64,21 @@ def linear():
     
     # Combine
     
-    expression = lFormTimeStep() + lFormBulk() + lFormForcing()
+    expression = (1/dt) * qp.dot(p) + (1/ep) * bilinearFormBulkE(Dqp,qp,Dp,p) + linearFormForcing(Dp,p)
     
     # Convert to UFL and return
     
     return uflfy(expression)
+
+def bilinearOnBoundary():
+    pass
 
 def linearOnBoundary():
-    from sympyplus import uflfy
-    
-    # Combine
-    
-    expression = lFormSurface()
-    
-    # Convert to UFL and return
-    
-    return uflfy(expression)
+    pass
 
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
-
-# BILINEAR FORMS
-
-def bFormElastic():
-    from settings import const
-    from sympyplus import uflfy
-    
-    L1, L2, L3 = getValues(const,'L1 L2 L3')
-
-    # Create vector objects
-    
-    q = QVector('q')
-    p = QVector('p')
-    
-    # Combine and return
-    
-    return L1*termL1(q.grad,p.grad) + L2*termL2(q.grad,p.grad) + L3*termL3(q.grad,p.grad)
-
-def bFormBulk():
-    from settings import const
-    from sympyplus import uflfy
-    
-    ep, L0 = getValues(const,'ep L0')
-
-    # Create vector objects
-    
-    q = QVector('q')
-    p = QVector('p')
-    
-    # Combine and return
-        
-    return (L0/ep)*q.dot(p)
-
-def bFormSurface():    
-    # Create vector objects
-    
-    q = QVector('q')
-    p = QVector('p')
-    
-    # Combine and return
-    
-    return q.dot(p)
-
-def bFormTimeStep():
-    from settings import const
-    
-    dt = getValues(const,'dt')
-    
-    # Create vector objects
-    
-    q = QVector('q')
-    p = QVector('p')
-    
-    # Combine and return
-    
-    return (1/dt) * q.dot(p)
-
-# LINEAR FORMS
-
-def lFormBulk():
-    from settings import const
-    from sympyplus import uflfy
-    
-    A, B, C, ep, L0 = getValues(const,'A B C ep L0')
-
-    # Create vector objects
-    
-    q_prev = QVector('q_prev')
-    p = QVector('p')
-    
-    # Combine and return
-    
-    return (1/ep) * ( (A + L0) * termA(q_prev,p) + B * termB(q_prev,p) - C * termC(q_prev,p) )
-
-def lFormForcing():
-    from settings import options
-    from settings import userBoundary
-    from sympy import Matrix, eye
-    from sympyplus import uflfy, outerp, vectorfy
-    
-    # Create vector object
-    
-    p = QVector('p')
-    
-    # Create a forcing if the manufactured solution is set
-    
-    if options['manufactured']:
-        n = userBoundary()
-        G = outerp(n,n) - (1.0/3.0) * eye(3)
-        F = strongForm(G)
-        f = vectorfy(F)
-    else:
-        f = Matrix([0,0,0,0,0])
-    
-    # Combine and return
-    
-    return f.dot(p)
-
-def lFormSurface():
-    from settings import userBoundary
-    from sympy import eye
-    from sympyplus import vectorfy, outerp
-    
-    # Create vector object
-    
-    p = QVector('p')
-    
-    # Compute Q_0 boundary tensor and q_0 vector
-    
-    nu = Vector('nu')
-    Q_0 = outerp(nu,nu) - (1.0/3.0) * eye(3) # Should be multiplied by s_0 value (min point for double well)
-    q_0 = vectorfy(Q_0)
-
-    # Combine and return
-    
-    return q_0.dot(p)
-
-def lFormTimeStep():
-    from settings import const
-    from sympyplus import uflfy
-    
-    dt = getValues(const,'dt')
-
-    # Create vector object
-    
-    q_prev = QVector('q_prev')
-    p = QVector('p')
-    
-    # Combine and return
-    
-    return (1/dt) * q_prev.dot(p)
-
-######################################################################################################################################################################################
-######################################################################################################################################################################################
-######################################################################################################################################################################################
-
-def strongForm(G): # plugs G into the strong form PDE
-    from settings import const
-
-    A, B, C, ep, L1, L2, L3 = getValues(const,'A B C ep L1 L2 L3')
-    
-    return L1*strongL1(G) + L2*strongL2(G) + L3*strongL3(G) + (1/ep)*(-A*strongA(G) - B*strongB(G) + C*strongC(G))
-
-def termA(vec1,vec2):
-    return vec1.dot(vec2)
-
-def termB(vec1,vec2):
-    from sympy import zeros
-    from sympyplus import innerp
-    
-    return innerp(vec1.ten*vec1.ten,vec2.ten)
-
-def termC(vec1,vec2):
-    return vec1.dot(vec1) * vec1.dot(vec2)
 
 def termL1(grad1,grad2):
     from sympyplus import innerp
@@ -253,6 +110,49 @@ def termL3(grad1,grad2):
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
+
+energyElastic = Lagrangian(L1/2*termL1(Dq,Dq)+L2/2*termL2(Dq,Dq)+L3/2*termL3(Dq,Dq),Dq,q)
+energyBulkC = Lagrangian((L0/2)*innerp(Q,Q),Dq,q)
+energyBulkE = Lagrangian((L0+A)/2*trace(Q**2) + (B/3)*trace(Q**3) - (C/4)*trace(Q**2)**2,Dq,q)
+
+##############
+
+bilinearFormElastic = variationalDerivative(energyElastic,Dq,q,Dp,p)
+bilinearFormBulkC = variationalDerivative(energyBulkC,Dq,q,Dp,p)
+bilinearFormBulkE = variationalDerivative(energyBulkE,Dq,q,Dp,p)
+
+##############
+
+def linearFormForcing(Dp,p):
+    if not isinstance(Dp,AbstractVectorGradient):
+        raise TypeError('Argument \'Dp\' must be type AbstractVectorGradient')
+    if not isinstance(p,QVector):
+        raise TypeError('Argument \'p\' must be type QVector')
+
+    # Create a forcing if the manufactured solution is set
+    
+    if options['manufactured']:
+        n = userBoundary()
+        G = outerp(n,n) - (1.0/3.0) * eye(3)
+        F = strongForm(G)
+        f = vectorfy(F)
+    else:
+        f = Matrix([0,0,0,0,0])
+    
+    # Combine and return
+    
+    return f.dot(p)
+
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+######################################################################################################################################################################################
+
+def strongForm(G): # plugs G into the strong form PDE
+    from settings import const
+
+    A, B, C, ep, L1, L2, L3 = getValues(const,'A B C ep L1 L2 L3')
+    
+    return L1*strongL1(G) + L2*strongL2(G) + L3*strongL3(G) + (1/ep)*(-A*strongA(G) - B*strongB(G) + C*strongC(G))
 
 def strongL1(Q):
     from sympy import symbols, zeros, diff
