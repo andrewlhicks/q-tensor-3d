@@ -56,10 +56,33 @@ def uflfy(expression): # Checks to see if the sympy expression is a scalar or a 
 
 def variationalDerivative(energy,Dparam1,param1,Dparam2,param2):
     tau = Symbol('tau')
-    expr = energy(param1.grad+tau*param2.grad,param1+tau*param2)
-    expr = diff(expr,tau)
-    expr = expr.subs(tau,0)
-    return BinaryForm(expr,Dparam1,param1,Dparam2,param2)
+    expr = energy(Dparam1+tau*Dparam2,param1+tau*param2)
+    expr = diff(expr,tau).subs(tau,0)
+    
+    return GeneralForm(expr,Dparam1,param1,Dparam2,param2)
+
+def secondVariationalDerivative(energy,*args):
+    args = list(args)
+    
+    if len(args) != 6:
+        raise TypeError('Must have exactly 2 arguments per parameter, that is, 6 arguments')
+
+    for ii in range(0,6,2):
+        if not isinstance(args[ii],AbstractVectorGradient):
+            raise TypeError('Odd numbered arguments must be type AbstractVectorGradient')
+        if not isinstance(args[ii+1],QVector):
+            raise TypeError('Even numbered arguments must be type QVector')
+
+    ##########################################################################################################
+
+    Dph = [args[ii] for ii in range(0,len(args),2)]
+    ph = [args[ii] for ii in range(1,len(args),2)]
+
+    tau = Symbol('tau')
+    expr = energy(Dph[0]+tau*Dph[1],ph[0]+tau*ph[1],Dph[2],ph[2])
+    expr = diff(expr,tau).subs(tau,0)
+
+    return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1],Dph[2],ph[2])
 
 def vectorfy(tensor): # Returns the vector form of a Q-tensor
     if isMatrix(tensor) == (3,3):
