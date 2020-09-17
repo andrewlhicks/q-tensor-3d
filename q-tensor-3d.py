@@ -15,12 +15,11 @@ from firedrake.slate.slac.compiler import PETSC_ARCH
 from firedrakeplus import *
 from eigen import *
 import compute
-from valuecheck import valueCheck
+from misc import valueCheck, Timer
 import printoff
 
-# Create timer object which will be used to time the various calculations
+# Create instance of timer object which will be used to time the various calculations
 
-from misc import Timer
 timer = Timer()
 
 # Settings
