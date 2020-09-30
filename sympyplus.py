@@ -1,3 +1,6 @@
+""" The purpose of this module is to add additional functionality to sympy.
+The functions here are intended to be used on sympy objects only. """
+
 from sympy import *
 
 # Basis for the 3D Q-tensor
@@ -9,71 +12,144 @@ d = sqrt(2.0)/2.0
 
 E = [diag(a,b,c), diag(b,a,c), Matrix([[0,d,0],[d,0,0],[0,0,0]]), Matrix([[0,0,d],[0,0,0],[d,0,0]]), Matrix([[0,0,0],[0,0,d],[0,d,0]])]
 
+# Test
+
+class DummyMat(MutableDenseMatrix):
+    def __new__(cls): 
+        return super(QTensor,cls).__new__(cls,zeros(3,3))
+    def dx(self,dim_no):
+        return tensorfy(self.vect.dx(dim_no))
+
+def arrange(Q,permutation):
+    temp_mat = [zeros(3,3),zeros(3,3),zeros(3,3)]
+    for ii in range(3):
+        for jj in range(3):
+            for kk in range(3):
+                temp_mat[kk][ii,jj] += Q.dx(kk)[permutation[ii],permutation[jj]]
+    return temp_mat
+
+def einstein(Q,P,permQ,permP):
+    Q_arr = arrange(Q,permQ)
+    P_arr = arrange(P,permP)
+    summ = 0
+    for ii in range(3):
+        summ += innerp(Q_arr[ii],P_arr[ii])
+    return summ
+
 # Operations
 
-def innerp(A,B): # Returns the Frobenius inner product of two matrices
-    from sympy import trace
+def innerp(A,B):
+    """ Returns the Frobenius inner product of two matrices. """
     return trace(A.T*B)
 
-def outerp(A,B): # Returns the outer or tensor product of two matrices
+def outerp(A,B):
+    """ Returns the "outer" or "tensor" product of two matrices. """
     return A*B.T
 
 # Other
 
-def isMatrix(obj): # Checks to see if the object is a MutableDenseMatrix. If so, the returns the Matrix shape. If not, returns 0.
-    from sympy import MutableDenseMatrix
+def checkIfQTensor(obj):
+    """ Checks if 'obj' is a Q-tensor. I want to be able to check for
+    tracelessness and symmetry, but in practice sometimes errors come up when
+    attempting this. """
 
-    if isinstance(obj,MutableDenseMatrix):
-        return obj.shape
-    else:
-        return 0
+    if not isinstance(obj,MutableDenseMatrix):
+        raise TypeError('Must be type MutableDenseMatrix.')
+    elif not obj.shape == (3,3):
+        raise ShapeError('Shape must be (3, 3).')
+    elif not obj.is_symmetric():
+        raise ValueError('Must be symmetric.')
+    # The following code does not work as intended:
+    # elif not trace(obj).is_zero:
+    #     raise ValueError('Must have trace 0')
 
-def uflfy(expression): # Checks to see if the sympy expression is a scalar or a 5D vector, then returns the UFL code in string form
-    from sympy import ccode
+def checkIfVector(obj,dim):
+    """ Checks if 'obj' is a Sympy vector of dimension 'dim'. """
+    if not isinstance(obj,MutableDenseMatrix):
+        raise TypeError('Must be type MutableDenseMatrix.')
+    elif not obj.shape == (dim,1):
+        raise ShapeError(f'Shape must be ({dim}, 1).')
 
-    # Test if expression is scalar
+def tensorfy(vector):
+    """ Returns the Q-Tensor form of any 5D vector. """
 
-    if isMatrix(expression) == 0:
+    checkIfVector(vector,5)
+
+    tensor = zeros(3,3)
+
+    for ii in range(5):
+        tensor += vector[ii]*E[ii]
+
+    return tensor
+
+def uflfy(expression):
+    """ Returns the UFL code for a scalar or a QVector. First checks if
+    'expression' is a matrix. If not, then returns C code for the expression. This
+    is a crude way to check for a scalar, but in practice it should work.
+    Otherwise, checks if the expression is a 5D vector and returns the C code for
+    that expression. """
+
+    if not isinstance(expression,MutableDenseMatrix):
         return ccode(expression)
-    
-    # Test if expression is vector
-
-    elif isMatrix(expression)[1] == 1:
-        # Check if 5D
-
-        if isMatrix(expression)[0] == 5:
-            return f"as_vector([{ccode(expression[0])},{ccode(expression[1])},{ccode(expression[2])},{ccode(expression[3])},{ccode(expression[4])}])"
-
-        # Else raise a ValueError
-
-        else:
-            raise ValueError("Vector must be 5D.")
-
-    # Else raise a ValueError
-
     else:
-        raise ValueError("Must be scalar or vector.")
+        checkIfVector(expression,5)
+        return 'as_vector([' + ','.join([ccode(expression[ii]) for ii in range(5)]) + '])'
 
-def variationalDerivative(energy,Dparam1,param1,Dparam2,param2):
+def variationalDerivative(lagrangian,*args):
+    """ Given an instance of Lagrangian, returns a GeneralForm of order 2 which
+    represents the first variational derivative of the Lagrangian object respect
+    to the last four objects, i.e. two parameters and their derivatives. """
+
+    if not isinstance(lagrangian,Lagrangian):
+        raise TypeError('First positional argument must be type Lagrangian.')
+
+    args = list(args)
+
+    if len(args) != 4:
+        raise TypeError('Must have exactly 2 arguments per parameter, that is, 4 arguments.')
+
+    for ii in range(0,4,2):
+        if not isinstance(args[ii],AbstractVectorGradient):
+            raise TypeError('Odd numbered arguments must be type AbstractVectorGradient.')
+        if not isinstance(args[ii+1],QVector):
+            raise TypeError('Even numbered arguments must be type QVector.')
+
+    ##########################################################################################################    
+
+    # Here, 'ph' stands for "placeholder"
+
+    Dph = [args[ii] for ii in range(0,4,2)]
+    ph = [args[ii] for ii in range(1,4,2)]
+
     tau = Symbol('tau')
-    expr = energy(Dparam1+tau*Dparam2,param1+tau*param2)
+    expr = lagrangian(Dph[0]+tau*Dph[1],ph[0]+tau*ph[1])
     expr = diff(expr,tau).subs(tau,0)
     
-    return GeneralForm(expr,Dparam1,param1,Dparam2,param2)
+    return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1])
 
 def secondVariationalDerivative(energy,*args):
+    """ Given an instance of a GeneralForm of order 2, returns the variational
+    derivative as a GeneralForm of order 3. """
+
+    if not isinstance(energy,GeneralForm):
+        raise TypeError('First positional argument must be type GeneralForm.')
+    elif not energy.order == 2:
+        raise ValueError('GeneralForm must be of order 2.')
+
     args = list(args)
     
     if len(args) != 6:
-        raise TypeError('Must have exactly 2 arguments per parameter, that is, 6 arguments')
+        raise TypeError('Must have exactly 2 arguments per parameter, that is, 6 arguments.')
 
     for ii in range(0,6,2):
         if not isinstance(args[ii],AbstractVectorGradient):
-            raise TypeError('Odd numbered arguments must be type AbstractVectorGradient')
+            raise TypeError('Odd numbered arguments must be type AbstractVectorGradient.')
         if not isinstance(args[ii+1],QVector):
-            raise TypeError('Even numbered arguments must be type QVector')
+            raise TypeError('Even numbered arguments must be type QVector.')
 
     ##########################################################################################################
+
+    # Here, 'ph' stands for "placeholder"
 
     Dph = [args[ii] for ii in range(0,len(args),2)]
     ph = [args[ii] for ii in range(1,len(args),2)]
@@ -84,54 +160,84 @@ def secondVariationalDerivative(energy,*args):
 
     return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1],Dph[2],ph[2])
 
-def vectorfy(tensor): # Returns the vector form of a Q-tensor
-    if isMatrix(tensor) == (3,3):
-        return Matrix([innerp(tensor,E[0]),innerp(tensor,E[1]),innerp(tensor,E[2]),innerp(tensor,E[3]),innerp(tensor,E[4])])
-    else:
-        raise ValueError('Must be a 3x3 tensor')
+def vectorfy(tensor): 
+    """ Returns the vector form of a Q-tensor. Checks if 'tensor' is a Q-tensor in
+    the mathematical sense, then returns the corresponding vector. """
+
+    checkIfQTensor(tensor)
+
+    vector = zeros(5,1)
+
+    for ii in range(5):
+        vector[ii] += innerp(tensor,E[ii])
+
+    return vector
 
 # Classes
 
 class UserDefinedFunction:
+    """ Defines a function that can be inputted by the user in a YAML settings
+    file simply by entering a string in Sympy format. The spatial variables must
+    be 'x0', 'x1', and 'x2'. """
     def __init__(self,func_string):
         self.func_string = func_string
     def  __call__(self):
-        import sympy as sp
-        x0, x1, x2 = sp.symbols('x0 x1 x2')
+        x0, x1, x2 = symbols('x0 x1 x2')
         return eval(self.func_string)
 
 class AbstractVectorGradient(Matrix):
-    def __new__(cls,abstract_vector,dim=3):
-        gradient_vector = Matrix([])
+    """ Defines a gradient or Jacobian matrix for a given AbstractVector, using
+    the built in dx() method of the AbstractVector. """
+    def __new__(cls,abstractvector,dim=3):
+        if not isinstance(abstractvector,AbstractVector):
+            raise TypeError('Must be type AbstractVector.')
+
+        abstractvectorgradient = Matrix([])
+
         for ii in range(dim):
-            gradient_vector = gradient_vector.col_insert(ii,abstract_vector.dx(ii))
+            abstractvectorgradient = abstractvectorgradient.col_insert(ii,abstractvector.dx(ii))
         
-        return super(AbstractVectorGradient,cls).__new__(cls,gradient_vector)
+        return super(AbstractVectorGradient,cls).__new__(cls,abstractvectorgradient)
 
 class AbstractVector(Matrix):
+    """ Defines a 'dim'-dimensional vector, whose entries are symbols labeled by
+    'name' and subscripted from 0 to dim-1. The name chosen should match the
+    variable name that will later be used by Firedrake. The dx() method is a
+    similar vector but with the '.dx()' suffix attached to each entry of the
+    vector, to indicate in UFL code that the derivative is being taken.
+    """
+
     def __new__(cls,name,dim=3):
-        from sympy import Symbol
-        vector = []
+        if not isinstance(name,str):
+            raise TypeError('Must be a string.')
+
+        vector = zeros(dim,1)
+
         for ii in range(dim):
-            vector.append(Symbol(f'{name}[{ii}]'))
+            vector[ii] += Symbol(f'{name}[{ii}]')
         
         return super(AbstractVector,cls).__new__(cls,vector)
+
     def __init__(self,name,dim=3):
-        self.name = name # For 'name', choose the variable name that Firedrake will later use
-        self.dim = 5
+        self.name = name
+        self.dim = dim
         
         self.grad = AbstractVectorGradient(self)
     
     def dx(self,dim_no):
-        from sympy import Symbol, zeros
-        vector = []
+        vector = zeros(self.dim,1)
+
         for ii in range(self.dim):
-            vector.append(Symbol(f'{self.name}[{ii}].dx({dim_no})'))
-        
-        return Matrix(vector) # Maybe in the future try to retun another Abstract Vector? But to do this I would need to make AbstractVector more general in terms of name input
+            vector[ii] += Symbol(f'{self.name}[{ii}].dx({dim_no})')
+
+        return vector # Ideally, another AbstractVector would be returned, but in practice this is hard
 
 class Lagrangian:
-    def __init__(self,expr,Dph,ph): # Later on, maybe try to apply this code to the class UserDefinedFunction
+    """ Defines a Lagrangian, i.e., the integrand of an energy functional, in
+    terms of user-inputted 'Dph' and 'ph', i.e. the parameter and its derivative
+    that the Langrangian will defined with respect to. """
+
+    def __init__(self,expr,Dph,ph):
         self.expr = expr
         self.Dph = Dph
         self.ph = ph
@@ -139,13 +245,13 @@ class Lagrangian:
         if Dq is None and q is None:
             return self.expr
         elif Dq is None:
-            raise TypeError('Lagrangian function missing 1 required positional argument: \'Dq\'')
+            raise TypeError('Lagrangian function missing 1 required positional argument: \'Dq\'.')
         elif q is None:
-            raise TypeError('Lagrangian function missing 1 required positional argument: \'q\'')
+            raise TypeError('Lagrangian function missing 1 required positional argument: \'q\'.')
         elif not isinstance(Dq,AbstractVectorGradient):
-            raise TypeError('Argument \'Dq\' for Lagrangian function must be type AbstractVectorGradient')
+            raise TypeError('Argument \'Dq\' for Lagrangian function must be type AbstractVectorGradient.')
         elif not isinstance(q,QVector):
-            raise TypeError('Argument \'q\' for Lagrangian function must be type QVector')
+            raise TypeError('Argument \'q\' for Lagrangian function must be type QVector.')
         
         expr = self.expr
         Dph = self.Dph
@@ -164,22 +270,11 @@ class Lagrangian:
         
         return expr
 
-class BinaryForm:
-    def __init__(self,expr,Dph1,ph1,Dph2,ph2):
-        self.expr = expr
-        self.Dph1 = Dph1
-        self.ph1 = ph1
-        self.Dph2 = Dph2
-        self.ph2 = ph2
-    def __call__(self,Dq=None,q=None,Dp=None,p=None):
-        expr = self.expr
-        lagrangian_in_var1 = Lagrangian(expr,self.Dph1,self.ph1)
-        expr = lagrangian_in_var1(Dq,q)
-        lagrangian_in_var2 = Lagrangian(expr,self.Dph2,self.ph2)
-        expr = lagrangian_in_var2(Dp,p)
-        return expr
-
 class GeneralForm:
+    """ Returns a more general form of the Lagrangian. More parameters and their
+    derivatives are allowed besides just one. The order of the GeneralForm is the
+    number of pairs of parameters and their derivative. """
+    
     def __init__(self,expr,*args):
         self.expr = expr
         
@@ -188,20 +283,20 @@ class GeneralForm:
         # If no args are given
         
         if len(args) == 0:
-            raise TypeError('Expression must be in terms of parameters; none entered')
+            raise TypeError('Expression must be in terms of parameters; none entered.')
         
         # If args are given
         
         # Error handler
         
         if len(args) % 2 != 0:
-            raise TypeError('Must have exactly 2 arguments per parameter, that is, an even number of arguments')
-        self.no_params = int(len(args)/2)
+            raise TypeError('Must have exactly 2 arguments per parameter, that is, an even number of arguments.')
+        self.order = int(len(args)/2)
         for ii in range(0,len(args),2):
             if not isinstance(args[ii],AbstractVectorGradient):
-                raise TypeError('Odd numbered arguments must be type AbstractVectorGradient')
+                raise TypeError('Odd numbered arguments must be type AbstractVectorGradient.')
             if not isinstance(args[ii+1],QVector):
-                raise TypeError('Even numbered arguments must be type QVector')
+                raise TypeError('Even numbered arguments must be type QVector.')
         
         # Function
         
@@ -221,8 +316,8 @@ class GeneralForm:
         
         # Error handler
         
-        if len(args) != self.no_params*2:
-            raise TypeError(f'Must have exactly {self.no_params} parameters with 2 arguments each, that is, {self.no_params*2} arguments')
+        if len(args) != self.order*2:
+            raise TypeError(f'Must have exactly {self.order} parameters with 2 arguments each, that is, {self.order*2} arguments.')
         
         # Function
         
@@ -230,38 +325,31 @@ class GeneralForm:
         q = [args[ii] for ii in range(1,len(args),2)]
         
 
-        for ii in range(self.no_params):
+        for ii in range(self.order):
             lagrangian_in_one_var = Lagrangian(expr,self.Dph[ii],self.ph[ii])
             expr = lagrangian_in_one_var(Dq[ii],q[ii])
 
         return expr
 
 class QTensor(Matrix):
-    def __new__(cls,q_vector):
-        from sympy import zeros
-        
-        tensor = zeros(3,3)
-        for ii in range(5):
-            tensor += q_vector[ii]*E[ii]
-            
-        return super(QTensor,cls).__new__(cls,tensor)
-    def __init__(self,q_vector):
-        self.vect = q_vector
+    """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.
+    The dx() method is the tensorfied dx() of the QVector. """
+    def __new__(cls,qvector):
+        if not isinstance(qvector,QVector):
+            raise TypeError('Must be type QVector.')
+        return super(QTensor,cls).__new__(cls,tensorfy(qvector))
+    def __init__(self,qvector):
+        self.vect = qvector
     def dx(self,dim_no):
-        from sympy import zeros
-
-        tensor_dx = zeros(3,3) # perhaps I could make a function to do this?
-        for ii in range(5):
-            tensor_dx += self.vect.dx(dim_no)[ii]*E[ii]
-
-        return tensor_dx
+        return tensorfy(self.vect.dx(dim_no))
 
 class QVector(AbstractVector):
+    """ Defines an AbstractVector of dimension 5. Adds a .tens variable which is
+    the QTensor corresponding to the QVector. """
     def __new__(cls,name):
         return super(QVector,cls).__new__(cls,name,5)
     def __init__(self,name):
         super().__init__(name,5)
-
         self.tens = QTensor(self)
 
 # END OF CODE

@@ -1,16 +1,18 @@
+""" The purpose of this module is to add additional functionality to
+firedrake. The functions here are intended to be used on firedrake objects
+only. """
+
+from firedrake import *
+
 def errorH1(func_comp,func_true):
-    from firedrake import sqrt, assemble, inner, grad, dot, dx
     diff = func_comp - func_true
     return sqrt(assemble((inner(grad(diff),grad(diff)) + dot(diff,diff)) * dx))
 
 def errorL2(func_comp,func_true):
-    from firedrake import sqrt, assemble, dot, dx
     diff = func_comp - func_true
     return sqrt(assemble((dot(diff,diff)) * dx))
 
 def tensorfy(vector):
-    from firedrake import sqrt, as_tensor
-    
     # Basis of Q-tensor for Eigen calculation
 
     a = (sqrt(3.0)-3.0)/6.0

@@ -1,14 +1,10 @@
 from sympyplus import *
 from misc import getValues
-from settings import const, options, userBoundary
+from settings import const, options, userfunc
 
-# Configure constants (Might want to take care of this in settings.py)
+# Set up variable with respect to which we will take derivatives
 
-L1,L2,L3 = getValues(const,'L1 L2 L3') # Elastic constants
-A,B,C = getValues(const,'A B C') # Bulk constants
-L0 = getValues(const,'L0')  # Convex splitting constant
-ep = getValues(const,'ep') # Epsilon
-dt = getValues(const,'dt') # Time step
+x = [Symbol('x0'),Symbol('x1'),Symbol('x2')]
 
 # Set up Qvector objects
 
@@ -24,23 +20,18 @@ p = QVector('p')
 Dp = p.grad
 P = p.tens
 
+nu = AbstractVector('nu')
+
 # Compute boundary and initial guess
 
-def boundary():
-    from settings import userBoundary
-    from sympy import eye
-    from sympyplus import outerp, uflfy, vectorfy
-    
-    n = userBoundary()
+def boundary():   
+    n = userfunc.boundary()
     G = outerp(n,n) - (1.0/3.0) * eye(3)
     
     return uflfy(vectorfy(G))
 
 def initialGuess():
-    from settings import userInitialGuess
-    from sympyplus import uflfy
-    
-    return uflfy(userInitialGuess())
+    return uflfy(userfunc.initialGuess())
 
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
@@ -49,22 +40,18 @@ def initialGuess():
 #  Bilinear and linear to be integrated in the domain and on the boundary
 
 def bilinear():
-    from sympyplus import uflfy
-    
     # Combine
         
-    expression = (1/dt) * q.dot(p) + bilinearFormElastic(Dq,q,Dp,p) + (1/ep) * bilinearFormBulkC(Dq,q,Dp,p)
+    expression = (1/const.dt) * q.dot(p) + bilinearFormElastic(Dq,q,Dp,p) + (1/const.ep) * bilinearFormBulkC(Dq,q,Dp,p)
 
     # Convert to UFL and return
     
     return uflfy(expression)
 
 def linear():
-    from sympyplus import uflfy
-    
     # Combine
     
-    expression = (1/dt) * qp.dot(p) + (1/ep) * bilinearFormBulkE(Dqp,qp,Dp,p) + linearFormForcing(Dp,p)
+    expression = (1/const.dt) * qp.dot(p) + (1/const.ep) * bilinearFormBulkE(Dqp,qp,Dp,p) + linearFormForcing(Dp,p)
     
     # Convert to UFL and return
     
@@ -81,13 +68,9 @@ def linearOnBoundary():
 ######################################################################################################################################################################################
 
 def termL1(grad1,grad2):
-    from sympyplus import innerp
-    
     return innerp(grad1,grad2)
 
 def termL2(grad1,grad2):
-    from sympyplus import E
-    
     term = 0
 
     for ii in range(5):
@@ -97,8 +80,6 @@ def termL2(grad1,grad2):
     return term
 
 def termL3(grad1,grad2):
-    from sympyplus import E
-    
     term = 0
 
     for ii in range(5):
@@ -111,15 +92,23 @@ def termL3(grad1,grad2):
 ######################################################################################################################################################################################
 ######################################################################################################################################################################################
 
-energyElastic = Lagrangian(L1/2*termL1(Dq,Dq)+L2/2*termL2(Dq,Dq)+L3/2*termL3(Dq,Dq),Dq,q)
-energyBulkC = Lagrangian((L0/2)*innerp(Q,Q),Dq,q)
-energyBulkE = Lagrangian((L0+A)/2*trace(Q**2) + (B/3)*trace(Q**3) - (C/4)*trace(Q**2)**2,Dq,q)
+energyElastic = Lagrangian(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),Dq,q)
+energyBulkC = Lagrangian((const.L0/2)*innerp(Q,Q),Dq,q)
+energyBulkE = Lagrangian((const.L0+const.A)/2*trace(Q**2) + (const.B/3)*trace(Q**3) - (const.C/4)*trace(Q**2)**2,Dq,q)
+
+W1 = 1
+W2 = 1
+S0 = (const.B + sqrt(const.B**2 + 24*const.A*const.C))/(4*const.C)
+QT = Q + S0*eye(3)
+Pi = eye(3) - outerp(nu,nu)
+energyPlanarAnchoring = Lagrangian(W1*innerp(QT-Pi*QT*Pi,QT-Pi*QT*Pi) + W2*(innerp(QT,QT) - S0**2)**2,Dq,q)
 
 ##############
 
 bilinearFormElastic = variationalDerivative(energyElastic,Dq,q,Dp,p)
 bilinearFormBulkC = variationalDerivative(energyBulkC,Dq,q,Dp,p)
 bilinearFormBulkE = variationalDerivative(energyBulkE,Dq,q,Dp,p)
+bilinearFormPlanarAnchoring = variationalDerivative(energyPlanarAnchoring,Dq,q,Dp,p)
 
 ##############
 
@@ -131,8 +120,8 @@ def linearFormForcing(Dp,p):
 
     # Create a forcing if the manufactured solution is set
     
-    if options['manufactured']:
-        n = userBoundary()
+    if options.manufactured:
+        n = userfunc.boundary()
         G = outerp(n,n) - (1.0/3.0) * eye(3)
         F = strongForm(G)
         f = vectorfy(F)
@@ -148,17 +137,9 @@ def linearFormForcing(Dp,p):
 ######################################################################################################################################################################################
 
 def strongForm(G): # plugs G into the strong form PDE
-    from settings import const
-
-    A, B, C, ep, L1, L2, L3 = getValues(const,'A B C ep L1 L2 L3')
-    
-    return L1*strongL1(G) + L2*strongL2(G) + L3*strongL3(G) + (1/ep)*(-A*strongA(G) - B*strongB(G) + C*strongC(G))
+    return const.L1*strongL1(G) + const.L2*strongL2(G) + const.L3*strongL3(G) + (1/const.ep)*(-const.A*strongA(G) - const.B*strongB(G) + const.C*strongC(G))
 
 def strongL1(Q):
-    from sympy import symbols, zeros, diff
-    x0,x1,x2 = symbols('x0 x1 x2')
-    x = [x0,x1,x2]
-    
     term = zeros(3,3)
     
     for ii in range(3):
@@ -169,10 +150,6 @@ def strongL1(Q):
     return term
 
 def strongL2(Q):
-    from sympy import symbols, zeros, diff
-    x0,x1,x2 = symbols('x0 x1 x2')
-    x = [x0,x1,x2]
-    
     term = zeros(3,3)
         
     for ii in range(3):
@@ -182,11 +159,7 @@ def strongL2(Q):
     
     return term
 
-def strongL3(Q):
-    from sympy import symbols, zeros, diff
-    x0,x1,x2 = symbols('x0 x1 x2')
-    x = [x0,x1,x2]
-    
+def strongL3(Q):  
     term = zeros(3,3)
         
     for ii in range(3):

@@ -10,8 +10,6 @@
 
 # Import modules
 
-from firedrake import *
-from firedrake.slate.slac.compiler import PETSC_ARCH
 from firedrakeplus import *
 from eigen import *
 import compute
@@ -67,8 +65,8 @@ printoff.pdeSolveTitle()
 
 loop = True
 
-if options['manufactured']:
-    mesh_numnodes = meshdata['numnodes_init']
+if options.manufactured:
+    mesh_numnodes = meshdata.numnodes_init
 
 while loop:
     # Set loop to be false; turn back on if needed
@@ -81,10 +79,10 @@ while loop:
     
     # Define our mesh
     
-    if options['manufactured']:
+    if options.manufactured:
         mesh = UnitCubeMesh(mesh_numnodes,mesh_numnodes,mesh_numnodes)
     else:
-        mesh = Mesh(meshdata['file_path'])
+        mesh = Mesh(meshdata.file_path)
     
     # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
     
@@ -150,15 +148,15 @@ while loop:
     
     # outfile is the pvd file that will be written to visualize this
     
-    if options['visualize']:
-        outfile = File(paraview['file_path'])
+    if options.visualize:
+        outfile = File(paraview.file_path)
         outfile.write(eigvec, eigval)
     
     # Initialize time loop
     
     current_time = 0.0
-    time_step = timedata['time_step']
-    end_time = timedata['end_time']
+    time_step = timedata.time_step
+    end_time = timedata.end_time
 
     # Time loop
 
@@ -169,8 +167,8 @@ while loop:
         
         # Solve
         
-        solve(a == L, q_soln, bcs=[bc], solver_parameters={'ksp_type' : solverdata['ksp_type'],        # Krylov subspace type
-                                                           'pc_type'  : solverdata['pc_type'],         # preconditioner type
+        solve(a == L, q_soln, bcs=[bc], solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
+                                                           'pc_type'  : solverdata.pc_type,         # preconditioner type
                                                            'mat_type' : 'aij' })
         
         # Calculate eigenvectors and eigenvalues
@@ -182,12 +180,12 @@ while loop:
         
         # Write eigenvectors and eigenvalues to Paraview
         
-        if options['visualize']:
+        if options.visualize:
             outfile.write(eigvec, eigval)
         
         current_time += time_step
     
-    if options['manufactured']:    
+    if options.manufactured:    
         # Calculate the H1 and L2 errors
         
         H1_error = errorH1(q_soln,g)
@@ -207,7 +205,7 @@ while loop:
         
         # If less than or equal to maximum number of nodes, turn loop back on
         
-        if mesh_numnodes <= meshdata['numnodes_max']:
+        if mesh_numnodes <= meshdata.numnodes_max:
             loop = True
     else:
         # Record the time elapsed
