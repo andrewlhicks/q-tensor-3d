@@ -1,17 +1,9 @@
-# +-------------------------------------+
-# | Q tensor numerical simulation in 3D |
-# +-------------------------------------+
-#
-# The boundary edges in this mesh are numbered as follows:
-# 1: plane x == -1
-# 2: plane x == 1
-# 3: plane y == -1
-# 4: plane y == 1
-
-# Import modules
+""" Welcome to the Q-TENSOR NUMERICAL SIMULATION IN 3D. This program uses
+Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
+"""
 
 from firedrakeplus import *
-from eigen import *
+import eigen
 import compute
 from misc import valueCheck, Timer
 import printoff
@@ -142,7 +134,7 @@ while loop:
     # Calculate eigenvectors and eigenvalues
     
     Q_soln.interpolate(tensorfy(q_soln))
-    op2.par_loop(kernel, H1_ten.node_set, eigvecs.dat(op2.RW), eigvals.dat(op2.RW), Q_soln.dat(op2.READ))
+    op2.par_loop(eigen.kernel, H1_ten.node_set, eigvecs.dat(op2.RW), eigvals.dat(op2.RW), Q_soln.dat(op2.READ))
     eigvec.interpolate(as_vector([eigvecs[0,0],eigvecs[1,0],eigvecs[2,0]]))
     eigval.interpolate(eigvals[0])
     
@@ -174,7 +166,7 @@ while loop:
         # Calculate eigenvectors and eigenvalues
         
         Q_soln.interpolate(tensorfy(q_soln))
-        op2.par_loop(kernel, H1_ten.node_set, eigvecs.dat(op2.RW), eigvals.dat(op2.RW), Q_soln.dat(op2.READ))
+        op2.par_loop(eigen.kernel, H1_ten.node_set, eigvecs.dat(op2.RW), eigvals.dat(op2.RW), Q_soln.dat(op2.READ))
         eigvec.interpolate(as_vector([eigvecs[0,0],eigvecs[1,0],eigvecs[2,0]]))
         eigval.interpolate(eigvals[0])
         
