@@ -4,49 +4,49 @@
 
 All settings files are contained in the folder 'settings'. Settings files are in the '.yml' format. Visit [PyYAML](https://pyyaml.org/wiki/PyYAMLDocumentation) for more information.
 
-`const` - The constants that will be used in the PDE itself
-  `L0` - Convex splitting constant
-  `L1` - Elastic energy constant L1
-  `L2` - Elastic energy constant L2
-  `L3` - Elastic energy constant L3
-  `A` - Bulk energy constant A
-  `B` - Bulk energy constant B
-  `C` - Bulk energy constant C
-  `ep` - The bulk energy is scaled by a factor of 1/ep^2. So as ep gets smaller, the end time needs to be increased
+- `const` - The constants that will be used in the PDE itself
+  - `L0` - Convex splitting constant
+  - `L1` - Elastic energy constant L1
+  - `L2` - Elastic energy constant L2
+  - `L3` - Elastic energy constant L3
+  - `A` - Bulk energy constant A
+  - `B` - Bulk energy constant B
+  - `C` - Bulk energy constant C
+  - `ep` - The bulk energy is scaled by a factor of 1/ep^2. So as ep gets smaller, the end time needs to be increased
 
-`meshdata` - Specific data corresponding to the mesh being used
-  `file_path` - Specify the path to the mesh .msh file
-  `numnodes_init` - For manufactured solution, the number of nodes in each dimension of the unit cube mesh
-  `numnodes_max` - For manufactured solution, the maximum allowable number of nodes in each dimension of the unit cube mesh
+- `meshdata` - Specific data corresponding to the mesh being used
+  - `file_path` - Specify the path to the mesh .msh file
+  - `numnodes_init` - For manufactured solution, the number of nodes in each dimension of the unit cube mesh
+  - `numnodes_max` - For manufactured solution, the maximum allowable number of nodes in each dimension of the unit cube mesh
 
-`options` - Take boolean values
-  `omit_init_printoff` - If 'true', omits the initial printoff of the settings
-  `visualize` - If 'true', creates a Paraview file to visualize the data
-  `manufactured` - If 'true', manufactures a solution, creates a unit cube mesh, and loops through different numbers of degrees of freedom
+- `options` - Take boolean values
+  - `omit_init_printoff` - If 'true', omits the initial printoff of the settings
+  - `visualize` - If 'true', creates a Paraview file to visualize the data
+  - `manufactured` - If 'true', manufactures a solution, creates a unit cube mesh, and loops through different numbers of degrees of freedom
 
-`paraview` - Specifies any paraview settings that need to be configured
-  `file_path` - paraview/q-tensor-3d.pvd
+- `paraview` - Specifies any paraview settings that need to be configured
+  - `file_path` - paraview/q-tensor-3d.pvd
 
-`solverdata` - Settings specific to the PDE solver being used
-  `ksp_type` - Krylov subspace method, use 'cg' (conjugate gradient) for symmetric positive definite matrices
-  `pc_type` - Preconditioner type
+- `solverdata` - Settings specific to the PDE solver being used
+  - `ksp_type` - Krylov subspace method, use 'cg' (conjugate gradient) for symmetric positive definite matrices
+  - `pc_type` - Preconditioner type
 
-`timedata` - Specifies the time step of the time-dependent PDE and the end time
-  `time_step`
-  `end_time`
+- `timedata` - Specifies the time step of the time-dependent PDE and the end time
+  - `time_step`
+  - `end_time`
 
-`userfunc` - Allows the user to enter custom functions using Sympy notation with the 'sp.' prefix
-  `boundary` - Where do we want the vector to physically point on the boundary? Example: `sp.Matrix([x0-10,x1-10,x2-10])/sp.sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)`
-  `initialGuess` - What is our initial guess for the solution to the PDE?
+- `userfunc` - Allows the user to enter custom functions using Sympy notation
+  - `boundary` - Where do we want the vector to physically point on the boundary? Example: `Matrix([x0-10,x1-10,x2-10])/sp.sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)`
+  - `initialGuess` - What is our initial guess for the solution to the PDE? Example: `zeros(3,1)`
 
 ## Choosing a mesh
 
 If using a manufactured solution, a mesh covering the unit cube, i.e. the cube with diagonal from (0,0,0) to (1,1,1) in the Cartesian coordinate space, will be used automatically. The boundary edges in this mesh are numbered as follows:
 
-1. The plane <img src="https://render.githubusercontent.com/render/math?math=x = -1">
-2. The plane <img src="https://render.githubusercontent.com/render/math?math=x = 1">
-3. The plane <img src="https://render.githubusercontent.com/render/math?math=y = -1">
-4. The plane <img src="https://render.githubusercontent.com/render/math?math=y = 1">
+1. The plane x = -1
+2. The plane x = 1
+3. The plane y = -1
+4. The plane y = 1
 
 This mesh will have the same number of nodes in each dimension. The number of nodes can be changed in settings by modifying `meshdata.numnodes_init` and `meshdata.numnodes_max`. For example, if the number of nodes is set to 10, then the resulting mesh will have 10 x 10 x 10 = 1000 nodes.
 
