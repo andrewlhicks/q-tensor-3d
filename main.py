@@ -4,9 +4,15 @@ Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 
 from firedrakeplus import *
 import eigen
-import compute
 from misc import valueCheck, Timer
 import printoff
+
+# Functions
+
+def newtonSolve(*args,**kwargs):
+    return solve(*args,**kwargs)
+
+no_newt_steps = 10
 
 # Create instance of timer object which will be used to time the various calculations
 
@@ -36,12 +42,14 @@ printoff.prelimCompTitle()
 
 timer.start()
 
+import compute
+
 initial_guess = compute.initialGuess()
 boundary = compute.boundary()
-bilinear_form = compute.bilinear()
-bilinear_form_on_boundary = compute.bilinearOnBoundary()
-linear_form = compute.linear()
-linear_form_on_boundary = compute.linearOnBoundary()
+bilinear_form = compute.bilinearDomain()
+# bilinear_form_on_boundary = compute.bilinearBoundary()
+linear_form = compute.linearDomain()
+# linear_form_on_boundary = compute.linearBoundary()
 
 timer.stop()
 
@@ -99,6 +107,10 @@ while loop:
     q_prev = Function(H1_vec)
     q_soln = Function(H1_vec)
     Q_soln = Function(H1_ten)
+
+    q_newt_prev = Function(H1_vec)
+    q_newt_delt = Function(H1_vec)
+    q_newt_soln = Function(H1_vec)
     
     g = Function(H1_vec)
     
@@ -144,25 +156,34 @@ while loop:
         outfile = File(paraview.file_path)
         outfile.write(eigvec, eigval)
     
-    # Initialize time loop
-    
-    current_time = 0.0
-    time_step = timedata.time_step
-    end_time = timedata.end_time
-
     # Time loop
 
-    while (current_time <= end_time):
+    for time in range(0,timedata.end_time,timedata.time_step):
         # Assign the solution from the previous loop to q_prev
         
         q_prev.assign(q_soln)
         
-        # Solve
+        # Newton's method
+        
+        # q_newt_soln.assign(q_prev)
+
+        # for ii in range(0,no_newt_steps):
+        #     q_newt_prev.assign(q_newt_soln)
+
+        #     solve(a == L, q_newt_delt, bcs=[bc], solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
+        #                                                   'pc_type'  : solverdata.pc_type,         # preconditioner type
+        #                                                   'mat_type' : 'aij' })
+
+        #     q_newt_soln.assign(q_newt_delt + q_newt_prev)
+
+        #     if q_newt_delt.dat.data.max() < 10e12: break
+
+        # q_soln.assign(q_newt_soln)
         
         solve(a == L, q_soln, bcs=[bc], solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
-                                                           'pc_type'  : solverdata.pc_type,         # preconditioner type
-                                                           'mat_type' : 'aij' })
-        
+                                                          'pc_type'  : solverdata.pc_type,         # preconditioner type
+                                                          'mat_type' : 'aij' })
+
         # Calculate eigenvectors and eigenvalues
         
         Q_soln.interpolate(tensorfy(q_soln))
@@ -174,8 +195,6 @@ while loop:
         
         if options.visualize:
             outfile.write(eigvec, eigval)
-        
-        current_time += time_step
     
     if options.manufactured:    
         # Calculate the H1 and L2 errors
@@ -207,4 +226,5 @@ while loop:
         # Print a summary
         
         printoff.pdeSolveInfo(timer.time_elapsed)
+
 # END OF CODE

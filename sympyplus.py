@@ -36,6 +36,105 @@ def einstein(Q,P,permQ,permP):
         summ += innerp(Q_arr[ii],P_arr[ii])
     return summ
 
+def checkIfLinear(expression,*args):
+    for arg in args:
+        if not isinstance(arg,QVector) and not isinstance(arg,AbstractVectorGradient):
+            raise TypeError('Must be checking for linearity with respect to type QVector or AbstractVectorGradient.')
+    for arg in args:
+        if isinstance(arg,QVector):
+            for ii in range(5):
+                secondderivative = diff(expression,arg[ii],2)
+                if not secondderivative.is_zero:
+                    return False
+            for ii in range(5):
+                expression = expression.subs(arg[ii],0)
+            if not expression.is_zero:
+                return False
+        elif isinstance(arg,AbstractVectorGradient):
+            for ii in range(5):
+                for jj in range(3):
+                    secondderivative = diff(expression,arg[ii,jj],2)
+                    if not secondderivative.is_zero:
+                        return False
+            for ii in range(5):
+                for jj in range(3):
+                    expression = expression.subs(arg[ii,jj],0)
+            if not expression.is_zero:
+                return False
+    return True
+
+class BilinearForm:
+    def __init__(self,*args):
+        assert(len(args)>=4)
+        if not isinstance(args[len(args)-4],AbstractVectorGradient):
+            raise TypeError('Penultimate arg must be type AbstractVectorGradient.')
+        if not isinstance(args[len(args)-3],QVector):
+            raise TypeError('Final arg must be type QVector.')
+        if not isinstance(args[len(args)-2],AbstractVectorGradient):
+            raise TypeError('Penultimate arg must be type AbstractVectorGradient.')
+        if not isinstance(args[len(args)-1],QVector):
+            raise TypeError('Final arg must be type QVector.')
+        
+        self.Dtrialfunc = args[len(args)-4]
+        self.trialfunc = args[len(args)-3]
+        self.Dtestfunc = args[len(args)-2]
+        self.testfunc = args[len(args)-1]
+
+        self.forms = []
+
+        for arg in args:
+            self.forms.append(arg)
+    
+        for ii in range(0,4):
+            del self.forms[-1]
+
+        for form in self.forms:
+            if (not checkIfLinear(self.trialfunc) and not checkIfLinear(self.Dtrialfunc)) or (not checkIfLinear(self.trialfunc) and not checkIfLinear(self.Dtrialfunc)):
+                raise ValueError('All forms must be linear.')
+    def __call__(self):
+        expr = 0
+        for ii in range(0,len(self.forms)):
+            expr += self.forms[ii]
+        return uflfy(expr)
+    def add_form(self,*addenda):
+        for addendum in addenda:
+            if not checkIfLinear(addendum,self.trialfunc,self.testfunc) and not checkIfLinear(addendum,self.Dtrialfunc,self.Dtestfunc):
+                raise ValueError('All forms added must be linear.')
+            self.forms.append(addendum)
+
+class LinearForm:
+    def __init__(self,*args):
+        assert(len(args)>=2)
+        if not isinstance(args[len(args)-2],AbstractVectorGradient):
+            raise TypeError('Penultimate arg must be type AbstractVectorGradient.')
+        if not isinstance(args[len(args)-1],QVector):
+            raise TypeError('Final arg must be type QVector.')
+        
+        self.Dtestfunc = args[len(args)-2]
+        self.testfunc = args[len(args)-1]
+
+        self.forms = []
+
+        for arg in args:
+            self.forms.append(arg)
+    
+        for ii in range(0,2):
+            del self.forms[-1]
+
+        for form in self.forms:
+            if not checkIfLinear(form,self.Dtestfunc) and not checkIfLinear(form,self.testfunc):
+                raise ValueError('All forms must be linear.')
+    def __call__(self):
+        expr = 0
+        for ii in range(0,len(self.forms)):
+            expr += self.forms[ii]
+        return uflfy(expr)
+    def add_form(self,*addenda):
+        for addendum in addenda:
+            if not checkIfLinear(addendum,self.Dtestfunc) and not checkIfLinear(addendum,self.testfunc):
+                raise ValueError('All forms added must be linear.')
+            self.forms.append(addendum)
+
 # Operations
 
 def innerp(A,B):
@@ -127,13 +226,13 @@ def variationalDerivative(lagrangian,*args):
     
     return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1])
 
-def secondVariationalDerivative(energy,*args):
+def secondVariationalDerivative(binaryform,*args):
     """ Given an instance of a GeneralForm of order 2, returns the variational
     derivative as a GeneralForm of order 3. """
 
-    if not isinstance(energy,GeneralForm):
+    if not isinstance(binaryform,GeneralForm):
         raise TypeError('First positional argument must be type GeneralForm.')
-    elif not energy.order == 2:
+    elif not binaryform.order == 2:
         raise ValueError('GeneralForm must be of order 2.')
 
     args = list(args)
@@ -155,7 +254,7 @@ def secondVariationalDerivative(energy,*args):
     ph = [args[ii] for ii in range(1,len(args),2)]
 
     tau = Symbol('tau')
-    expr = energy(Dph[0]+tau*Dph[1],ph[0]+tau*ph[1],Dph[2],ph[2])
+    expr = binaryform(Dph[0]+tau*Dph[1],ph[0]+tau*ph[1],Dph[2],ph[2])
     expr = diff(expr,tau).subs(tau,0)
 
     return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1],Dph[2],ph[2])
