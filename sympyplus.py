@@ -36,7 +36,7 @@ def einstein(Q,P,permQ,permP):
         summ += innerp(Q_arr[ii],P_arr[ii])
     return summ
 
-def checkIfLinear(expression,*args):
+def isLinear(expression,*args):
     for arg in args:
         if not isinstance(arg,QVector) and not isinstance(arg,AbstractVectorGradient):
             raise TypeError('Must be checking for linearity with respect to type QVector or AbstractVectorGradient.')
@@ -63,77 +63,114 @@ def checkIfLinear(expression,*args):
                 return False
     return True
 
-class BilinearForm:
-    def __init__(self,*args):
-        assert(len(args)>=4)
-        if not isinstance(args[len(args)-4],AbstractVectorGradient):
-            raise TypeError('Penultimate arg must be type AbstractVectorGradient.')
-        if not isinstance(args[len(args)-3],QVector):
-            raise TypeError('Final arg must be type QVector.')
-        if not isinstance(args[len(args)-2],AbstractVectorGradient):
-            raise TypeError('Penultimate arg must be type AbstractVectorGradient.')
-        if not isinstance(args[len(args)-1],QVector):
-            raise TypeError('Final arg must be type QVector.')
-        
-        self.Dtrialfunc = args[len(args)-4]
-        self.trialfunc = args[len(args)-3]
-        self.Dtestfunc = args[len(args)-2]
-        self.testfunc = args[len(args)-1]
+class Param:
+    def __init__(self,param):
+        if isinstance(param,Param):
+            self.der = param.der
+            self.vec = param.vec
+        else:
+            if not isinstance(param,list):
+                raise TypeError('Parameters must be lists.')
+            elif len(param) != 2:
+                raise ValueError('Parameter must be be a list of length 2.')
+            elif not isinstance(param[0],AbstractVectorGradient):
+                raise TypeError('First argument of parameter must be type AbstractVectorGradient.')
+            elif not isinstance(param[1],QVector):
+                raise TypeError('Second argument of parameter must be type QVector.')
+            self.der = param[0]
+            self.vec = param[1]
 
+def isLinearParam(expression,param):
+    if not isinstance(param,Param):
+        raise TypeError('Second positional argument must be type Param.')
+
+    if isLinear(expression,param.der) or isLinear(expression,param.vec):
+        return True
+    else:
+        return False
+
+def checkIfParam(param):
+    if not isinstance(param,list):
+        raise TypeError('Parameters must be lists.')
+    elif len(param) != 2:
+        raise ValueError('Parameter must be be a list of length 2.')
+    elif not isinstance(param[0],AbstractVectorGradient):
+        raise TypeError('First argument of parameter must be type AbstractVectorGradient.')
+    elif not isinstance(param[1],QVector):
+        raise TypeError('Second argument of parameter must be type QVector.')
+
+class lhsForm:
+    def __init__(self,trial_func,test_func,name=None,forms=[]):
+        if not isinstance(forms,list):
+            raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
+        self.trial_func = Param(trial_func)
+        self.test_func = Param(test_func)
+        self.name = name
         self.forms = []
+        self.add_form(*forms)
 
-        for arg in args:
-            self.forms.append(arg)
-    
-        for ii in range(0,4):
-            del self.forms[-1]
-
-        for form in self.forms:
-            if (not checkIfLinear(self.trialfunc) and not checkIfLinear(self.Dtrialfunc)) or (not checkIfLinear(self.trialfunc) and not checkIfLinear(self.Dtrialfunc)):
-                raise ValueError('All forms must be linear.')
     def __call__(self):
         expr = 0
-        for ii in range(0,len(self.forms)):
-            expr += self.forms[ii]
-        return uflfy(expr)
-    def add_form(self,*addenda):
-        for addendum in addenda:
-            if not checkIfLinear(addendum,self.trialfunc,self.testfunc) and not checkIfLinear(addendum,self.Dtrialfunc,self.Dtestfunc):
-                raise ValueError('All forms added must be linear.')
-            self.forms.append(addendum)
-
-class LinearForm:
-    def __init__(self,*args):
-        assert(len(args)>=2)
-        if not isinstance(args[len(args)-2],AbstractVectorGradient):
-            raise TypeError('Penultimate arg must be type AbstractVectorGradient.')
-        if not isinstance(args[len(args)-1],QVector):
-            raise TypeError('Final arg must be type QVector.')
-        
-        self.Dtestfunc = args[len(args)-2]
-        self.testfunc = args[len(args)-1]
-
-        self.forms = []
-
-        for arg in args:
-            self.forms.append(arg)
-    
-        for ii in range(0,2):
-            del self.forms[-1]
-
         for form in self.forms:
-            if not checkIfLinear(form,self.Dtestfunc) and not checkIfLinear(form,self.testfunc):
-                raise ValueError('All forms must be linear.')
+            if not isLinearParam(form.expr,self.trial_func):
+                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the trial function.')
+            elif not isLinearParam(form.expr,self.test_func):
+                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the test function.')
+            expr += form.expr
+        return uflfy(expr)
+
+    def __repr__(self):
+        return 'Untitled lhsForm' if self.name == None else f'rhsForm {self.name}'
+
+    def add_form(self,*forms):
+        for form in forms:
+            if not isinstance(form,GeneralForm):
+                raise TypeError('Form must be type GeneralForm.')
+            self.forms.append(form)
+
+class rhsForm:
+    def __init__(self,test_func,name=None,forms=[]):
+        if not isinstance(forms,list):
+            raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
+        self.test_func = Param(test_func)
+        self.name = name
+        self.forms = []
+        self.add_form(*forms)
+
     def __call__(self):
         expr = 0
-        for ii in range(0,len(self.forms)):
-            expr += self.forms[ii]
+        for form in self.forms:
+            if not isLinearParam(form.expr,self.test_func):
+                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear.')
+            expr += form.expr
         return uflfy(expr)
-    def add_form(self,*addenda):
-        for addendum in addenda:
-            if not checkIfLinear(addendum,self.Dtestfunc) and not checkIfLinear(addendum,self.testfunc):
-                raise ValueError('All forms added must be linear.')
-            self.forms.append(addendum)
+
+    def __repr__(self):
+        return 'Untitled rhsForm' if self.name == None else f'rhsForm {self.name}'
+
+    def add_form(self,*forms):
+        for form in forms:
+            if not isinstance(form,GeneralForm):
+                raise TypeError('Form must be type GeneralForm.')
+            self.forms.append(form)
+
+def newtonsMethod(lhs_form,rhs_form,const_func,trial_func,test_func):
+    const_func = Param(const_func)
+    trial_func = Param(trial_func)
+    test_func = Param(test_func)
+
+    new_lhs_form = lhsForm(trial_func,test_func)
+    for form in lhs_form.forms:
+        new_lhs_form.add_form(secondVariationalDerivative(form,const_func,trial_func,test_func))
+
+    new_rhs_form = rhsForm(test_func)
+    for form in lhs_form.forms:
+        new_rhs_form.add_form(form.mul(-1).new_params(const_func,test_func))
+    for form in rhs_form.forms:
+        new_rhs_form.add_form(form.new_params(test_func))
+
+    return (new_lhs_form,new_rhs_form)
+
 
 # Operations
 
@@ -156,8 +193,8 @@ def checkIfQTensor(obj):
         raise TypeError('Must be type MutableDenseMatrix.')
     elif not obj.shape == (3,3):
         raise ShapeError('Shape must be (3, 3).')
-    elif not obj.is_symmetric():
-        raise ValueError('Must be symmetric.')
+    # elif not obj.is_symmetric():
+    #     raise ValueError('Must be symmetric.')
     # The following code does not work as intended:
     # elif not trace(obj).is_zero:
     #     raise ValueError('Must have trace 0')
@@ -194,39 +231,32 @@ def uflfy(expression):
         checkIfVector(expression,5)
         return 'as_vector([' + ','.join([ccode(expression[ii]) for ii in range(5)]) + '])'
 
-def variationalDerivative(lagrangian,*args):
+def variationalDerivative(lagrangian,*params,name=None):
     """ Given an instance of Lagrangian, returns a GeneralForm of order 2 which
     represents the first variational derivative of the Lagrangian object respect
     to the last four objects, i.e. two parameters and their derivatives. """
 
-    if not isinstance(lagrangian,Lagrangian):
-        raise TypeError('First positional argument must be type Lagrangian.')
+    if not isinstance(lagrangian,GeneralForm):
+        raise TypeError('First positional argument must be type GeneralForm.')
+    elif lagrangian.order != 1:
+        raise ValueError('GeneralForm must be of order 1.')
 
-    args = list(args)
+    if len(params) != 2:
+        raise TypeError('Must have exactly 2 parameters.')
 
-    if len(args) != 4:
-        raise TypeError('Must have exactly 2 arguments per parameter, that is, 4 arguments.')
-
-    for ii in range(0,4,2):
-        if not isinstance(args[ii],AbstractVectorGradient):
-            raise TypeError('Odd numbered arguments must be type AbstractVectorGradient.')
-        if not isinstance(args[ii+1],QVector):
-            raise TypeError('Even numbered arguments must be type QVector.')
+    params = [Param(param) for param in params]
 
     ##########################################################################################################    
 
-    # Here, 'ph' stands for "placeholder"
-
-    Dph = [args[ii] for ii in range(0,4,2)]
-    ph = [args[ii] for ii in range(1,4,2)]
+    # Compute the derivative
 
     tau = Symbol('tau')
-    expr = lagrangian(Dph[0]+tau*Dph[1],ph[0]+tau*ph[1])
+    expr = lagrangian([params[0].der+tau*params[1].der,params[0].vec+tau*params[1].vec])
     expr = diff(expr,tau).subs(tau,0)
     
-    return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1])
+    return GeneralForm(expr,[params[0].der,params[0].vec],[params[1].der,params[1].vec],name=name)
 
-def secondVariationalDerivative(binaryform,*args):
+def secondVariationalDerivative(binaryform,*params,name=None):
     """ Given an instance of a GeneralForm of order 2, returns the variational
     derivative as a GeneralForm of order 3. """
 
@@ -235,29 +265,23 @@ def secondVariationalDerivative(binaryform,*args):
     elif not binaryform.order == 2:
         raise ValueError('GeneralForm must be of order 2.')
 
-    args = list(args)
+    params = list(params)
     
-    if len(args) != 6:
-        raise TypeError('Must have exactly 2 arguments per parameter, that is, 6 arguments.')
-
-    for ii in range(0,6,2):
-        if not isinstance(args[ii],AbstractVectorGradient):
-            raise TypeError('Odd numbered arguments must be type AbstractVectorGradient.')
-        if not isinstance(args[ii+1],QVector):
-            raise TypeError('Even numbered arguments must be type QVector.')
+    if len(params) != 3:
+        raise TypeError('Must have exactly 3 parameters.')
+    
+    params = [Param(param) for param in params]
 
     ##########################################################################################################
 
-    # Here, 'ph' stands for "placeholder"
-
-    Dph = [args[ii] for ii in range(0,len(args),2)]
-    ph = [args[ii] for ii in range(1,len(args),2)]
-
     tau = Symbol('tau')
-    expr = binaryform(Dph[0]+tau*Dph[1],ph[0]+tau*ph[1],Dph[2],ph[2])
+    expr = binaryform([params[0].der+tau*params[1].der,params[0].vec+tau*params[1].vec],[params[2].der,params[2].vec])
     expr = diff(expr,tau).subs(tau,0)
 
-    return GeneralForm(expr,Dph[0],ph[0],Dph[1],ph[1],Dph[2],ph[2])
+    if name == None:
+        name = f'Der of {binaryform.name}'
+
+    return GeneralForm(expr,[params[0].der,params[0].vec],[params[1].der,params[1].vec],[params[2].der,params[2].vec],name=name)
 
 def vectorfy(tensor): 
     """ Returns the vector form of a Q-tensor. Checks if 'tensor' is a Q-tensor in
@@ -331,104 +355,86 @@ class AbstractVector(Matrix):
 
         return vector # Ideally, another AbstractVector would be returned, but in practice this is hard
 
-class Lagrangian:
-    """ Defines a Lagrangian, i.e., the integrand of an energy functional, in
-    terms of user-inputted 'Dph' and 'ph', i.e. the parameter and its derivative
-    that the Langrangian will defined with respect to. """
-
-    def __init__(self,expr,Dph,ph):
-        self.expr = expr
-        self.Dph = Dph
-        self.ph = ph
-    def __call__(self,Dq=None,q=None):
-        if Dq is None and q is None:
-            return self.expr
-        elif Dq is None:
-            raise TypeError('Lagrangian function missing 1 required positional argument: \'Dq\'.')
-        elif q is None:
-            raise TypeError('Lagrangian function missing 1 required positional argument: \'q\'.')
-        elif not isinstance(Dq,AbstractVectorGradient):
-            raise TypeError('Argument \'Dq\' for Lagrangian function must be type AbstractVectorGradient.')
-        elif not isinstance(q,QVector):
-            raise TypeError('Argument \'q\' for Lagrangian function must be type QVector.')
-        
-        expr = self.expr
-        Dph = self.Dph
-        ph = self.ph
-        
-        for jj in range(3):
-            for ii in range(5):
-                old = Dph[ii,jj]
-                new = Dq[ii,jj]
-                expr = expr.subs(old,new)
-        
-        for ii in range(5):
-            old = ph[ii]
-            new = q[ii]
-            expr = expr.subs(old,new)
-        
-        return expr
-
 class GeneralForm:
     """ Returns a more general form of the Lagrangian. More parameters and their
     derivatives are allowed besides just one. The order of the GeneralForm is the
     number of pairs of parameters and their derivative. """
     
-    def __init__(self,expr,*args):
+    def __init__(self,expr,*params,name=None):
         self.expr = expr
-        
-        args = list(args)
-        
-        # If no args are given
-        
-        if len(args) == 0:
+        self.name = name
+        self.order = len(params)
+
+        if self.order == 0:
             raise TypeError('Expression must be in terms of parameters; none entered.')
         
-        # If args are given
-        
-        # Error handler
-        
-        if len(args) % 2 != 0:
-            raise TypeError('Must have exactly 2 arguments per parameter, that is, an even number of arguments.')
-        self.order = int(len(args)/2)
-        for ii in range(0,len(args),2):
-            if not isinstance(args[ii],AbstractVectorGradient):
-                raise TypeError('Odd numbered arguments must be type AbstractVectorGradient.')
-            if not isinstance(args[ii+1],QVector):
-                raise TypeError('Even numbered arguments must be type QVector.')
-        
-        # Function
-        
-        self.Dph = [args[ii] for ii in range(0,len(args),2)]
-        self.ph = [args[ii] for ii in range(1,len(args),2)]
-    def __call__(self,*args):
-        expr = self.expr
-        
-        args = list(args)
-        
-        # If no args are given
-        
-        if len(args) == 0:
-            return expr
-        
-        # If args are given
-        
-        # Error handler
-        
-        if len(args) != self.order*2:
-            raise TypeError(f'Must have exactly {self.order} parameters with 2 arguments each, that is, {self.order*2} arguments.')
-        
-        # Function
-        
-        Dq = [args[ii] for ii in range(0,len(args),2)]
-        q = [args[ii] for ii in range(1,len(args),2)]
-        
+        self.params = [Param(param) for param in params]
 
-        for ii in range(self.order):
-            lagrangian_in_one_var = Lagrangian(expr,self.Dph[ii],self.ph[ii])
-            expr = lagrangian_in_one_var(Dq[ii],q[ii])
+    def __call__(self,*new_params):
+        if len(new_params) == 0:
+            return self.expr
+        elif len(new_params) != self.order:
+            raise ValueError(f'The number of params must be equal to the order of the form ({self.order}). {len(new_params)} were given.')
+        else:
+            return self.new_params(*new_params).expr
 
-        return expr
+    def __repr__(self):
+        if self.name is not None:
+            return self.name
+        else:
+            return 'Unnamed'
+
+    def rename(self,name):
+        if not isinstance(name,str):
+            raise TypeError('Name must be a string.')
+        self.name = name
+
+    def new_params(self,*new_params):
+        if len(new_params) != self.order:
+            raise ValueError(f'The number of new params must be equal to the order of the form ({self.order}). {len(new_params)} were given.')
+        
+        new_params = [Param(new_param) for new_param in new_params]
+
+        # Initialize
+
+        new_expr = self.expr
+
+        # Function
+
+        for kk in range(self.order):            
+            old_param = self.params[kk]
+            new_param = new_params[kk]
+
+            # Substitute old parameter derivative for new parameter derivative
+
+            for jj in range(3):
+                for ii in range(5):
+                    old = old_param.der[ii,jj]
+                    new = new_param.der[ii,jj]
+                    new_expr = new_expr.subs(old,new)
+            
+            # Substitute old parameter vector for new parameter vector
+
+            for ii in range(5):
+                old = old_param.vec[ii]
+                new = new_param.vec[ii]
+                new_expr = new_expr.subs(old,new)
+
+        return GeneralForm(new_expr,*new_params,name=self.name)
+
+    def mul(self,n):
+        new_expr = self.expr * n
+        return GeneralForm(new_expr,*self.params,name=self.name)
+
+    def checkParam(self,param):
+        if not isinstance(param,list):
+                raise TypeError('Parameters must be lists.')
+        elif len(param) != 2:
+            raise ValueError('Parameter must be be a list of length 2.')
+        elif not isinstance(param[0],AbstractVectorGradient):
+            raise TypeError('First argument of parameter must be type AbstractVectorGradient.')
+        elif not isinstance(param[1],QVector):
+            raise TypeError('Second argument of parameter must be type QVector.')
 
 class QTensor(Matrix):
     """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.
