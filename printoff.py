@@ -38,8 +38,9 @@ def prelimInfo():
     print(f"           L3 = {const.L3},                   No. time steps: {timedata.end_time/timedata.time_step:0.0f}")
     print(f"            A = {const.A},")
     print(f"            B = {const.B},")
-    print(f"            C = {const.C}")
-    print(f"      epsilon = {const.ep}")
+    print(f"            C = {const.C},")
+    print(f"      epsilon = {const.ep},")
+    print(f"           L0 = {const.L0}")
     print()
     
     # If we are visualizing this in Paraview, print the path to the Paraview file

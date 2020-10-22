@@ -120,7 +120,7 @@ class lhsForm:
         return uflfy(expr)
 
     def __repr__(self):
-        return 'Untitled lhsForm' if self.name == None else f'rhsForm {self.name}'
+        return 'Untitled lhsForm' if self.name == None else f'lhsForm {self.name}'
 
     def add_form(self,*forms):
         for form in forms:
@@ -264,8 +264,6 @@ def secondVariationalDerivative(binaryform,*params,name=None):
         raise TypeError('First positional argument must be type GeneralForm.')
     elif not binaryform.order == 2:
         raise ValueError('GeneralForm must be of order 2.')
-
-    params = list(params)
     
     if len(params) != 3:
         raise TypeError('Must have exactly 3 parameters.')
@@ -435,6 +433,9 @@ class GeneralForm:
             raise TypeError('First argument of parameter must be type AbstractVectorGradient.')
         elif not isinstance(param[1],QVector):
             raise TypeError('Second argument of parameter must be type QVector.')
+
+    def uflfy(self):
+        return uflfy(self.expr)
 
 class QTensor(Matrix):
     """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.
