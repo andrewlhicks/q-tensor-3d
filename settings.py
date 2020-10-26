@@ -16,7 +16,7 @@ settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 # Settings
 
 class const:
-	L0, L1, L2, L3, A, B, C, ep = getValues(settings_dict['const'],'L0, L1, L2, L3, A, B, C, ep')
+	L0, L1, L2, L3, A, B, C, ep, W0, W1, W2 = getValues(settings_dict['const'],'L0, L1, L2, L3, A, B, C, ep, W0, W1, W2')
 class meshdata: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 	file_path, numnodes_init, numnodes_max = getValues(settings_dict['meshdata'],'file_path, numnodes_init, numnodes_max')
 class options:

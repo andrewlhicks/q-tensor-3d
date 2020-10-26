@@ -98,10 +98,6 @@ p = QVector('p')
 Dp = p.grad
 P = p.tens
 
-r = QVector('r')
-Dr = r.grad
-R = r.tens
-
 qp = QVector('q_prev')
 Dqp = qp.grad
 QP = qp.tens
@@ -112,31 +108,20 @@ QNP = qnp.tens
 
 f = QVector('f')
 
-##############
+S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
+Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+QT = Q + S0*eye(3)
+Pi = eye(3) - outerp(nu,nu)
+
+# Energies
 
 energyElastic = GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
-
-# New convex splitting
 energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
 energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
+# energyNAnchor = GeneralForm(const.W0/2*innerp(Q - Q0,Q - Q0),[Dq,q])
+# energyPDAnchor = GeneralForm(const.W1/2*innerp(QT-Pi*QT*Pi,QT-Pi*QT*Pi) + const.W2/2*(innerp(QT,QT) - S0**2)**2,[Dq,q])
 
-# Old convex splitting
-# energyBulkC = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q],name='energyBulkC')
-# energyBulkE = GeneralForm((1/const.ep**2)*((const.L0+const.A)/2*trace(Q**2) + (const.B/3)*trace(Q**3) - (const.C/4)*trace(Q**2)**2),[Dq,q],name='energyBulkE')
-
-# W0 = 1
-# W1 = 1
-# W2 = 1
-
-# S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-# Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
-# QT = Q + S0*eye(3)
-# Pi = eye(3) - outerp(nu,nu)
-
-# energyNAnchor = GeneralForm(W0*innerp(Q - Q0,Q - Q0),[Dq,q])
-# energyPDAnchor = GeneralForm(W1*innerp(QT-Pi*QT*Pi,QT-Pi*QT*Pi) + W2*(innerp(QT,QT) - S0**2)**2,[Dq,q])
-
-##############
+# Bilinear forms
 
 bfTimeStep = GeneralForm((1/const.dt)*q.dot(p),[Dq,q],[Dp,p],name='bfTimeStep')
 bfElastic = variationalDerivative(energyElastic,[Dq,q],[Dp,p],name='bfElastic')
@@ -145,43 +130,24 @@ bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
 # bfPDAnchor = variationalDerivative(energyPDAnchor,[Dq,q],[Dp,p],name='bfPDAnchor')
 # bfNAnchor = variationalDerivative(energyNAnchor,[Dq,q],[Dp,p],name='bfNAnchor')
 
-##############
+# Linear forms
 
 lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
 lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
-
-lfManuForcing = GeneralForm(f.dot(p),[Dp,p],name='lfManuForcing')
-
-##############
-
-# der_bfBulkC = GeneralForm( (1/const.ep**2) * ( (const.L0 - const.A)*innerp(R,P) - 2*const.B*innerp(Q*R,P) + const.C*(2*innerp(Q,R)*innerp(Q,P) + innerp(Q,Q)*innerp(R,P) ) ), [Dq,q],[Dr,r],[Dp,p])
-
-##############
+# Lefthand side
 
 bilinearDomain = lhsForm([Dq,q],[Dp,p],forms=[bfTimeStep,bfElastic,bfBulkC])
 
+# Righthand side
+
 linearDomain = rhsForm([Dp,p],forms=[lfTimeStep,lfBulkE])
-if options.manufactured: linearDomain.add_form(lfManuForcing)
+if options.manufactured:
+    lfManuForcing = GeneralForm(f.dot(p),[Dp,p],name='lfManuForcing')
+    linearDomain.add_form(lfManuForcing)
+
+# Newton's method
 
 newt_bilinearDomain, newt_linearDomain = newtonsMethod(bilinearDomain,linearDomain,[Dqnp,qnp],[Dq,q],[Dp,p])
-
-##############
-
-# newt_bilinearDomain = lhsForm([Dq,q],[Dp,p])
-# newt_bilinearDomain.add_form(bfTimeStep.new_params([Dq,q],[Dp,p]))
-# newt_bilinearDomain.add_form(bfElastic.new_params([Dq,q],[Dp,p]))
-# newt_bilinearDomain.add_form(der_bfBulkC.new_params([Dqnp,qnp],[Dq,q],[Dp,p]))
-
-# newt_linearDomain = rhsForm([Dp,p])
-# # First subtract the original a(q,p)
-# newt_linearDomain.add_form(bfTimeStep.new_params([Dqnp,qnp],[Dp,p]).mul(-1))
-# newt_linearDomain.add_form(bfElastic.new_params([Dqnp,qnp],[Dp,p]).mul(-1))
-# newt_linearDomain.add_form(bfBulkC.new_params([Dqnp,qnp],[Dp,p]).mul(-1))
-
-# # Then add the original L(p)
-# newt_linearDomain.add_form(lfBulkE)
-# newt_linearDomain.add_form(lfTimeStep)
-# if options.manufactured: newt_linearDomain.add_form(lfManuForcing)
 
 # END OF CODE
