@@ -86,15 +86,18 @@ def pdeSolveTitle():
     print(f"{color.uline}PDE SOLVE:{color.end}")
     print()
 
-def pdeSolveInfo(time_elapsed):
-    print(f"Finished PDE solve in {time_elapsed:0.2f} seconds.")
+def pdeSolveInfo(**kwargs):
     print()
+    for arg in kwargs:
+        if arg == 'mesh_numnodes':
+            print(f"Mesh node struc: {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']}")
+        elif arg == 'h1_error':
+            print(f"H1 error:        {kwargs['h1_error']:0.15f}")
+        elif arg == 'l2_error':
+            print(f"L2 error:        {kwargs['l2_error']:0.15f}")
+        if arg == 'time_elapsed':
+            print(f"Time elapsed:    {kwargs['time_elapsed']:0.2f} seconds")
 
-def pdeSolveInfoManufactured(mesh_numnodes,H1_error,L2_error,time_elapsed):
-    print(f"Mesh node struc: {mesh_numnodes} x {mesh_numnodes} x {mesh_numnodes}")
-    print(f"H1 error:        {H1_error:0.15f}")
-    print(f"L2 error:        {L2_error:0.15f}")
-    print(f"Time elapsed:    {time_elapsed:0.2f} seconds")
     print()
 
 # END OF CODE

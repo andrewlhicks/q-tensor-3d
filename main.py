@@ -6,11 +6,34 @@ from firedrakeplus import *
 import eigen
 from misc import valueCheck, Timer
 import printoff
+from progressbar import progressbar
 
 # Functions
 
-def newtonSolve(*args,**kwargs):
-    return solve(*args,**kwargs)
+def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver_parameters={}):
+    function_space = q_soln._function_space
+
+    bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
+    bc = DirichletBC(function_space, bdy_cond, "on_boundary")
+
+    q_newt_delt = Function(function_space)
+    # q_newt_prev = Function(function_space)
+    q_newt_soln = Function(function_space)
+
+    q_newt_soln.assign(intial_guess)
+
+    for ii in range(no_newt_steps):
+        q_newt_prev.assign(q_newt_soln)
+
+        # Solve
+
+        solve(newt_eqn, q_newt_delt, bcs=[bc], solver_parameters=solver_parameters)
+
+        q_newt_soln.assign(q_newt_delt + q_newt_prev)
+
+        if q_newt_delt.dat.data.max() < 10e-12: break
+
+    q_soln.assign(q_newt_soln)
 
 def visualize(q_soln,new_outfile=False):
     # Create functions to store eigenvectors and eigenvalues
@@ -39,7 +62,71 @@ def visualize(q_soln,new_outfile=False):
 
     outfile.write(eigvec, eigval)
 
-no_newt_steps = 10
+def NEWTONSOLVE(bilinear_form,linear_form,initial_guess,mesh,forcing=None):
+    timer = Timer()
+    timer.start()
+    
+    # Define function space, coordinates, and q_soln
+    
+    H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
+    x0, x1, x2 = SpatialCoordinate(mesh)
+    q_soln = Function(H1_vec)
+
+    # Facet normal
+    
+    nu = FacetNormal(mesh)
+
+    # Test and Trial functions
+    
+    q = TrialFunction(H1_vec)
+    p = TestFunction(H1_vec)
+
+    # Updated constant functions
+
+    q_prev = Function(H1_vec)
+    q_newt_prev = Function(H1_vec)
+    
+    # Non-updated onstant functions
+
+    if forcing is not None:
+        f = interpolate(eval(forcing),H1_vec) # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
+    q_init = interpolate(eval(initial_guess),H1_vec)
+
+    # First q_soln is taken to be the initial guess
+
+    q_soln.assign(q_init)
+    
+    if options.visualize: visualize(q_soln,new_outfile=True)
+
+    # define bilinear form a(q,p), and linear form L(p)
+
+    a = eval(bilinear_form) * dx
+    L = eval(linear_form) * dx
+
+    # Time loop
+
+    for time in progressbar(range(0,timedata.end_time,timedata.time_step),redirect_stdout=True,max_value=10):
+
+        # Assign the solution from the previous loop to q_prev
+        q_prev.assign(q_soln)
+        
+        newtonSolve(a == L, q_soln, q_newt_prev, q_prev, solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
+                                                                         'pc_type'  : solverdata.pc_type,         # preconditioner type
+                                                                         'mat_type' : 'aij' })
+
+        # Write eigenvectors and eigenvalues to Paraview
+        
+        if options.visualize: visualize(q_soln)
+
+    timer.stop()
+
+    return (q_soln, timer.time_elapsed)
+
+def FIREDRAKEFY(func,mesh):
+    H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5)
+    x0, x1, x2 = SpatialCoordinate(mesh)
+
+    return interpolate(eval(func),H1_vec)
 
 # Create instance of timer object which will be used to time the various calculations
 
@@ -53,16 +140,10 @@ from settings import const, options, meshdata, paraview, solverdata, timedata
 
 valueCheck()
 
-# Print the title 'PRELIMINARY INFO' (set 'omit_init_printoff = True' to skip this)
+# Print info
 
 printoff.prelimTitle()
-
-# Print preliminary information (set 'omit_init_printoff = True' to skip this)
-
 printoff.prelimInfo()
-
-# Print the title 'PRELIMINARY COMPUTATIONS'
-
 printoff.prelimCompTitle()
 
 # Preliminary computations
@@ -71,169 +152,32 @@ timer.start()
 
 import compute
 
-initial_guess = compute.initialGuess()
+class ufl:
+    init_guess = compute.init_guess()
+    manu_soln = compute.manu_soln()
+    manu_forc = compute.manu_forc()
 
-manu_soln = compute.manu_soln()
-manu_forc = compute.manu_forc()
-
-boundary = compute.bdy()
-bilinear_form = compute.newt_bilinearDomain()
-linear_form = compute.newt_linearDomain()
+    n_bf_O = compute.newt_bilinearDomain()
+    n_lf_O = compute.newt_linearDomain()
 
 timer.stop()
 
-# Print the time it took to do the preliminary computations
-
 printoff.prelimCompInfo(timer.time_elapsed)
-
-# Print the title 'PDE SOLVE'
-
 printoff.pdeSolveTitle()
 
-# Initialize loop
-
-loop = True
-
-if options.manufactured:
-    mesh_numnodes = meshdata.numnodes_init
-
-while loop:
-    # Set loop to be false; turn back on if needed
-    
-    loop = False
-    
-    # Start the timer
-    
-    timer.start()
-    
-    # Define our mesh
-    
-    mesh = Mesh(meshdata.file_path) if not options.manufactured else UnitCubeMesh(mesh_numnodes,mesh_numnodes,mesh_numnodes)
-    
-    # Define function spaces for tensors, vectors, eigenvalues, and eigenvectors
-    
-    H1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
-    
-    # Define spatial coordinates
-    
-    x0, x1, x2 = SpatialCoordinate(mesh)
-    
-    # Define functions
-    
-    q = TrialFunction(H1_vec)
-    p = TestFunction(H1_vec)
-    
-    q_init = Function(H1_vec)
-    q_prev = Function(H1_vec)
-    q_soln = Function(H1_vec)
-    Q_soln = Function(H1_ten)
-
-    q_newt_prev = Function(H1_vec)
-    q_newt_delt = Function(H1_vec)
-    q_newt_soln = Function(H1_vec)
-
-    # set q_manu, the manufactured solution
-
-    q_manu = Function(H1_vec)
-    q_manu.interpolate(eval(manu_soln))
-
-    bdy = interpolate(eval(boundary),H1_vec)
-    bc = DirichletBC(H1_vec, bdy, "on_boundary")
-    
-    # define bilinear form a(q,p), and linear form L(p)
-    
-    nu = FacetNormal(mesh)
-    f = Function(H1_vec) # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
-    f.interpolate(eval(manu_forc))
-
-    # a = eval(bilinear_form) * dx + eval(bilinear_form_on_boundary) * ds
-    # L = eval(linear_form) * dx + eval(linear_form_on_boundary) * ds
-    a = eval(bilinear_form) * dx
-    L = eval(linear_form) * dx
-
-    # for the 0th time step, we define the solution to be the initial guess
-    
-    q_init.interpolate(eval(initial_guess))
-    q_soln.assign(q_init)
-
-    # outfile is the pvd file that will be written to visualize this
-    
-    if options.visualize: visualize(q_soln,new_outfile=True)
-
-    # Time loop
-
-    q_newt_delt_ref = Function(H1_vec)
-    q_newt_delt_diff = Function(H1_vec)
-
-    bdy = interpolate(as_vector([0,0,0,0,0]),H1_vec)
-    bc = DirichletBC(H1_vec, bdy, "on_boundary")
-
-    for time in range(0,timedata.end_time,timedata.time_step):
-        print(f'Time: {time}')
-
-        # Assign the solution from the previous loop to q_prev
-        q_prev.assign(q_soln)
-        
-        # Newton's method
-        
-        q_newt_soln.assign(q_prev)
-
-        for ii in range(no_newt_steps):
-            q_newt_prev.assign(q_newt_soln)
-
-            # Solve
-
-            solve(a == L, q_newt_delt, bcs=[bc], solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
-                                                                    'pc_type'  : solverdata.pc_type,         # preconditioner type
-                                                                    'mat_type' : 'aij' })
-
-            q_newt_soln.assign(q_newt_delt + q_newt_prev)
-            
-            
-            print(f'     q_newt_delt max: {q_newt_delt.dat.data.max()}')
-
-            if q_newt_delt.dat.data.max() < 10e-12: break
-
-        q_soln.assign(q_newt_soln)
-        print()
-        # solve(a == L, q_soln, bcs=[bc], solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
-        #                                                   'pc_type'  : solverdata.pc_type,         # preconditioner type
-        #                                                   'mat_type' : 'aij' })
-        
-        # Write eigenvectors and eigenvalues to Paraview
-        
-        if options.visualize: visualize(q_soln)
-    
-    if options.manufactured:    
-        # Calculate the H1 and L2 errors
-        
-        H1_error = errorH1(q_soln,q_manu)
-        L2_error = errorL2(q_soln,q_manu)
-        
-        # Record the time elapsed
-        
-        timer.stop()
-        
-        # Print a summary
-        
-        printoff.pdeSolveInfoManufactured(mesh_numnodes,H1_error,L2_error,timer.time_elapsed)
-        
-        # Double the mesh size
-        
-        mesh_numnodes *= 2
-        
-        # If less than or equal to maximum number of nodes, turn loop back on
-        
-        if mesh_numnodes <= meshdata.numnodes_max:
-            loop = True
-    else:
-        # Record the time elapsed
-        
-        timer.stop()
-        
-        # Print a summary
-        
-        printoff.pdeSolveInfo(timer.time_elapsed)
+if not options.manufactured:
+    mesh = Mesh(meshdata.file_path)
+    q_soln, time_elapsed = NEWTONSOLVE(ufl.n_bf_O,ufl.n_lf_O,ufl.init_guess,mesh)
+    printoff.pdeSolveInfo(time_elapsed=time_elapsed)
+else:
+    numnodes = meshdata.numnodes_init
+    while numnodes <= meshdata.numnodes_max:
+        mesh = UnitCubeMesh(numnodes,numnodes,numnodes)
+        q_soln, time_elapsed = NEWTONSOLVE(ufl.n_bf_O,ufl.n_lf_O,ufl.init_guess,mesh,forcing=ufl.manu_forc)
+        q_manu = FIREDRAKEFY(ufl.manu_soln,mesh)
+        h1_error = errorH1(q_soln,q_manu)
+        l2_error = errorL2(q_soln,q_manu)
+        printoff.pdeSolveInfo(mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,time_elapsed=time_elapsed)
+        numnodes *= 2
 
 # END OF CODE

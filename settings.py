@@ -27,9 +27,6 @@ class solverdata:
 	ksp_type, pc_type = getValues(settings_dict['solverdata'],'ksp_type, pc_type')
 class timedata:
 	time_step, end_time = getValues(settings_dict['timedata'],'time_step, end_time')
-class userfunc:
-	boundary = UserDefinedFunction(settings_dict['userfunc']['boundary'])
-	initialGuess = UserDefinedFunction(settings_dict['userfunc']['initialGuess'])
 
 # Add 'dt' entry to 'const' dictionary
 

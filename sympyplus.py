@@ -3,6 +3,10 @@ The functions here are intended to be used on sympy objects only. """
 
 from sympy import *
 
+# Set up variable with respect to which we will take derivatives
+
+x = [Symbol('x0'),Symbol('x1'),Symbol('x2')]
+
 # Basis for the 3D Q-tensor
 
 a = (sqrt(3.0)-3.0)/6.0
