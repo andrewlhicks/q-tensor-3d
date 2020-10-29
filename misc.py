@@ -11,22 +11,6 @@ def getValues(dictionary,keys):
         values = tuple(values)
         return values
 
-def valueCheck():
-    from settings import const, options
-    
-    if not isinstance(options.manufactured,bool):
-        raise ValueError("Variable 'manufactured' must be a boolean.")
-
-    if not isinstance(options.omit_init_printoff,bool):
-        raise ValueError("Variable 'omit_init_printoff' must be a boolean.")
-
-    if not isinstance(options.visualize,bool):
-        raise ValueError("Variable 'visualize' must be a boolean.")
-    
-    if 0>=const.L1 or -const.L1>=const.L3 or const.L3>=2*const.L1 or -3/5*const.L1-1/10*const.L3>=const.L2:
-        print()
-        print(f"{color.warning}WARNING: L1, L2, and L3 do not satisfy the proper inequalities{color.end}")
-
 # Classes
 
 class color:

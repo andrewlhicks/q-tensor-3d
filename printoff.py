@@ -6,7 +6,7 @@ initial printoff should be omitted or not. From this point forward, if a blank
 line is needed for visual separation, it will be printed after the previous
 print and not before. """
 
-from settings import const, meshdata, options, paraview, timedata, solverdata
+from settings import const, meshdata, options, visdata, timedata, solverdata
 from misc import color
 from time import sleep
 
@@ -46,7 +46,7 @@ def prelimInfo():
     # If we are visualizing this in Paraview, print the path to the Paraview file
     
     if options.visualize:
-        print(f"Paraview file: {paraview.file_path}")
+        print(f"Paraview file: {visdata.file_path}")
         print()
     
     # Unless we are manufacturing a solution, print the path to the mesh file; otherwise print the information for the unit cube meshes we will cycle through
