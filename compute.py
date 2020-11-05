@@ -52,8 +52,6 @@ Pi = eye(3) - outerp(nu,nu)
 energyElastic = GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
 energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
 energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
-# energyNAnchor = GeneralForm(const.W0/2*innerp(Q - Q0,Q - Q0),[Dq,q])
-# energyPDAnchor = GeneralForm(const.W1/2*innerp(QT-Pi*QT*Pi,QT-Pi*QT*Pi) + const.W2/2*(innerp(QT,QT) - S0**2)**2,[Dq,q])
 
 # Bilinear forms
 
@@ -61,17 +59,23 @@ bfTimeStep = GeneralForm((1/const.dt)*q.dot(p),[Dq,q],[Dp,p],name='bfTimeStep')
 bfElastic = variationalDerivative(energyElastic,[Dq,q],[Dp,p],name='bfElastic')
 bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
 bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
-# bfPDAnchor = variationalDerivative(energyPDAnchor,[Dq,q],[Dp,p],name='bfPDAnchor')
-# bfNAnchor = variationalDerivative(energyNAnchor,[Dq,q],[Dp,p],name='bfNAnchor')
+
+bfNAnchor = GeneralForm(const.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
+bfPDAnchor1 = GeneralForm(const.W1*innerp(Q-Pi*Q*Pi,P-Pi*P*Pi),[Dq,q],[Dp,p],name='bfPDAnchor1')
+bfPDAnchor2 = GeneralForm(const.W2*(innerp(Q,Q)*innerp(Q,P)-8*S0**2/9*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
 
 # Linear forms
 
 lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
 lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
+lfNAnchor = GeneralForm(const.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
+lfPDAnchor1 = GeneralForm(const.W1*S0/3.0*innerp(eye(3)-Pi,P-Pi*P*Pi),[Dp,p],name='lfPDAnchor1')
+
 # Lefthand side
 
 bilinearDomain = lhsForm([Dq,q],[Dp,p],forms=[bfTimeStep,bfElastic,bfBulkC])
+bilinearBoundary = lhsForm([Dq,q],[Dp,p],forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
 
 # Righthand side
 
@@ -79,9 +83,23 @@ linearDomain = rhsForm([Dp,p],forms=[lfTimeStep,lfBulkE])
 if options.manufactured:
     lfManuForcing = GeneralForm(f.dot(p),[Dp,p],name='lfManuForcing')
     linearDomain.add_form(lfManuForcing)
+linearBoundary = rhsForm([Dp,p],forms=[lfNAnchor,lfPDAnchor1])
 
 # Newton's method
 
 newt_bilinearDomain, newt_linearDomain = newtonsMethod(bilinearDomain,linearDomain,[Dqnp,qnp],[Dq,q],[Dp,p])
+newt_bilinearBoundary, newt_linearBoundary = newtonsMethod(bilinearBoundary,linearBoundary,[Dqnp,qnp],[Dq,q],[Dp,p])
+
+# Create relevant UFL strings
+
+class comp:
+    init_guess = init_guess()
+    manu_soln = manu_soln()
+    manu_forc = manu_forc()
+
+    n_bf_O = newt_bilinearDomain()
+    n_bf_G = newt_bilinearBoundary()
+    n_lf_O = newt_linearDomain()
+    n_lf_G = newt_linearBoundary()
 
 # END OF CODE

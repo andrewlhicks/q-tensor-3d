@@ -24,7 +24,7 @@ All settings files are contained in the folder 'settings'. Settings files are in
   - `visualize` - If 'true', creates a Paraview file to visualize the data
   - `manufactured` - If 'true', manufactures a solution, creates a unit cube mesh, and loops through different numbers of degrees of freedom
 
-- `paraview` - Specifies any paraview settings that need to be configured
+- `visdata` - Specifies any paraview settings that need to be configured
   - `file_path` - paraview/q-tensor-3d.pvd
 
 - `solverdata` - Settings specific to the PDE solver being used
@@ -34,10 +34,6 @@ All settings files are contained in the folder 'settings'. Settings files are in
 - `timedata` - Specifies the time step of the time-dependent PDE and the end time
   - `time_step`
   - `end_time`
-
-- `userfunc` - Allows the user to enter custom functions using Sympy notation
-  - `boundary` - Where do we want the vector to physically point on the boundary? Example: `Matrix([x0-10,x1-10,x2-10])/sp.sqrt((x0-10)**2 + (x1-10)**2 + (x2-10)**2 + 1e-10)`
-  - `initialGuess` - What is our initial guess for the solution to the PDE? Example: `zeros(3,1)`
 
 ## Choosing a mesh
 

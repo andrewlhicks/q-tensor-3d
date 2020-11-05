@@ -46,7 +46,7 @@ def prelimInfo():
     # If we are visualizing this in Paraview, print the path to the Paraview file
     
     if options.visualize:
-        print(f"Paraview file: {visdata.file_path}")
+        print(f"Paraview file: {color.blue}{visdata.file_path}{color.end}")
         print()
     
     # Unless we are manufacturing a solution, print the path to the mesh file; otherwise print the information for the unit cube meshes we will cycle through
@@ -59,7 +59,7 @@ def prelimInfo():
         print(f"Max mesh node struc:  {meshdata.numnodes_max} x {meshdata.numnodes_max} x {meshdata.numnodes_max}")
         print()
     else:
-        print(f"Mesh: {meshdata.file_path}")
+        print(f"Mesh: {color.blue}{meshdata.file_path}{color.end}")
         print()
 
 def prelimCompTitle():

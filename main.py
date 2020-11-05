@@ -15,18 +15,12 @@ pr.prelimInfo()
 pr.prelimCompTitle()
 
 # Preliminary computations
+
 timer = Timer()
+
 timer.start()
 
-import compute
-
-class ufl:
-    init_guess = compute.init_guess()
-    manu_soln = compute.manu_soln()
-    manu_forc = compute.manu_forc()
-
-    n_bf_O = compute.newt_bilinearDomain()
-    n_lf_O = compute.newt_linearDomain()
+from compute import comp
 
 timer.stop()
 
@@ -35,14 +29,14 @@ pr.pdeSolveTitle()
 
 if not settings.options.manufactured:
     mesh = fd.Mesh(settings.meshdata.file_path)
-    q_soln, time_elapsed = fd.solvePDE(ufl.n_bf_O,ufl.n_lf_O,ufl.init_guess,mesh)
+    q_soln, time_elapsed = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.init_guess,mesh)
     pr.pdeSolveInfo(time_elapsed=time_elapsed)
 else:
     numnodes = settings.meshdata.numnodes_init
     while numnodes <= settings.meshdata.numnodes_max:
         mesh = fd.UnitCubeMesh(numnodes,numnodes,numnodes)
-        q_soln, time_elapsed = fd.solvePDE(ufl.n_bf_O,ufl.n_lf_O,ufl.init_guess,mesh,forcing=ufl.manu_forc)
-        q_manu = fd.firedrakefy(ufl.manu_soln,mesh)
+        q_soln, time_elapsed = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.init_guess,mesh,forcing=comp.manu_forc)
+        q_manu = fd.firedrakefy(comp.manu_soln,mesh)
         h1_error = fd.errorH1(q_soln,q_manu)
         l2_error = fd.errorL2(q_soln,q_manu)
         pr.pdeSolveInfo(mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,time_elapsed=time_elapsed)

@@ -34,15 +34,16 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver
 
         # Solve
 
-        solve(newt_eqn, q_newt_delt, bcs=[bc], solver_parameters=solver_parameters)
+        # solve(newt_eqn, q_newt_delt, bcs=[bc], solver_parameters=solver_parameters)
+        solve(newt_eqn, q_newt_delt, solver_parameters=solver_parameters)
 
         q_newt_soln.assign(q_newt_delt + q_newt_prev)
 
-        if q_newt_delt.dat.data.max() < 10e-12: break
+        if q_newt_delt.dat.data.max() < 1e-12: break
 
     q_soln.assign(q_newt_soln)
 
-def solvePDE(bilinear_form,linear_form,initial_guess,mesh,forcing=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,forcing=None):
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
@@ -81,8 +82,8 @@ def solvePDE(bilinear_form,linear_form,initial_guess,mesh,forcing=None):
 
     # define bilinear form a(q,p), and linear form L(p)
 
-    a = eval(bilinear_form) * dx
-    L = eval(linear_form) * dx
+    a = eval(bilinear_form) * dx + eval(bilinear_form_bdy) * ds
+    L = eval(linear_form) * dx + eval(linear_form_bdy) * ds
 
     # Time loop
 
