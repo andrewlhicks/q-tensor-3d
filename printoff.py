@@ -10,26 +10,15 @@ from settings import const, meshdata, options, visdata, timedata, solverdata
 from misc import color
 from time import sleep
 
-def prelimTitle():
+def prelimInfo():
     # Print a blank line to create a better visual
     
     print()
-    
-    # Check to see if we should omit this printoff altogether
 
-    if options.omit_init_printoff:
-        return
-    
     # Print a new section
     
     print(f"{color.uline}PRELIMINARY INFO:{color.end}")
     print()
-
-def prelimInfo():
-    # Check to see if we should omit this printoff altogether
-
-    if options.omit_init_printoff:
-        return
     
     # Begin to print the preliminary information
     
@@ -39,6 +28,9 @@ def prelimInfo():
     print(f"            A = {const.A},")
     print(f"            B = {const.B},")
     print(f"            C = {const.C},")
+    print(f"           W0 = {const.W0},")
+    print(f"           W1 = {const.W1},")
+    print(f"           W2 = {const.W2},")
     print(f"      epsilon = {const.ep},")
     print(f"           L0 = {const.L0}")
     print()
@@ -48,19 +40,21 @@ def prelimInfo():
     if options.visualize:
         print(f"Paraview file: {color.blue}{visdata.file_path}{color.end}")
         print()
-    
-    # Unless we are manufacturing a solution, print the path to the mesh file; otherwise print the information for the unit cube meshes we will cycle through
-    
-    if options.manufactured:
-        print("Manufactured solution")
-        print("Mesh: unit cube mesh")
-        print()
-        print(f"Init mesh node struc: {meshdata.numnodes_init} x {meshdata.numnodes_init} x {meshdata.numnodes_init}")
-        print(f"Max mesh node struc:  {meshdata.numnodes_max} x {meshdata.numnodes_max} x {meshdata.numnodes_max}")
-        print()
-    else:
-        print(f"Mesh: {color.blue}{meshdata.file_path}{color.end}")
-        print()
+
+def meshInfo(mesh_name,**kwargs):
+    print(f"{color.uline}MESH INFO:{color.end}")
+    print()
+    print(f"Mesh: {mesh_name}")
+    for kw in kwargs:
+        if kw == 'numnodes_init':
+            print(f"Init mesh node struc: {kwargs['numnodes_init']} x {kwargs['numnodes_init']} x {kwargs['numnodes_init']}")
+        elif kw == 'numnodes_max':
+            print(f"Init mesh node struc: {kwargs['numnodes_max']} x {kwargs['numnodes_max']} x {kwargs['numnodes_max']}")
+        elif kw == 'no_refinements':
+            print(f"No. refinements: {kwargs['no_refinements']}")
+        elif kw == 'file_path':
+            print(f"Path: {color.blue}{kwargs['file_path']}{color.end}")
+    print()
 
 def prelimCompTitle():
     # Wait for 1 second, it looks nicer
@@ -90,13 +84,15 @@ def pdeSolveInfo(**kwargs):
     print()
     for arg in kwargs:
         if arg == 'mesh_numnodes':
-            print(f"Mesh node struc: {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']}")
+            print(f"Mesh node struc:  {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']}")
         elif arg == 'h1_error':
-            print(f"H1 error:        {kwargs['h1_error']:0.15f}")
+            print(f"H1 error:         {kwargs['h1_error']:0.15f}")
         elif arg == 'l2_error':
-            print(f"L2 error:        {kwargs['l2_error']:0.15f}")
-        if arg == 'time_elapsed':
-            print(f"Time elapsed:    {kwargs['time_elapsed']:0.2f} seconds")
+            print(f"L2 error:         {kwargs['l2_error']:0.15f}")
+        elif arg == 'time_elapsed':
+            print(f"Time elapsed:     {kwargs['time_elapsed']:0.2f} seconds")
+        elif arg == 'refinement_level':
+            print(f"Refinement level: {kwargs['refinement_level']}")
 
     print()
 

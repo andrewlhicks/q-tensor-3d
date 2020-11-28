@@ -1,7 +1,9 @@
 """ Treatment of the L1, L2, and L3 terms, since they are too complicated to write in-line. """
 
-from sympyplus import zeros, diff, innerp, E, x
+from sympyplus import *
 from settings import const
+
+nu = Matrix([x[0],x[1],x[2]])
 
 def termL1(grad1,grad2):
     return innerp(grad1,grad2)
@@ -54,5 +56,48 @@ def strongL3(Q):
     
     return term
 
+def strongGammaL1(Q):
+    term = zeros(3,3)
+    
+    for ii in range(3):
+            for jj in range(3):
+                for kk in range(3):
+                    term[ii,jj] += nu[kk]*diff(Q[ii,jj],x[kk])
+    
+    return term
+
+def strongGammaL2(Q):
+    term = zeros(3,3)
+        
+    for ii in range(3):
+        for jj in range(3):
+            for kk in range(3):
+                term[ii,jj] += nu[jj]*diff(Q[ii,kk],x[kk])
+    
+    return term
+
+def strongGammaL3(Q):  
+    term = zeros(3,3)
+        
+    for ii in range(3):
+        for jj in range(3):
+            for kk in range(3):
+                term[ii,jj] += nu[kk]*diff(Q[ii,kk],x[jj])
+    
+    return term
+
+# S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
+S0 = 1
+Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+Pi = eye(3) - outerp(nu,nu)
+
+def tilde(Q):
+    return Q + S0/3*eye(3)
+
+###
+
 def strongForm(G): # plugs G into the strong form PDE
     return const.L1*strongL1(G) + const.L2*strongL2(G) + const.L3*strongL3(G) + (1/const.ep**2)*(-const.A*G - const.B*G*G + const.C*innerp(G,G)*G)
+
+def strongFormGamma(G):
+    return const.L1*strongGammaL1(G) + const.L2*strongGammaL2(G) + const.L3*strongGammaL3(G) + const.W0*(G-Q0) + const.W1*(tilde(G)-Pi*tilde(G)*Pi) + const.W2*(innerp(tilde(G),tilde(G))-S0**2)*G

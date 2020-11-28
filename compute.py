@@ -4,21 +4,28 @@ from settings import const, options
 
 # Initial guess and manufactured solution
 
-n = Matrix([cos(x[0]+x[1]+x[2]),sin(x[0]+x[1]+x[2]),0])
-G = outerp(n,n) - (1.0/3.0) * eye(3)
+# n = Matrix([cos(x[0]+x[1]+x[2]),sin(x[0]+x[1]+x[2]),0])
+# G = outerp(n,n) - (1.0/3.0) * eye(3)
+M = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
+			[sin(x[1]),cos(x[1]),sin(x[2])],
+			[cos(x[2]),sin(x[2]),sin(x[0])]])
+G = M - trace(M)/3*eye(3)
 g = vectorfy(G)
-h = 0*(x[0]**2-x[0])*(x[1]**2-x[1])*(x[2]**2-x[2])*Matrix([1,1,1,1,1])
+h = (x[0]**2-x[0])*(x[1]**2-x[1])*(x[2]**2-x[2])*Matrix([1,1,1,1,1])
 
 # Intial guess and boundary
 
 def init_guess():
-    return uflfy(g + h)
+    return uflfy(g)
 
 def manu_soln():
     return uflfy(g)
 
 def manu_forc():
     return uflfy(vectorfy(strongForm(G)))
+
+def manu_forc_gam():
+	return uflfy(vectorfy(strongFormGamma(G)))
 
 # Set up Qvector objects
 
@@ -41,8 +48,10 @@ Dqnp = qnp.grad
 QNP = qnp.tens
 
 f = QVector('f')
+f_gam = QVector('f_gam')
 
 S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
+S0 = 1
 Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 QT = Q + S0*eye(3)
 Pi = eye(3) - outerp(nu,nu)
@@ -61,8 +70,8 @@ bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
 bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
 
 bfNAnchor = GeneralForm(const.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
-bfPDAnchor1 = GeneralForm(const.W1*innerp(Q-Pi*Q*Pi,P-Pi*P*Pi),[Dq,q],[Dp,p],name='bfPDAnchor1')
-bfPDAnchor2 = GeneralForm(const.W2*(innerp(Q,Q)*innerp(Q,P)-8*S0**2/9*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
+bfPDAnchor1 = GeneralForm(const.W1*innerp(QT-Pi*QT*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1')
+bfPDAnchor2 = GeneralForm(const.W2*((innerp(Q,Q) - 2*S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
 
 # Linear forms
 
@@ -70,7 +79,7 @@ lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
 lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
 lfNAnchor = GeneralForm(const.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
-lfPDAnchor1 = GeneralForm(const.W1*S0/3.0*innerp(eye(3)-Pi,P-Pi*P*Pi),[Dp,p],name='lfPDAnchor1')
+lfPDAnchor1 = GeneralForm(const.W1*innerp(S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
 
 # Lefthand side
 
@@ -83,7 +92,11 @@ linearDomain = rhsForm([Dp,p],forms=[lfTimeStep,lfBulkE])
 if options.manufactured:
     lfManuForcing = GeneralForm(f.dot(p),[Dp,p],name='lfManuForcing')
     linearDomain.add_form(lfManuForcing)
-linearBoundary = rhsForm([Dp,p],forms=[lfNAnchor,lfPDAnchor1])
+linearBoundary = rhsForm([Dp,p])
+linearBoundary.add_form(lfNAnchor,lfPDAnchor1)
+if options.manufactured:
+    lfManuForcingGamma = GeneralForm(f_gam.dot(p),[Dp,p],name='lfManuForcingGamma')
+    linearBoundary.add_form(lfManuForcingGamma)
 
 # Newton's method
 
@@ -96,6 +109,7 @@ class comp:
     init_guess = init_guess()
     manu_soln = manu_soln()
     manu_forc = manu_forc()
+    manu_forc_gam = manu_forc_gam()
 
     n_bf_O = newt_bilinearDomain()
     n_bf_G = newt_bilinearBoundary()

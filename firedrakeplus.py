@@ -4,13 +4,20 @@ only. """
 
 from firedrake import *
 
+class nrm:
+    def inf(function):
+        from numpy import abs
+        return abs(function.dat.data.max())
+    def H1(function):
+        return sqrt(assemble((inner(grad(function),grad(function)) + dot(function,function)) * dx))
+    def L2(function):
+        return sqrt(assemble(dot(function,function) * dx))
+
 def errorH1(func_comp,func_true):
-    diff = func_comp - func_true
-    return sqrt(assemble((inner(grad(diff),grad(diff)) + dot(diff,diff)) * dx))
+    return nrm.H1(func_comp - func_true)
 
 def errorL2(func_comp,func_true):
-    diff = func_comp - func_true
-    return sqrt(assemble((dot(diff,diff)) * dx))
+    return nrm.L2(func_comp - func_true)
 
 def firedrakefy(func,mesh):
     H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5)
@@ -35,15 +42,15 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver
         # Solve
 
         # solve(newt_eqn, q_newt_delt, bcs=[bc], solver_parameters=solver_parameters)
-        solve(newt_eqn, q_newt_delt, solver_parameters=solver_parameters)
+        solve(newt_eqn, q_newt_delt, bcs=None, solver_parameters=solver_parameters)
 
         q_newt_soln.assign(q_newt_delt + q_newt_prev)
 
-        if q_newt_delt.dat.data.max() < 1e-12: break
+        if nrm.inf(q_newt_soln) < 1e-12: break
 
     q_soln.assign(q_newt_soln)
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,forcing=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,forcing=None,forcing_gamma=None):
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
@@ -68,10 +75,12 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     q_prev = Function(H1_vec)
     q_newt_prev = Function(H1_vec)
     
-    # Non-updated onstant functions
+    # Non-updated constant functions
 
     if forcing is not None:
         f = interpolate(eval(forcing),H1_vec) # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
+    if forcing_gamma is not None:
+        f_gam = interpolate(eval(forcing_gamma),H1_vec)
     q_init = interpolate(eval(initial_guess),H1_vec)
 
     # First q_soln is taken to be the initial guess
@@ -82,8 +91,12 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     # define bilinear form a(q,p), and linear form L(p)
 
-    a = eval(bilinear_form) * dx + eval(bilinear_form_bdy) * ds
-    L = eval(linear_form) * dx + eval(linear_form_bdy) * ds
+    a = eval(bilinear_form) * dx
+    if eval(bilinear_form_bdy) != 0:
+        a += eval(bilinear_form_bdy) * ds
+    L = eval(linear_form) * dx
+    if eval(linear_form_bdy) != 0:
+        L += eval(linear_form_bdy) * ds
 
     # Time loop
 
@@ -95,9 +108,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         # Assign the solution from the previous loop to q_prev
         q_prev.assign(q_soln)
         
-        newtonSolve(a == L, q_soln, q_newt_prev, q_prev, solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
-                                                                         'pc_type'  : solverdata.pc_type,         # preconditioner type
-                                                                         'mat_type' : 'aij' })
+        newtonSolve(a == L, q_soln, q_newt_prev, q_prev,
+            solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
+                               'pc_type'  : solverdata.pc_type,         # preconditioner type
+                               'mat_type' : 'aij' })
 
         # Write eigenvectors and eigenvalues to Paraview
         
