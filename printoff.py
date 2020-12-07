@@ -43,18 +43,35 @@ def prelimInfo():
 
 def meshInfo(mesh_name,**kwargs):
     print(f"{color.uline}MESH INFO:{color.end}")
-    print()
-    print(f"Mesh: {mesh_name}")
+
+    # assemble dicts
+
+    dicts = []
+
+    dicts.append({'title':'Mesh','text':mesh_name})
+
     for kw in kwargs:
         if kw == 'numnodes_init':
-            print(f"Init mesh node struc: {kwargs['numnodes_init']} x {kwargs['numnodes_init']} x {kwargs['numnodes_init']}")
-        elif kw == 'numnodes_max':
-            print(f"Init mesh node struc: {kwargs['numnodes_max']} x {kwargs['numnodes_max']} x {kwargs['numnodes_max']}")
+            dicts.append({'title':'Init mesh node struc','text':f'{kwargs[kw]} x {kwargs[kw]} x {kwargs[kw]}'})
+        elif kw == 'numnodes_final':
+            dicts.append({'title':'Final mesh node struc','text':f'{kwargs[kw]} x {kwargs[kw]} x {kwargs[kw]}'})
         elif kw == 'no_refinements':
-            print(f"No. refinements: {kwargs['no_refinements']}")
+            dicts.append({'title':'No. refinements','text':kwargs[kw]})
         elif kw == 'file_path':
-            print(f"Path: {color.blue}{kwargs['file_path']}{color.end}")
-    print()
+            dicts.append({'title':'Path','text':f'{color.blue}kwargs[kw]{color.end}'})
+
+    # for kw in kwargs:
+    #     if kw == 'numnodes_init':
+    #         print(f"Init mesh node struc: {kwargs['numnodes_init']} x {kwargs['numnodes_init']} x {kwargs['numnodes_init']}")
+    #     elif kw == 'numnodes_max':
+    #         print(f"Init mesh node struc: {kwargs['numnodes_max']} x {kwargs['numnodes_max']} x {kwargs['numnodes_max']}")
+    #     elif kw == 'no_refinements':
+    #         print(f"No. refinements: {kwargs['no_refinements']}")
+    #     elif kw == 'file_path':
+    #         print(f"Path: {color.blue}{kwargs['file_path']}{color.end}")
+    # print()
+
+    print_lines(*dicts)
 
 def prelimCompTitle():
     # Wait for 1 second, it looks nicer
@@ -80,20 +97,57 @@ def pdeSolveTitle():
     print(f"{color.uline}PDE SOLVE:{color.end}")
     print()
 
-def pdeSolveInfo(**kwargs):
-    print()
-    for arg in kwargs:
-        if arg == 'mesh_numnodes':
-            print(f"Mesh node struc:  {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']} x {kwargs['mesh_numnodes']}")
-        elif arg == 'h1_error':
-            print(f"H1 error:         {kwargs['h1_error']:0.15f}")
-        elif arg == 'l2_error':
-            print(f"L2 error:         {kwargs['l2_error']:0.15f}")
-        elif arg == 'time_elapsed':
-            print(f"Time elapsed:     {kwargs['time_elapsed']:0.2f} seconds")
-        elif arg == 'refinement_level':
-            print(f"Refinement level: {kwargs['refinement_level']}")
+def print_lines(*args):
+    """ Args are dictionaries with 'title' and 'text' """
+
+    def print_line(title,text):
+        if not isinstance(title,str):
+            raise TypeError('Title must be a string.')
+
+        title_len = len(title)
+        spaces_len = int(indent_len - 1 - title_len)
+        if spaces_len < 0: spaces_len = 0
+
+        spaces = ''.join([' ' for _ in range(spaces_len)])
+        print(f"{title}:{spaces}{text}")
+
+    indent_len = int(0)
+
+    for arg in args:
+        if len(arg['title']) + 2 > indent_len:
+            indent_len = len(arg['title']) + 2
 
     print()
+    for arg in args:
+        print_line(arg['title'],arg['text'])
+    print()
+    
+def pdeSolveInfo(**kwargs):
+    # assemble dicts
+
+    dicts = []
+
+    for kw in kwargs:
+        if kw == 'mesh_numnodes':
+            dicts.append({'title':'Mesh node struc','text':f'{kwargs[kw]} x {kwargs[kw]} x {kwargs[kw]}'})
+        elif kw == 'h1_error':
+            dicts.append({'title':'H1 error','text':f'{kwargs[kw]:0.15f}'})
+        elif kw == 'l2_error':
+            dicts.append({'title':'L2 error','text':f'{kwargs[kw]:0.15f}'})
+        elif kw == 'time_elapsed':
+            dicts.append({'title':'Time elapsed','text':f'{kwargs[kw]:0.2f} seconds'})
+        elif kw == 'refinement_level':
+            dicts.append({'title':'Refinement level','text':kwargs[kw]})
+        elif kw == 'energy':
+            dicts.append({'title':'Energy','text':kwargs[kw]})
+        elif kw == 'custom':
+            dicts.append(kwargs[kw])
+
+    print_lines(*dicts)
+
+def warning(text):
+    if not isinstance(text,str):
+        raise TypeError('Warnings must be composed of a string.')
+    print(f'{color.warning}Warning: {text}{color.end}')
 
 # END OF CODE

@@ -186,6 +186,10 @@ def outerp(A,B):
     """ Returns the "outer" or "tensor" product of two matrices. """
     return A*B.T
 
+def fnorm(A):
+    """ Returns the Frobenius norm of the matrix. """
+    return sqrt(innerp(A,A))
+
 # Other
 
 def checkIfQTensor(obj):
@@ -440,6 +444,12 @@ class GeneralForm:
 
     def uflfy(self):
         return uflfy(self.expr)
+
+class Lagrangian(GeneralForm):
+    def __init__(self,expr,*params,name=None):
+        if len(params) != 1:
+            raise ValueError(f'Lagrangian must contain only one parameter. {len(params)} were given.')
+        return super.__init__(self,expr,*params,name=None)
 
 class QTensor(Matrix):
     """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.

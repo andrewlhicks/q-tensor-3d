@@ -16,8 +16,10 @@ settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 # Settings
 
 class const:
+	from numpy import sqrt
 	L1, L2, L3, A, B, C, ep, W0, W1, W2 = getValues(settings_dict['const'],'L1, L2, L3, A, B, C, ep, W0, W1, W2')
 	L0 = 2*(A+B**2/C) if settings_dict['const']['L0'] == 'auto' else settings_dict['const']['L0']
+	S0 = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
 class meshdata: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 	file_path, numnodes_init, numnodes_max = getValues(settings_dict['meshdata'],'file_path, numnodes_init, numnodes_max')
 class options:

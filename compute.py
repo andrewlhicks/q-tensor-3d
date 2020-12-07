@@ -51,7 +51,6 @@ f = QVector('f')
 f_gam = QVector('f_gam')
 
 S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-S0 = 1
 Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 QT = Q + S0*eye(3)
 Pi = eye(3) - outerp(nu,nu)
@@ -59,8 +58,12 @@ Pi = eye(3) - outerp(nu,nu)
 # Energies
 
 energyElastic = GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
+# energyBulk = GeneralForm(const.A/2*trace(Q**2) - const.B/3*trace(Q**3) + const.C/4*trace(Q**2)**2,[Dq,q])
 energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
 energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
+
+# energyNAnchor = GeneralForm(const.W0/2*fnorm(Q-Q0)**2,[Dq,q])
+# energyPDAnchor = GeneralForm(const.W1/2*fnorm(QT-Pi*QT*Pi)**2 + const.W2/4*(fnorm(QT)**2-S0**2)**2,[Dq,q])
 
 # Bilinear forms
 

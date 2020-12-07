@@ -3,21 +3,31 @@ firedrake. The functions here are intended to be used on firedrake objects
 only. """
 
 from firedrake import *
+from compute import comp
 
 class nrm:
     def inf(function):
         from numpy import abs
         return abs(function.dat.data.max())
-    def H1(function):
-        return sqrt(assemble((inner(grad(function),grad(function)) + dot(function,function)) * dx))
-    def L2(function):
-        return sqrt(assemble(dot(function,function) * dx))
+    def H1(function,mesh):
+        return sqrt(assemble((inner(grad(function),grad(function)) + dot(function,function)) * dx(domain=mesh)))
+    def L2(function,mesh):
+        return sqrt(assemble(dot(function,function) * dx(domain=mesh)))
 
-def errorH1(func_comp,func_true):
-    return nrm.H1(func_comp - func_true)
+def computeEnergy(function,mesh):
+    from energycomps import elastic, bulk, forcing_f, forcing_g, anchor_n, anchor_pd
+    facet_normal = FacetNormal(mesh)
+    f = firedrakefy(comp.manu_forc,mesh)
+    g = firedrakefy(comp.manu_forc_gam,mesh)
+    domain_integral = assemble((elastic(function) + bulk(function) - forcing_f(function,f)) * dx)
+    boundary_integral = assemble((anchor_n(function,facet_normal) + anchor_pd(function,facet_normal) - forcing_g(function,g)) * ds)
+    return domain_integral + boundary_integral
 
-def errorL2(func_comp,func_true):
-    return nrm.L2(func_comp - func_true)
+def errorH1(func_comp,func_true,mesh):
+    return nrm.H1(func_comp - func_true,mesh)
+
+def errorL2(func_comp,func_true,mesh):
+    return nrm.L2(func_comp - func_true,mesh)
 
 def firedrakefy(func,mesh):
     H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5)
@@ -54,6 +64,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
+    import numpy as np
 
     # Define function space, coordinates, and q_soln
     
@@ -103,7 +114,11 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     timer = Timer()
     timer.start()
 
-    for time in progressbar(range(0,timedata.end_time,timedata.time_step),redirect_stdout=True):
+    no_times = int(timedata.end_time/timedata.time_step)
+    times = np.arange(0,timedata.end_time,timedata.time_step)
+    energies = np.array([])
+
+    for time in progressbar(times,redirect_stdout=True):
 
         # Assign the solution from the previous loop to q_prev
         q_prev.assign(q_soln)
@@ -117,9 +132,11 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         
         if options.visualize: visualize(q_soln,mesh)
 
+        energies = np.append(energies,computeEnergy(q_soln,mesh))
+
     timer.stop()
 
-    return (q_soln, timer.time_elapsed)
+    return (q_soln, timer.time_elapsed, times, energies)
 
 def tensorfy(vector):
     # Basis of Q-tensor for Eigen calculation
