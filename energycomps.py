@@ -3,10 +3,21 @@
 from firedrake import *
 from firedrakeplus import tensorfy
 from settings import const
+from sympyplus import levi_civita
 
 def elastic(q):
 	Q = tensorfy(q)
-	return const.L1/2*Q[i,j].dx(k)*Q[i,j].dx(k) + const.L2/2*Q[i,j].dx(j)*Q[i,k].dx(k) + const.L3/2*Q[i,j].dx(k)*Q[i,k].dx(j)
+	summ = const.L1/2*Q[i,j].dx(k)*Q[i,j].dx(k) + const.L2/2*Q[i,j].dx(j)*Q[i,k].dx(k) + const.L3/2*Q[i,j].dx(k)*Q[i,k].dx(j)
+
+	for ii in range(3):
+		for jj in range(3):
+			for kk in range(3):
+				for ll in range(3):
+					summ += const.L1/2*const.q0*levi_civita(ii,kk,ll)*Q[ll,jj].dx(kk)*Q[ii,jj]
+
+	summ += const.L1/2*const.q0**2*inner(Q,Q)
+
+	return summ
 
 def bulk(q):
 	Q = tensorfy(q)

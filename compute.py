@@ -23,32 +23,13 @@ def manu_soln():
 
 def manu_forc():
     return uflfy(vectorfy(strongForm(G)))
+    # return uflfy(Matrix([0,0,0,0,0]))
 
 def manu_forc_gam():
 	return uflfy(vectorfy(strongFormGamma(G)))
+    # return uflfy(Matrix([0,0,0,0,0]))
 
-# Set up Qvector objects
-
-nu = AbstractVector('nu')
-
-q = QVector('q')
-Dq = q.grad
-Q = q.tens
-
-p = QVector('p')
-Dp = p.grad
-P = p.tens
-
-qp = QVector('q_prev')
-Dqp = qp.grad
-QP = qp.tens
-
-qnp = QVector('q_newt_prev')
-Dqnp = qnp.grad
-QNP = qnp.tens
-
-f = QVector('f')
-f_gam = QVector('f_gam')
+###
 
 S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
 Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
@@ -58,12 +39,8 @@ Pi = eye(3) - outerp(nu,nu)
 # Energies
 
 energyElastic = GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
-# energyBulk = GeneralForm(const.A/2*trace(Q**2) - const.B/3*trace(Q**3) + const.C/4*trace(Q**2)**2,[Dq,q])
 energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
 energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
-
-# energyNAnchor = GeneralForm(const.W0/2*fnorm(Q-Q0)**2,[Dq,q])
-# energyPDAnchor = GeneralForm(const.W1/2*fnorm(QT-Pi*QT*Pi)**2 + const.W2/4*(fnorm(QT)**2-S0**2)**2,[Dq,q])
 
 # Bilinear forms
 
@@ -72,8 +49,10 @@ bfElastic = variationalDerivative(energyElastic,[Dq,q],[Dp,p],name='bfElastic')
 bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
 bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
 
+bfTwist = GeneralForm(const.L1/2*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
+
 bfNAnchor = GeneralForm(const.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
-bfPDAnchor1 = GeneralForm(const.W1*innerp(QT-Pi*QT*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1')
+bfPDAnchor1 = GeneralForm(const.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1') # This was WRONG and nonlinear. Why didn't the code catch this?
 bfPDAnchor2 = GeneralForm(const.W2*((innerp(Q,Q) - 2*S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
 
 # Linear forms
@@ -82,11 +61,11 @@ lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
 lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
 lfNAnchor = GeneralForm(const.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
-lfPDAnchor1 = GeneralForm(const.W1*innerp(S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
+lfPDAnchor1 = GeneralForm(const.W1*innerp(-S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
 
 # Lefthand side
 
-bilinearDomain = lhsForm([Dq,q],[Dp,p],forms=[bfTimeStep,bfElastic,bfBulkC])
+bilinearDomain = lhsForm([Dq,q],[Dp,p],forms=[bfTimeStep,bfElastic,bfBulkC,bfTwist])
 bilinearBoundary = lhsForm([Dq,q],[Dp,p],forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
 
 # Righthand side

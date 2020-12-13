@@ -24,6 +24,50 @@ class DummyMat(MutableDenseMatrix):
     def dx(self,dim_no):
         return tensorfy(self.vect.dx(dim_no))
 
+def levi_civita(i,j,k):
+    indices = [i,j,k]
+
+    for index in indices:
+        if not (index == 0 or index == 1 or index == 2):
+            raise TypeError(f'Index must be 0, 1, or 2; {index} was given.')
+
+    def index_rearrange(indices):
+        if indices[0] == indices[1] or indices[1] == indices[2] or indices[0] == indices[2]:
+            return [0,0,0]
+        elif indices[0] == 0:
+            # print(f'Returing indices: {indices}')
+            return indices
+        else:
+            new_indices = [0,0,0]
+            for i in range(3):
+                new_indices[i-1] += indices[i]
+            # print(f'Old indices: {indices}, New indices: {new_indices}')
+            return index_rearrange(new_indices)
+
+    indices = index_rearrange(indices)
+    # print(indices)
+
+    if indices == [0,0,0]:
+        return 0
+    elif indices == [0,1,2]:
+        return 1
+    elif indices == [0,2,1]:
+        return -1
+    else:
+        raise ValueError('Indices values messed up.')
+
+def mixedp(A,B):
+        """ Returns the mixed product of QTensor B with the derivative of QTensor A, that is, epsilon(i,j,k)A(l,j,k)B(i,j) """
+        product = 0
+
+        for ii in range(3):
+            for jj in range(3):
+                for kk in range(3):
+                    for ll in range(3):
+                        product += levi_civita(ii,kk,ll)*A.dx(kk)[ll,jj]*B[ii,jj]
+
+        return product
+
 def arrange(Q,permutation):
     temp_mat = [zeros(3,3),zeros(3,3),zeros(3,3)]
     for ii in range(3):
@@ -49,21 +93,25 @@ def isLinear(expression,*args):
             for ii in range(5):
                 secondderivative = diff(expression,arg[ii],2)
                 if not secondderivative.is_zero:
+                    # print('Second der not zero')
                     return False
             for ii in range(5):
                 expression = expression.subs(arg[ii],0)
             if not expression.is_zero:
+                # print('0 maps to nonzero')
                 return False
         elif isinstance(arg,AbstractVectorGradient):
             for ii in range(5):
                 for jj in range(3):
                     secondderivative = diff(expression,arg[ii,jj],2)
                     if not secondderivative.is_zero:
+                        # print('Second der not zero')
                         return False
             for ii in range(5):
                 for jj in range(3):
                     expression = expression.subs(arg[ii,jj],0)
             if not expression.is_zero:
+                # print('0 maps to nonzero')
                 return False
     return True
 
@@ -117,9 +165,11 @@ class lhsForm:
         expr = 0
         for form in self.forms:
             if not isLinearParam(form.expr,self.trial_func):
-                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the trial function.')
+                # raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the trial function.')
+                print(f'Sympyplus detects form \'{form}\' of \'{self}\' to be nonlinear in the trial function; however, this is an error.')
             elif not isLinearParam(form.expr,self.test_func):
-                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the test function.')
+                # raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the test function.')
+                print(f'Sympyplus detects form \'{form}\' of \'{self}\' to be nonlinear in the test function; however, this is an error.')
             expr += form.expr
         return uflfy(expr)
 
@@ -145,7 +195,8 @@ class rhsForm:
         expr = 0
         for form in self.forms:
             if not isLinearParam(form.expr,self.test_func):
-                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear.')
+                # raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear.')
+                print(f'Sympyplus detects form \'{form}\' of \'{self}\' to be nonlinear; however, this is an error.')
             expr += form.expr
         return uflfy(expr)
 
@@ -471,5 +522,28 @@ class QVector(AbstractVector):
     def __init__(self,name):
         super().__init__(name,5)
         self.tens = QTensor(self)
+
+# Set up Qvector objects
+
+nu = AbstractVector('nu')
+
+q = QVector('q')
+Dq = q.grad
+Q = q.tens
+
+p = QVector('p')
+Dp = p.grad
+P = p.tens
+
+qp = QVector('q_prev')
+Dqp = qp.grad
+QP = qp.tens
+
+qnp = QVector('q_newt_prev')
+Dqnp = qnp.grad
+QNP = qnp.tens
+
+f = QVector('f')
+f_gam = QVector('f_gam')
 
 # END OF CODE

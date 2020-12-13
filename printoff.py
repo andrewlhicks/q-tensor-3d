@@ -25,6 +25,7 @@ def prelimInfo():
     print(f"Constants: L1 = {const.L1},                   Time step: {timedata.time_step}                         KSP type: \"{solverdata.ksp_type}\"")
     print(f"           L2 = {const.L2},                   End time: {timedata.end_time}                         PC type:  \"{solverdata.pc_type}\"")
     print(f"           L3 = {const.L3},                   No. time steps: {timedata.end_time/timedata.time_step:0.0f}")
+    print(f"           q0 = {const.q0}")
     print(f"            A = {const.A},")
     print(f"            B = {const.B},")
     print(f"            C = {const.C},")

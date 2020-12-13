@@ -43,15 +43,16 @@ else:
     #     l2_error = fd.errorL2(q_soln,q_manu)
     #     pr.pdeSolveInfo(mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,time_elapsed=time_elapsed)
     #     numnodes *= 2
-    no_refinements = 3
+    no_refinements = 4
 
     pr.meshInfo('Unit Sphere Mesh',no_refinements=no_refinements)
     pr.pdeSolveTitle()
 
-    fig, ax = plt.subplots(figsize=(10,10))
-    fig.suptitle('Energy decrease',fontsize=16)
+    
     
     for refinement_level in range(no_refinements):
+        fig, ax = plt.subplots(figsize=(10,10))
+        fig.suptitle('Energy decrease',fontsize=16)
 
         mesh = fd.Mesh(f'meshes/sphere{refinement_level}.msh')
         q_manu = fd.firedrakefy(comp.manu_soln,mesh)
@@ -61,10 +62,9 @@ else:
 
         for i in range(1,len(energies)):
             if energies[i]-energies[i-1] > 0:
-                pr.warning(f'Energy decrease failed at time t = {times[i]}')
+                pr.warning(f'Energy decrease failed at time t = {times[i]} by {energies[i]-energies[i-1]}')
 
-        if refinement_level == no_refinements - 1:
-            plot.time_vs_energy(ax,times,energies,refinement_level=refinement_level,manu_energy=None)
+        plot.time_vs_energy(ax,times,energies,refinement_level=refinement_level,manu_energy=None)
 
         h1_error = fd.errorH1(q_soln,q_manu,mesh)
         l2_error = fd.errorL2(q_soln,q_manu,mesh)
@@ -72,6 +72,6 @@ else:
         
         pr.pdeSolveInfo(refinement_level=refinement_level,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)
     
-    plt.savefig('plots/energy_decrease.png')
+        plt.savefig(f'plots/energy_decrease_ref_{refinement_level}.png')
 
 # END OF CODE

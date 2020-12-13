@@ -55,8 +55,8 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver
         solve(newt_eqn, q_newt_delt, bcs=None, solver_parameters=solver_parameters)
 
         q_newt_soln.assign(q_newt_delt + q_newt_prev)
-
-        if nrm.inf(q_newt_soln) < 1e-12: break
+        # print(nrm.inf(q_newt_delt))
+        if nrm.inf(q_newt_delt) < 1e-12: break
 
     q_soln.assign(q_newt_soln)
 
