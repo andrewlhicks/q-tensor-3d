@@ -3,7 +3,23 @@ firedrake. The functions here are intended to be used on firedrake objects
 only. """
 
 from firedrake import *
-from compute import comp
+import functools
+
+"""
+Example of a decorator:
+
+def decorator(func):
+    @functools.wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        # Do something before
+        value = func(*args, **kwargs)
+        # Do something after
+        return value
+    return wrapper_decorator
+
+"""
+
+zero_vec = as_vector([0,0,0,0,0])
 
 class nrm:
     def inf(function):
@@ -14,13 +30,20 @@ class nrm:
     def L2(function,mesh):
         return sqrt(assemble(dot(function,function) * dx(domain=mesh)))
 
-def computeEnergy(function,mesh):
-    from energycomps import elastic, bulk, forcing_f, forcing_g, anchor_n, anchor_pd
+def computeEnergy(function,mesh,forcing_f=None,forcing_g=None):
+    from energycomps import elastic, bulk, anchor_n, anchor_pd
+
+    H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
+    x0, x1, x2 = SpatialCoordinate(mesh)
+
+    f = interpolate(zero_vec,H1_vec) if forcing_f is None else interpolate(eval(forcing_f),H1_vec)
+    g = interpolate(zero_vec,H1_vec) if forcing_g is None else interpolate(eval(forcing_g),H1_vec)
+
     facet_normal = FacetNormal(mesh)
-    f = firedrakefy(comp.manu_forc,mesh)
-    g = firedrakefy(comp.manu_forc_gam,mesh)
-    domain_integral = assemble((elastic(function) + bulk(function) - forcing_f(function,f)) * dx)
-    boundary_integral = assemble((anchor_n(function,facet_normal) + anchor_pd(function,facet_normal) - forcing_g(function,g)) * ds)
+
+    domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
+    boundary_integral = assemble((anchor_n(function,facet_normal) + anchor_pd(function,facet_normal) - dot(function,g)) * ds)
+    
     return domain_integral + boundary_integral
 
 def errorH1(func_comp,func_true,mesh):
@@ -60,7 +83,7 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver
 
     q_soln.assign(q_newt_soln)
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,forcing=None,forcing_gamma=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
@@ -87,11 +110,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     q_newt_prev = Function(H1_vec)
     
     # Non-updated constant functions
+    # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
 
-    if forcing is not None:
-        f = interpolate(eval(forcing),H1_vec) # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
-    if forcing_gamma is not None:
-        f_gam = interpolate(eval(forcing_gamma),H1_vec)
+    f = interpolate(zero_vec,H1_vec) if forcing_f is None else interpolate(eval(forcing_f),H1_vec)
+    g = interpolate(zero_vec,H1_vec) if forcing_g is None else interpolate(eval(forcing_g),H1_vec)
     q_init = interpolate(eval(initial_guess),H1_vec)
 
     # First q_soln is taken to be the initial guess
@@ -132,7 +154,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         
         if options.visualize: visualize(q_soln,mesh)
 
-        energies = np.append(energies,computeEnergy(q_soln,mesh))
+        energies = np.append(energies,computeEnergy(q_soln,mesh,forcing_f=forcing_f,forcing_g=forcing_g))
 
     timer.stop()
 

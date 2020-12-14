@@ -544,6 +544,6 @@ Dqnp = qnp.grad
 QNP = qnp.tens
 
 f = QVector('f')
-f_gam = QVector('f_gam')
+g = QVector('g')
 
 # END OF CODE

@@ -6,28 +6,12 @@ from settings import const, options
 
 # n = Matrix([cos(x[0]+x[1]+x[2]),sin(x[0]+x[1]+x[2]),0])
 # G = outerp(n,n) - (1.0/3.0) * eye(3)
-M = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
+X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
 			[sin(x[1]),cos(x[1]),sin(x[2])],
 			[cos(x[2]),sin(x[2]),sin(x[0])]])
-G = M - trace(M)/3*eye(3)
-g = vectorfy(G)
-h = (x[0]**2-x[0])*(x[1]**2-x[1])*(x[2]**2-x[2])*Matrix([1,1,1,1,1])
-
-# Intial guess and boundary
-
-def init_guess():
-    return uflfy(g)
-
-def manu_soln():
-    return uflfy(g)
-
-def manu_forc():
-    return uflfy(vectorfy(strongForm(G)))
-    # return uflfy(Matrix([0,0,0,0,0]))
-
-def manu_forc_gam():
-	return uflfy(vectorfy(strongFormGamma(G)))
-    # return uflfy(Matrix([0,0,0,0,0]))
+M = X - trace(X)/3*eye(3)
+m = vectorfy(M)
+# h = (x[0]**2-x[0])*(x[1]**2-x[1])*(x[2]**2-x[2])*Matrix([1,1,1,1,1])
 
 ###
 
@@ -63,22 +47,16 @@ lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 lfNAnchor = GeneralForm(const.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
 lfPDAnchor1 = GeneralForm(const.W1*innerp(-S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
 
-# Lefthand side
+lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
+lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')
+
+# Assemble LHS, RHS
 
 bilinearDomain = lhsForm([Dq,q],[Dp,p],forms=[bfTimeStep,bfElastic,bfBulkC,bfTwist])
 bilinearBoundary = lhsForm([Dq,q],[Dp,p],forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
 
-# Righthand side
-
-linearDomain = rhsForm([Dp,p],forms=[lfTimeStep,lfBulkE])
-if options.manufactured:
-    lfManuForcing = GeneralForm(f.dot(p),[Dp,p],name='lfManuForcing')
-    linearDomain.add_form(lfManuForcing)
-linearBoundary = rhsForm([Dp,p])
-linearBoundary.add_form(lfNAnchor,lfPDAnchor1)
-if options.manufactured:
-    lfManuForcingGamma = GeneralForm(f_gam.dot(p),[Dp,p],name='lfManuForcingGamma')
-    linearBoundary.add_form(lfManuForcingGamma)
+linearDomain = rhsForm([Dp,p],forms=[lfTimeStep,lfBulkE,lf_ForcingF])
+linearBoundary = rhsForm([Dp,p],forms=[lfNAnchor,lfPDAnchor1,lf_ForcingG])
 
 # Newton's method
 
@@ -88,10 +66,10 @@ newt_bilinearBoundary, newt_linearBoundary = newtonsMethod(bilinearBoundary,line
 # Create relevant UFL strings
 
 class comp:
-    init_guess = init_guess()
-    manu_soln = manu_soln()
-    manu_forc = manu_forc()
-    manu_forc_gam = manu_forc_gam()
+    initial_q = uflfy(m)
+    manufac_q = uflfy(m)
+    forcing_f = uflfy(vectorfy(strongForm(M)))
+    forcing_g = uflfy(vectorfy(strongFormGamma(M)))
 
     n_bf_O = newt_bilinearDomain()
     n_bf_G = newt_bilinearBoundary()
