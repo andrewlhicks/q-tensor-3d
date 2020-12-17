@@ -2,6 +2,7 @@
 The functions here are intended to be used on sympy objects only. """
 
 from sympy import *
+from settings import const
 
 # Set up variable with respect to which we will take derivatives
 
@@ -545,5 +546,10 @@ QNP = qnp.tens
 
 f = QVector('f')
 g = QVector('g')
+
+S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
+Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+QT = Q + S0*eye(3)
+Pi = eye(3) - outerp(nu,nu)
 
 # END OF CODE

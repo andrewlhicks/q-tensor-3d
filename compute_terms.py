@@ -134,8 +134,8 @@ def tilde(Q):
 
 ###
 
-def strongForm(G): # plugs G into the strong form PDE
-    return const.L1*strongL1(G) + const.L2*strongL2(G) + const.L3*strongL3(G) + const.L1*strong_twist(G) + (1/const.ep**2)*(-const.A*G - const.B*G*G + const.C*innerp(G,G)*G)
+def strong_F(Q_manu): # plugs Q_manu into the strong form PDE
+    return const.L1*strongL1(Q_manu) + const.L2*strongL2(Q_manu) + const.L3*strongL3(Q_manu) + const.L1*strong_twist(Q_manu) + (1/const.ep**2)*(-const.A*Q_manu - const.B*Q_manu*Q_manu + const.C*innerp(Q_manu,Q_manu)*Q_manu)
 
-def strongFormGamma(G):
-    return const.L1*strongGammaL1(G) + const.L2*strongGammaL2(G) + const.L3*strongGammaL3(G) + const.L1*strong_twist_gamma(G) + const.W0*(G-Q0) + const.W1*(tilde(G)-Pi*tilde(G)*Pi) + const.W2*(innerp(tilde(G),tilde(G))-S0**2)*G
+def strong_G(Q_manu):
+    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-S0**2)*Q_manu

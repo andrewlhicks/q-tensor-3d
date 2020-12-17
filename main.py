@@ -43,14 +43,14 @@ else:
     #     l2_error = fd.errorL2(q_soln,q_manu)
     #     pr.pdeSolveInfo(mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,time_elapsed=time_elapsed)
     #     numnodes *= 2
-    no_refinements = 1
+    no_refinements = 4
 
     pr.meshInfo('Unit Sphere Mesh',no_refinements=no_refinements)
     pr.pdeSolveTitle()
 
     
     
-    for refinement_level in range(no_refinements):
+    for refinement_level in range(0,no_refinements):
         fig, ax = plt.subplots(figsize=(10,10))
         fig.suptitle('Energy decrease',fontsize=16)
 
@@ -60,9 +60,9 @@ else:
 
         q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
 
-        # for i in range(1,len(energies)):
-        #     if energies[i]-energies[i-1] > 0:
-        #         pr.warning(f'Energy decrease failed at time t = {times[i]} by {energies[i]-energies[i-1]}')
+        for i in range(1,len(energies)):
+            if energies[i]-energies[i-1] > 0:
+                pr.warning(f'Energy decrease failed at time t = {times[i]} by {energies[i]-energies[i-1]}')
 
         plot.time_vs_energy(ax,times,energies,refinement_level=refinement_level,manu_energy=None)
 

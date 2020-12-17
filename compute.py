@@ -15,10 +15,7 @@ m = vectorfy(M)
 
 ###
 
-S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
-QT = Q + S0*eye(3)
-Pi = eye(3) - outerp(nu,nu)
+
 
 # Energies
 
@@ -68,8 +65,8 @@ newt_bilinearBoundary, newt_linearBoundary = newtonsMethod(bilinearBoundary,line
 class comp:
     initial_q = uflfy(m)
     manufac_q = uflfy(m)
-    forcing_f = uflfy(vectorfy(strongForm(M)))
-    forcing_g = uflfy(vectorfy(strongFormGamma(M)))
+    forcing_f = uflfy(vectorfy(strong_F(M)))
+    forcing_g = uflfy(vectorfy(strong_G(M)))
 
     n_bf_O = newt_bilinearDomain()
     n_bf_G = newt_bilinearBoundary()

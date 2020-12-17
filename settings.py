@@ -1,5 +1,4 @@
 from misc import getValues, color
-from sympyplus import UserDefinedFunction
 import yaml
 
 # Change the filename to choose a different settings file
