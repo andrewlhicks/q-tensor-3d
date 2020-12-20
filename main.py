@@ -12,6 +12,9 @@ from misc import Timer
 
 # Print info
 
+pr._set_file_path('plots/log.txt')
+pr._clear_file()
+
 if not settings.options.omit_init_printoff: pr.prelimInfo()
 pr.prelimCompTitle()
 
@@ -43,7 +46,7 @@ else:
     #     l2_error = fd.errorL2(q_soln,q_manu)
     #     pr.pdeSolveInfo(mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,time_elapsed=time_elapsed)
     #     numnodes *= 2
-    no_refinements = 4
+    no_refinements = 3
 
     pr.meshInfo('Unit Sphere Mesh',no_refinements=no_refinements)
     pr.pdeSolveTitle()

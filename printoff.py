@@ -1,51 +1,103 @@
-""" This python program is meant to print off any relevant information to the
-user in a visually pleasing way. For the initial printoff, we first print a
-blank line to create visual separation between the regular command line and
-the information printed off here. Then the program checks to see if the
-initial printoff should be omitted or not. From this point forward, if a blank
-line is needed for visual separation, it will be printed after the previous
-print and not before. """
+""" Here, most of the printing is controlled. Most of it is done through
+'plogging', i.e. print-logging, where the information is printed to the
+console and then put into a log file. """
 
 from settings import const, meshdata, options, visdata, timedata, solverdata
-from misc import color
+from misc import colors
 from time import sleep
+import functools
 
+# Decorators
+
+def plogger(func):
+    @functools.wraps(func)
+    def wrapper_plogger(*args, **kwargs):
+        with open(file_path,'a') as file:
+            global plog
+            def plog(string='',color=None):
+                file.write(string+'\n')
+                if color is not None:
+                    string = colors[color] + string + colors['end']
+                print(string)
+            value = func(*args, **kwargs)
+        return value
+    return wrapper_plogger
+
+# Functions that deal with the file
+
+def _set_file_path(new_file_path):
+    global file_path
+    file_path = new_file_path
+
+def _clear_file():
+    from datetime import datetime
+    with open(file_path,'w') as file:
+        now = datetime.now()
+        file.write(now.strftime('%c') + '\n')
+
+# Functions that print lines
+
+def print_lines(*args):
+    """ Prints a lines, each line containing a tile and text. Args are
+    dictionaries with 'title' and 'text' attributes. """
+
+    def print_line(title,text):
+        if not isinstance(title,str):
+            raise TypeError('Title must be a string.')
+
+        title_len = len(title)
+        spaces_len = int(indent_len - 1 - title_len)
+        if spaces_len < 0: spaces_len = 0
+
+        spaces = ''.join([' ' for _ in range(spaces_len)])
+        plog(f'{title}:{spaces}{text}')
+
+    indent_len = int(0)
+
+    for arg in args:
+        if len(arg['title']) + 2 > indent_len:
+            indent_len = len(arg['title']) + 2
+
+    plog()
+    for arg in args:
+        print_line(arg['title'],arg['text'])
+    plog()
+
+# Plogger functions
+
+@plogger
 def prelimInfo():
-    # Print a blank line to create a better visual
-    
-    print()
+    """ Plogs the preliminary information for the PDE solve. """
 
-    # Print a new section
-    
-    print(f"{color.uline}PRELIMINARY INFO:{color.end}")
-    print()
-    
-    # Begin to print the preliminary information
-    
-    print(f"Constants: L1 = {const.L1},                   Time step: {timedata.time_step}                         KSP type: \"{solverdata.ksp_type}\"")
-    print(f"           L2 = {const.L2},                   End time: {timedata.end_time}                         PC type:  \"{solverdata.pc_type}\"")
-    print(f"           L3 = {const.L3},                   No. time steps: {timedata.end_time/timedata.time_step:0.0f}")
-    print(f"           q0 = {const.q0}")
-    print(f"            A = {const.A},")
-    print(f"            B = {const.B},")
-    print(f"            C = {const.C},")
-    print(f"           W0 = {const.W0},")
-    print(f"           W1 = {const.W1},")
-    print(f"           W2 = {const.W2},")
-    print(f"      epsilon = {const.ep},")
-    print(f"           L0 = {const.L0}")
-    print()
-    
-    # If we are visualizing this in Paraview, print the path to the Paraview file
-    
+    plog()
+    plog(f'PRELIMINARY INFO:',color='uline')
+
+    plog()
+    plog(f'Constants: L1 = {const.L1},                   Time step: {timedata.time_step}                         KSP type: \'{solverdata.ksp_type}\'')
+    plog(f'           L2 = {const.L2},                   End time: {timedata.end_time}                         PC type:  \'{solverdata.pc_type}\'')
+    plog(f'           L3 = {const.L3},                   No. time steps: {timedata.end_time/timedata.time_step:0.0f}')
+    plog(f'           q0 = {const.q0}')
+    plog(f'            A = {const.A},')
+    plog(f'            B = {const.B},')
+    plog(f'            C = {const.C},')
+    plog(f'           W0 = {const.W0},')
+    plog(f'           W1 = {const.W1},')
+    plog(f'           W2 = {const.W2},')
+    plog(f'      epsilon = {const.ep},')
+    plog(f'           L0 = {const.L0}')
+    plog()
+
     if options.visualize:
-        print(f"Paraview file: {color.blue}{visdata.file_path}{color.end}")
-        print()
+        plog(f'Paraview file: {visdata.file_path}')
+        plog()
 
+@plogger
 def meshInfo(mesh_name,**kwargs):
-    print(f"{color.uline}MESH INFO:{color.end}")
+    """ Prints the mesh information, namely, the mesh name and any other desired properties. """
 
-    # assemble dicts
+    plog(f'MESH INFO:',color='uline')
+
+    # Assemble dicts
 
     dicts = []
 
@@ -59,72 +111,42 @@ def meshInfo(mesh_name,**kwargs):
         elif kw == 'no_refinements':
             dicts.append({'title':'No. refinements','text':kwargs[kw]})
         elif kw == 'file_path':
-            dicts.append({'title':'Path','text':f'{color.blue}kwargs[kw]{color.end}'})
+            dicts.append({'title':'Path','text':f'kwargs[kw]'})
 
-    # for kw in kwargs:
-    #     if kw == 'numnodes_init':
-    #         print(f"Init mesh node struc: {kwargs['numnodes_init']} x {kwargs['numnodes_init']} x {kwargs['numnodes_init']}")
-    #     elif kw == 'numnodes_max':
-    #         print(f"Init mesh node struc: {kwargs['numnodes_max']} x {kwargs['numnodes_max']} x {kwargs['numnodes_max']}")
-    #     elif kw == 'no_refinements':
-    #         print(f"No. refinements: {kwargs['no_refinements']}")
-    #     elif kw == 'file_path':
-    #         print(f"Path: {color.blue}{kwargs['file_path']}{color.end}")
-    # print()
+    # Print lines
 
     print_lines(*dicts)
 
+@plogger
 def prelimCompTitle():
-    # Wait for 1 second, it looks nicer
+    """ Prints title for the preliminary computations. """
     
     sleep(1)
     
-    # Print a new section
-    
-    print(f"{color.uline}PRELIMINARY COMPUTATIONS:{color.end}")
-    print()
+    plog(f'PRELIMINARY COMPUTATIONS:',color='uline')
+    plog()
 
+@plogger
 def prelimCompInfo(time_elapsed):
-    print(f"Finished preliminary computations in {time_elapsed:0.2f} seconds.")
-    print()
+    """ Prints information after the preliminary computations are finished. """
 
+    plog(f'Finished preliminary computations in {time_elapsed:0.2f} seconds.')
+    plog()
+
+@plogger
 def pdeSolveTitle():
-    # Wait for 1 second
+    """ Prints title for the PDE solving. """
     
     sleep(1)
     
-    # Print a new section
-    
-    print(f"{color.uline}PDE SOLVE:{color.end}")
-    print()
+    plog(f'PDE SOLVE:',color='uline')
+    plog()
 
-def print_lines(*args):
-    """ Args are dictionaries with 'title' and 'text' """
-
-    def print_line(title,text):
-        if not isinstance(title,str):
-            raise TypeError('Title must be a string.')
-
-        title_len = len(title)
-        spaces_len = int(indent_len - 1 - title_len)
-        if spaces_len < 0: spaces_len = 0
-
-        spaces = ''.join([' ' for _ in range(spaces_len)])
-        print(f"{title}:{spaces}{text}")
-
-    indent_len = int(0)
-
-    for arg in args:
-        if len(arg['title']) + 2 > indent_len:
-            indent_len = len(arg['title']) + 2
-
-    print()
-    for arg in args:
-        print_line(arg['title'],arg['text'])
-    print()
-    
+@plogger
 def pdeSolveInfo(**kwargs):
-    # assemble dicts
+    """ Prints desired information for the PDE solving after it is complete. """
+
+    # Assemble dicts
 
     dicts = []
 
@@ -146,9 +168,12 @@ def pdeSolveInfo(**kwargs):
 
     print_lines(*dicts)
 
+@plogger
 def warning(text):
+    """ Plogs a warning. """
+
     if not isinstance(text,str):
         raise TypeError('Warnings must be composed of a string.')
-    print(f'{color.warning}Warning: {text}{color.end}')
+    plog(f'Warning: {text}',color='warning')
 
 # END OF CODE

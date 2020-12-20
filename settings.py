@@ -1,4 +1,5 @@
-from misc import getValues, color
+from misc import getValues
+import printoff as pr
 import yaml
 
 # Change the filename to choose a different settings file
@@ -46,7 +47,6 @@ if not isinstance(options.visualize,bool):
     raise ValueError("Variable 'visualize' must be a boolean.")
 
 if 0>=const.L1 or -const.L1>=const.L3 or const.L3>=2*const.L1 or -3/5*const.L1-1/10*const.L3>=const.L2:
-    print()
-    print(f"{color.warning}WARNING: L1, L2, and L3 do not satisfy the proper inequalities{color.end}")
+	pr.warning('L1, L2, and L3 do not satisfy the proper inequalities')
 
 # END OF CODE
