@@ -20,10 +20,10 @@ class const:
 	L1, L2, L3, q0, A, B, C, ep, W0, W1, W2 = getValues(settings_dict['const'],'L1, L2, L3, q0, A, B, C, ep, W0, W1, W2')
 	L0 = 2*(A+B**2/C) if settings_dict['const']['L0'] == 'auto' else settings_dict['const']['L0']
 	S0 = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
-class meshdata: # Perhaps I could make a class that constains both the mesh and the meshdata later on
-	file_path, numnodes_init, numnodes_max = getValues(settings_dict['meshdata'],'file_path, numnodes_init, numnodes_max')
+class mesh: # Perhaps I could make a class that constains both the mesh and the meshdata later on
+	name, refs = getValues(settings_dict['mesh'],'name, refs')
 class options:
-	omit_init_printoff, visualize, manufactured = getValues(settings_dict['options'],'omit_init_printoff, visualize, manufactured')
+	visualize, manufactured = getValues(settings_dict['options'],'visualize, manufactured')
 class visdata: # I could also make a class for paraview stuff
 	file_path = settings_dict['visdata']['file_path']
 class solverdata:
@@ -39,9 +39,6 @@ const.dt = timedata.time_step
 
 if not isinstance(options.manufactured,bool):
     raise ValueError("Variable 'manufactured' must be a boolean.")
-
-if not isinstance(options.omit_init_printoff,bool):
-    raise ValueError("Variable 'omit_init_printoff' must be a boolean.")
 
 if not isinstance(options.visualize,bool):
     raise ValueError("Variable 'visualize' must be a boolean.")

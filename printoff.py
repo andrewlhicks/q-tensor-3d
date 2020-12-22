@@ -2,7 +2,7 @@
 'plogging', i.e. print-logging, where the information is printed to the
 console and then put into a log file. """
 
-from settings import const, meshdata, options, visdata, timedata, solverdata
+from settings import const, mesh, options, visdata, timedata, solverdata
 from misc import colors
 from time import sleep
 import functools
