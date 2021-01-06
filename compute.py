@@ -30,7 +30,7 @@ bfElastic = variationalDerivative(energyElastic,[Dq,q],[Dp,p],name='bfElastic')
 bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
 bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
 
-bfTwist = GeneralForm(const.L1/2*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
+bfTwist = GeneralForm(const.L1*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
 
 bfNAnchor = GeneralForm(const.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
 bfPDAnchor1 = GeneralForm(const.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1') # This was WRONG and nonlinear. Why didn't the code catch this?

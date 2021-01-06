@@ -26,18 +26,18 @@ def termL3(grad1,grad2):
     
     return term
 
-def term_twist(q):
-    """ Returns the twist term from the energy """
-    Q = QTensor(q)
+# def term_twist(q):
+#     """ Returns the twist term from the energy """
+#     Q = QTensor(q)
 
-    return const.q0*mixedp(Q,Q) + const.q0**2*innerp(Q,Q)
+#     return const.q0*mixedp(Q,Q) + const.q0**2*innerp(Q,Q)
 
 def term_twist_var(q,p):
     """ Returns the variational derivative of the twist term """
     Q = QTensor(q)
     P = QTensor(p)
 
-    return const.q0*mixedp(Q,P) + const.q0*mixedp(P,Q) + 2*const.q0**2*innerp(Q,P)
+    return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) + 4*const.q0**2*innerp(Q,P)
 
 ####
 
@@ -121,7 +121,7 @@ def strong_twist_gamma(Q):
         for jj in range(3):
             for kk in range(3):
                 for ll in range(3):
-                    term[ii,jj] += const.q0/2*nu[kk]*levi_civita(ii,ll,kk)*Q[ll,jj]
+                    term[ii,jj] += const.q0*nu[kk]*levi_civita(ii,ll,kk)*Q[ll,jj]
 
     return term
 
@@ -135,7 +135,7 @@ def tilde(Q):
 ###
 
 def strong_F(Q_manu): # plugs Q_manu into the strong form PDE
-    return const.L1*strongL1(Q_manu) + const.L2*strongL2(Q_manu) + const.L3*strongL3(Q_manu) + const.L1*strong_twist(Q_manu) + (1/const.ep**2)*(-const.A*Q_manu - const.B*Q_manu*Q_manu + const.C*innerp(Q_manu,Q_manu)*Q_manu)
+    return const.L1*strongL1(Q_manu) + const.L2*strongL2(Q_manu) + const.L3*strongL3(Q_manu) + 4*const.L1*strong_twist(Q_manu) + (1/const.ep**2)*(-const.A*Q_manu - const.B*Q_manu*Q_manu + const.C*innerp(Q_manu,Q_manu)*Q_manu)
 
 def strong_G(Q_manu):
-    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-S0**2)*Q_manu
+    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + 2*const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-S0**2)*Q_manu

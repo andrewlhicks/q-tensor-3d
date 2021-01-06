@@ -13,9 +13,9 @@ def elastic(q):
 		for jj in range(3):
 			for kk in range(3):
 				for ll in range(3):
-					summ += const.L1/2*const.q0*levi_civita(ii,kk,ll)*Q[ll,jj].dx(kk)*Q[ii,jj]
+					summ += 2*const.L1*const.q0*levi_civita(ii,kk,ll)*Q[ll,jj].dx(kk)*Q[ii,jj]
 
-	summ += const.L1/2*const.q0**2*inner(Q,Q)
+	summ += 2*const.L1*const.q0**2*inner(Q,Q)
 
 	return summ
 
