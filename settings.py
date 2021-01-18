@@ -10,8 +10,8 @@ settings_filename = 'settings.yml'
 
 # Open the file and load it using YAML
 
-settings_file = open(f'settings/{settings_filename}')
-settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
+with open(f'settings/{settings_filename}') as settings_file:
+	settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 # Settings
 
