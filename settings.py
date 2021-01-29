@@ -5,7 +5,7 @@ import yaml
 # Change the filename to choose a different settings file
 
 ####################################
-settings_filename = 'settings.yml'
+settings_filename = 'lavrentovich_nd.yml'
 ####################################
 
 # Open the file and load it using YAML
@@ -17,8 +17,9 @@ with open(f'settings/{settings_filename}') as settings_file:
 
 class const:
 	from numpy import sqrt
+	from math import ceil
 	L1, L2, L3, q0, A, B, C, ep, W0, W1, W2 = getValues(settings_dict['const'],'L1, L2, L3, q0, A, B, C, ep, W0, W1, W2')
-	L0 = 2*(A+B**2/C) if settings_dict['const']['L0'] == 'auto' else settings_dict['const']['L0']
+	L0 = ceil(2*(A+B**2/C)) if settings_dict['const']['L0'] == 'auto' else settings_dict['const']['L0']
 	S0 = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
 class mesh: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 	name, refs = getValues(settings_dict['mesh'],'name, refs')

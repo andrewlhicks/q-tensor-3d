@@ -42,11 +42,13 @@ for refinement_level in range(settings.mesh.refs):
     # mesh = fd.UnitCubeMesh(numnodes,numnodes,numnodes)
 
     q_manu = fd.firedrakefy(comp.manufac_q,mesh)
-    manu_energy = fd.computeEnergy(q_manu,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
-    manu_energy = fd.computeEnergy(q_manu,mesh)
 
-    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
-    # q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh)
+    if settings.options.manufactured:
+        manu_energy = fd.computeEnergy(q_manu,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
+        q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
+    else:
+        q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh)
+        manu_energy = fd.computeEnergy(q_manu,mesh)
 
     for i in range(1,len(energies)):
         if energies[i]-energies[i-1] > 0:

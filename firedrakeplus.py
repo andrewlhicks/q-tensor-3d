@@ -184,12 +184,21 @@ def visualize(q_vis,mesh,new_outfile=False):
     # Create functions to store eigenvectors and eigenvalues
 
     H1_ten = TensorFunctionSpace(mesh, "CG", 1)
-    eigvecs = Function(TensorFunctionSpace(mesh, "CG", 1))
-    eigvals = Function(VectorFunctionSpace(mesh, "CG", 1))
-    eigvec = Function(VectorFunctionSpace(mesh, "CG", 1))
-    eigval = Function(FunctionSpace(mesh, "CG", 1))
+    H1_vec = VectorFunctionSpace(mesh, "CG", 1)
+    H1_scl = FunctionSpace(mesh, "CG", 1)
+    x0, x1, x2 = SpatialCoordinate(mesh)
+
+    eigvecs = Function(H1_ten)
+    eigvals = Function(H1_vec)
+    eigvec = Function(H1_vec)
+    eigval = Function(H1_scl)
+    radial = interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2),H1_vec)
+    magnitude = Function(H1_scl)
+    norm_q = Function(H1_scl)
     eigvec.rename('Eigenvectors of Q')
     eigval.rename('Eigenvalues of Q')
+    magnitude.rename('Magnitude')
+    norm_q.rename('Norm of Q')
 
     # Calculate eigenvectors and eigenvalues
 
@@ -197,6 +206,8 @@ def visualize(q_vis,mesh,new_outfile=False):
     op2.par_loop(eigen.kernel, H1_ten.node_set, eigvecs.dat(op2.RW), eigvals.dat(op2.RW), Q_vis.dat(op2.READ))
     eigvec.interpolate(as_vector([eigvecs[0,0],eigvecs[1,0],eigvecs[2,0]]))
     eigval.interpolate(eigvals[0])
+    magnitude.interpolate(dot(radial,eigvec))
+    norm_q.assign((q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2)**(1/2))
 
     # Create new outfile if desired
 
@@ -206,6 +217,6 @@ def visualize(q_vis,mesh,new_outfile=False):
 
     # Write the data onto the outfile
 
-    outfile.write(eigvec, eigval)
+    outfile.write(eigvec, eigval, magnitude, norm_q)
 
 # END OF CODE
