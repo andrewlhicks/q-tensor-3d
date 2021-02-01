@@ -30,7 +30,7 @@ class nrm:
     def L2(function,mesh):
         return sqrt(assemble(dot(function,function) * dx(domain=mesh)))
 
-def computeEnergy(function,mesh,forcing_f=None,forcing_g=None):
+def computeEnergy(function,mesh,boundary='weak',forcing_f=None,forcing_g=None):
     from energycomps import elastic, bulk, anchor_n, anchor_pd
 
     H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
@@ -42,7 +42,10 @@ def computeEnergy(function,mesh,forcing_f=None,forcing_g=None):
     facet_normal = FacetNormal(mesh)
 
     domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
-    boundary_integral = assemble((anchor_n(function,facet_normal) + anchor_pd(function,facet_normal) - dot(function,g)) * ds)
+    if boundary == 'weak':
+        boundary_integral = assemble((anchor_n(function,facet_normal) + anchor_pd(function,facet_normal) - dot(function,g)) * ds)
+    else:
+        boundary_integral = 0
     
     return domain_integral + boundary_integral
 
@@ -58,11 +61,15 @@ def firedrakefy(func,mesh):
 
     return interpolate(eval(func),H1_vec)
 
-def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver_parameters={}):
+def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,boundary='weak',solver_parameters={}):
     function_space = q_soln._function_space
 
-    bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
-    bc = DirichletBC(function_space, bdy_cond, "on_boundary")
+    if boundary == 'strong':
+        bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
+        bc = DirichletBC(function_space, bdy_cond, "on_boundary")
+        bcs = [bc]
+    elif boundary == 'weak':
+        bcs = None
 
     q_newt_delt = Function(function_space)
     q_newt_soln = Function(function_space)
@@ -74,8 +81,7 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver
 
         # Solve
 
-        # solve(newt_eqn, q_newt_delt, bcs=[bc], solver_parameters=solver_parameters)
-        solve(newt_eqn, q_newt_delt, bcs=None, solver_parameters=solver_parameters)
+        solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
 
         q_newt_soln.assign(q_newt_delt + q_newt_prev)
         # print(nrm.inf(q_newt_delt))
@@ -83,7 +89,7 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,solver
 
     q_soln.assign(q_newt_soln)
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,forcing_f=None,forcing_g=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,boundary='weak',forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
@@ -125,11 +131,12 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     # define bilinear form a(q,p), and linear form L(p)
 
     a = eval(bilinear_form) * dx
-    if eval(bilinear_form_bdy) != 0:
-        a += eval(bilinear_form_bdy) * ds
     L = eval(linear_form) * dx
-    if eval(linear_form_bdy) != 0:
-        L += eval(linear_form_bdy) * ds
+    if boundary == 'weak':
+        if eval(bilinear_form_bdy) != 0:
+            a += eval(bilinear_form_bdy) * ds
+        if eval(linear_form_bdy) != 0:
+            L += eval(linear_form_bdy) * ds
 
     # Time loop
 
@@ -145,8 +152,9 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         # Assign the solution from the previous loop to q_prev
         q_prev.assign(q_soln)
         
-        newtonSolve(a == L, q_soln, q_newt_prev, q_prev,
-            solver_parameters={'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
+        newtonSolve(a == L, q_soln, q_newt_prev, q_prev, boundary=boundary,
+            solver_parameters={'snes_type' : 'ksponly',                 # Turn off auto Newton's method
+                               'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
                                'pc_type'  : solverdata.pc_type,         # preconditioner type
                                'mat_type' : 'aij' })
 

@@ -5,7 +5,7 @@ import yaml
 # Change the filename to choose a different settings file
 
 ####################################
-settings_filename = 'lavrentovich_nd.yml'
+settings_filename = 'settings.yml'
 ####################################
 
 # Open the file and load it using YAML
@@ -24,7 +24,7 @@ class const:
 class mesh: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 	name, refs = getValues(settings_dict['mesh'],'name, refs')
 class options:
-	visualize, manufactured = getValues(settings_dict['options'],'visualize, manufactured')
+	visualize, manufactured, boundary = getValues(settings_dict['options'],'visualize, manufactured, boundary')
 class visdata: # I could also make a class for paraview stuff
 	file_path = settings_dict['visdata']['file_path']
 class solverdata:

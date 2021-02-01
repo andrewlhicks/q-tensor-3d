@@ -33,22 +33,30 @@ pr.prelimCompInfo(timer.time_elapsed)
 pr.meshInfo(f'{settings.mesh.name} Mesh',no_refinements=settings.mesh.refs)
 pr.pdeSolveTitle()
 
-for refinement_level in range(settings.mesh.refs):
+if settings.mesh.refs > 0:
+    ref_0 = 0
+    ref_f = settings.mesh.refs
+elif settings.mesh.refs < 0:
+    ref_0 = -settings.mesh.refs
+    ref_f = -settings.mesh.refs+1
+
+for refinement_level in range(ref_0,ref_f):
     fig, ax = plt.subplots(figsize=(10,10))
     fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
 
     mesh = fd.Mesh(f'meshes/{settings.mesh.name}{refinement_level}.msh')
-    # numnodes = 10 * 2**refinement_level
-    # mesh = fd.UnitCubeMesh(numnodes,numnodes,numnodes)
 
     q_manu = fd.firedrakefy(comp.manufac_q,mesh)
 
     if settings.options.manufactured:
-        manu_energy = fd.computeEnergy(q_manu,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
-        q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
+        forcing_f = comp.forcing_f
+        forcing_g = comp.forcing_g
     else:
-        q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh)
-        manu_energy = fd.computeEnergy(q_manu,mesh)
+        forcing_f = None
+        forcing_g = None
+
+    manu_energy = fd.computeEnergy(q_manu,mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
+    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=forcing_f,forcing_g=forcing_g)
 
     for i in range(1,len(energies)):
         if energies[i]-energies[i-1] > 0:

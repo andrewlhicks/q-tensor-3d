@@ -4,14 +4,20 @@ from settings import const, options
 
 # Initial guess and manufactured solution
 
-# n = Matrix([cos(x[0]+x[1]+x[2]),sin(x[0]+x[1]+x[2]),0])
-# G = outerp(n,n) - (1.0/3.0) * eye(3)
-X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
-			[sin(x[1]),cos(x[1]),sin(x[2])],
-			[cos(x[2]),sin(x[2]),sin(x[0])]])
-M = X - trace(X)/3*eye(3)
+# X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
+# 			[sin(x[1]),cos(x[1]),sin(x[2])],
+# 			[cos(x[2]),sin(x[2]),sin(x[0])]])
+# M = X - trace(X)/3*eye(3)
+# m = vectorfy(M)
+
+""" Mesh: unit cube
+Center of mesh: (0.5,0.5,0.5)
+"""
+
+theta = atan2(x[1]-0.5,x[0]-0.5)
+N = Matrix([cos(theta),sin(theta),0])
+M = const.S0*(outerp(N,N) - (1/3)*eye(3))
 m = vectorfy(M)
-# h = (x[0]**2-x[0])*(x[1]**2-x[1])*(x[2]**2-x[2])*Matrix([1,1,1,1,1])
 
 ###
 
