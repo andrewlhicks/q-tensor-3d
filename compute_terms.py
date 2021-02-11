@@ -1,7 +1,6 @@
 """ Treatment of the L1, L2, and L3 terms, since they are too complicated to write in-line. """
 
 from sympyplus import *
-from settings import const
 
 nu = Matrix([x[0],x[1],x[2]])
 

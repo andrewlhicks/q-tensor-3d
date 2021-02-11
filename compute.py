@@ -1,23 +1,22 @@
 from sympyplus import *
 from compute_terms import *
-from settings import const, options
 
 # Initial guess and manufactured solution
 
-# X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
-# 			[sin(x[1]),cos(x[1]),sin(x[2])],
-# 			[cos(x[2]),sin(x[2]),sin(x[0])]])
-# M = X - trace(X)/3*eye(3)
-# m = vectorfy(M)
+X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
+			[sin(x[1]),cos(x[1]),sin(x[2])],
+			[cos(x[2]),sin(x[2]),sin(x[0])]])
+M = X - trace(X)/3*eye(3)
+m = vectorfy(M)
 
 """ Mesh: unit cube
 Center of mesh: (0.5,0.5,0.5)
 """
 
-theta = atan2(x[1]-0.5,x[0]-0.5)
-N = Matrix([cos(theta),sin(theta),0])
-M = const.S0*(outerp(N,N) - (1/3)*eye(3))
-m = vectorfy(M)
+# theta = atan2(x[1]-0.5,x[0]-0.5)
+# N = Matrix([cos(theta),sin(theta),0])
+# M = const.S0*(outerp(N,N) - (1/3)*eye(3))
+# m = vectorfy(M)
 
 ###
 

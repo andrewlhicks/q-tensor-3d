@@ -10,6 +10,10 @@ import plot
 
 from misc import Timer
 
+# Settings info
+
+settings._load_file('settings.yml')
+
 # Print info
 
 pr._set_file_path('plots/log.txt')

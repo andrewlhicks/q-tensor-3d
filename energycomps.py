@@ -2,8 +2,7 @@
 
 from firedrake import *
 from firedrakeplus import tensorfy
-from settings import const
-from sympyplus import levi_civita
+from sympyplus import levi_civita, const
 
 def elastic(q):
 	Q = tensorfy(q)

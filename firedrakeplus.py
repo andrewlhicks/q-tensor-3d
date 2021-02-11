@@ -198,25 +198,29 @@ def visualize(q_vis,mesh,new_outfile=False):
 
     eigvecs = Function(H1_ten)
     eigvals = Function(H1_vec)
-    eigvec = Function(H1_vec)
-    eigval = Function(H1_scl)
+    eigvec0 = Function(H1_vec,name='Eigenvector 0')
+    eigvec1 = Function(H1_vec,name='Eigenvector 1')
+    eigvec2 = Function(H1_vec,name='Eigenvector 2')
+    eigval0 = Function(H1_scl,name='Eigenvalue 0')
+    eigval1 = Function(H1_scl,name='Eigenvalue 1')
+    eigval2 = Function(H1_scl,name='Eigenvalue 2')
     radial = interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2),H1_vec)
-    magnitude = Function(H1_scl)
-    norm_q = Function(H1_scl)
-    eigvec.rename('Eigenvectors of Q')
-    eigval.rename('Eigenvalues of Q')
-    magnitude.rename('Magnitude')
-    norm_q.rename('Norm of Q')
+    magnitude = Function(H1_scl,name='Magnitude')
+    norm_q = Function(H1_scl,name='Norm of Q')
+    norm_q.assign((q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2)**(1/2))
 
     # Calculate eigenvectors and eigenvalues
 
     Q_vis = interpolate(tensorfy(q_vis),H1_ten)
     op2.par_loop(eigen.kernel, H1_ten.node_set, eigvecs.dat(op2.RW), eigvals.dat(op2.RW), Q_vis.dat(op2.READ))
-    eigvec.interpolate(as_vector([eigvecs[0,0],eigvecs[1,0],eigvecs[2,0]]))
-    eigval.interpolate(eigvals[0])
-    magnitude.interpolate(dot(radial,eigvec))
-    norm_q.assign((q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2)**(1/2))
-
+    eigvec0.interpolate(as_vector([eigvecs[0,0],eigvecs[1,0],eigvecs[2,0]]))
+    eigvec1.interpolate(as_vector([eigvecs[0,1],eigvecs[1,1],eigvecs[2,1]]))
+    eigvec2.interpolate(as_vector([eigvecs[0,2],eigvecs[1,2],eigvecs[2,2]]))
+    eigval0.interpolate(eigvals[0])
+    eigval1.interpolate(eigvals[1])
+    eigval2.interpolate(eigvals[2])
+    magnitude.interpolate(abs(dot(radial,eigvec0)))
+    
     # Create new outfile if desired
 
     if new_outfile == True:
@@ -225,6 +229,6 @@ def visualize(q_vis,mesh,new_outfile=False):
 
     # Write the data onto the outfile
 
-    outfile.write(eigvec, eigval, magnitude, norm_q)
+    outfile.write(eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
 
 # END OF CODE

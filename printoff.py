@@ -2,10 +2,15 @@
 'plogging', i.e. print-logging, where the information is printed to the
 console and then put into a log file. """
 
-from settings import const, mesh, options, visdata, timedata, solverdata
+import settings
+import constants
 from misc import colors
 from time import sleep
 import functools
+
+settings._load_file('settings.yml')
+constants._load_file('testing_nd.yml')
+const = constants.const
 
 # Decorators
 
@@ -73,9 +78,9 @@ def prelimInfo():
     plog(f'PRELIMINARY INFO:',color='uline')
 
     plog()
-    plog(f'Constants: L1 = {const.L1},                   Time step: {timedata.time_step}                         KSP type: \'{solverdata.ksp_type}\'')
-    plog(f'           L2 = {const.L2},                   End time: {timedata.end_time}                         PC type:  \'{solverdata.pc_type}\'')
-    plog(f'           L3 = {const.L3},                   No. time steps: {timedata.end_time/timedata.time_step:0.0f}')
+    plog(f'Constants: L1 = {const.L1},                   Time step: {settings.timedata.time_step}                         KSP type: \'{settings.solverdata.ksp_type}\'')
+    plog(f'           L2 = {const.L2},                   End time: {settings.timedata.end_time}                         PC type:  \'{settings.solverdata.pc_type}\'')
+    plog(f'           L3 = {const.L3},                   No. time steps: {settings.timedata.end_time/settings.timedata.time_step:0.0f}')
     plog(f'           q0 = {const.q0}')
     plog(f'            A = {const.A},')
     plog(f'            B = {const.B},')
@@ -87,8 +92,8 @@ def prelimInfo():
     plog(f'           L0 = {const.L0}')
     plog()
 
-    if options.visualize:
-        plog(f'Paraview file: {visdata.file_path}')
+    if settings.options.visualize:
+        plog(f'Paraview file: {settings.visdata.file_path}')
         plog()
 
 @plogger

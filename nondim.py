@@ -17,8 +17,8 @@ nd_const = {}
 # Define auxiliary constants
 
 R = float(input('Enter length scale R: '))
-# AM = max(const['A'],const['B'],const['C'])
-AM = const['A']
+AM = max(const['A'],const['B'],const['C'])
+# AM = const['A']
 LM = max(const['L1'],const['L2'],const['L3'])
 
 # Define non-dimensionalized constants
