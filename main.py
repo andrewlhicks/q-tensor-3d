@@ -60,7 +60,8 @@ for refinement_level in range(ref_0,ref_f):
         forcing_g = None
 
     manu_energy = fd.computeEnergy(q_manu,mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
-    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=forcing_f,forcing_g=forcing_g)
+    # q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,forcing_f=forcing_f,forcing_g=forcing_g)
+    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,'random',mesh,forcing_f=forcing_f,forcing_g=forcing_g)
 
     for i in range(1,len(energies)):
         if energies[i]-energies[i-1] > 0:

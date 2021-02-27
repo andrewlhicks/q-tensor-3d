@@ -4,19 +4,19 @@ import yaml
 from math import sqrt
 from misc import getValues
 
-settings_filename = input('Enter settings file name: ')
+file_path = input('Enter constants file name: ')
 
 # Open the file and load it using YAML
 
-with open(f'settings/{settings_filename}.yml') as settings_file:
-	settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
+with open(f'constants/{file_path}.yml') as constants_file:
+	constants_dict = yaml.load(constants_file, Loader=yaml.FullLoader)
 
-const = settings_dict['const']
+const = constants_dict['const']
 nd_const = {}
 
 # Define auxiliary constants
 
-R = float(input('Enter length scale R: '))
+R = 0.42e-6
 AM = max(const['A'],const['B'],const['C'])
 # AM = const['A']
 LM = max(const['L1'],const['L2'],const['L3'])
@@ -36,9 +36,9 @@ nd_const['W2'] = const['W2']*R/(LM)
 nd_const['q0'] = const['q0']*R
 nd_const['ep'] = sqrt(LM/AM)/R
 
-# Replace old constants with new ones in the settings_dict
+# Replace old constants with new ones in the constants_dict
 
-settings_dict['const'] = nd_const
+constants_dict['const'] = nd_const
 
-with open(f'settings/{settings_filename}_nd.yml','w') as settings_file:
-	settings_file.write(yaml.dump(settings_dict))
+with open(f'constants/{file_path}_nd.yml','w') as constants_file:
+	constants_file.write(yaml.dump(constants_dict))

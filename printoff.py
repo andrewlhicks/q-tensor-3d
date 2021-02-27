@@ -9,7 +9,7 @@ from time import sleep
 import functools
 
 settings._load_file('settings.yml')
-constants._load_file('testing_nd.yml')
+constants._load_file(settings.constants.file_path)
 const = constants.const
 
 # Decorators

@@ -89,6 +89,15 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,bounda
 
     q_soln.assign(q_newt_soln)
 
+def RandomFunction(function_space):
+    from numpy import random
+    function = interpolate(as_vector([0,0,0,0,0]),function_space)
+
+    for ii in range(len(function.dat.data)):
+        function.dat.data[ii] = random.rand(5)*1e+1
+
+    return function
+
 def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,boundary='weak',forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
@@ -120,7 +129,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     f = interpolate(zero_vec,H1_vec) if forcing_f is None else interpolate(eval(forcing_f),H1_vec)
     g = interpolate(zero_vec,H1_vec) if forcing_g is None else interpolate(eval(forcing_g),H1_vec)
-    q_init = interpolate(eval(initial_guess),H1_vec)
+
+    q_init = RandomFunction(H1_vec) if initial_guess == 'random' else interpolate(eval(initial_guess),H1_vec)
 
     # First q_soln is taken to be the initial guess
 
@@ -204,7 +214,8 @@ def visualize(q_vis,mesh,new_outfile=False):
     eigval0 = Function(H1_scl,name='Eigenvalue 0')
     eigval1 = Function(H1_scl,name='Eigenvalue 1')
     eigval2 = Function(H1_scl,name='Eigenvalue 2')
-    radial = interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2),H1_vec)
+    radial = Function(H1_vec,name='Radial')
+    radial.interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2))
     magnitude = Function(H1_scl,name='Magnitude')
     norm_q = Function(H1_scl,name='Norm of Q')
     norm_q.assign((q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2)**(1/2))
@@ -229,6 +240,6 @@ def visualize(q_vis,mesh,new_outfile=False):
 
     # Write the data onto the outfile
 
-    outfile.write(eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
+    outfile.write(radial, eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
 
 # END OF CODE
