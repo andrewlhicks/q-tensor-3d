@@ -68,7 +68,11 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,bounda
         bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
         bc = DirichletBC(function_space, bdy_cond, "on_boundary")
         bcs = [bc]
-    elif boundary == 'weak':
+    elif boundary == 'weak-strong':
+        bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
+        bc = DirichletBC(function_space, bdy_cond, [2]) # 2 refers to the outer boundary of Ravnik
+        bcs = [bc]
+    elif boundary == 'weak' or boundary == 'slab':
         bcs = None
 
     q_newt_delt = Function(function_space)
@@ -112,7 +116,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     # Facet normal
     
-    nu = FacetNormal(mesh)
+    if boundary == 'slab':
+        nu = as_vector([0,0,1])
+    else:
+        nu = FacetNormal(mesh)
 
     # Test and Trial functions
     
@@ -147,6 +154,11 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
             a += eval(bilinear_form_bdy) * ds
         if eval(linear_form_bdy) != 0:
             L += eval(linear_form_bdy) * ds
+    elif boundary == 'weak-strong' or boundary == 'slab': # This is tailor-made for the HollowedCube mesh found in Ravnik, int bdy weak, ext strong
+        if eval(bilinear_form_bdy) != 0:
+            a += eval(bilinear_form_bdy) * ds(1)
+        if eval(linear_form_bdy) != 0:
+            L += eval(linear_form_bdy) * ds(1)
 
     # Time loop
 
@@ -214,8 +226,9 @@ def visualize(q_vis,mesh,new_outfile=False):
     eigval0 = Function(H1_scl,name='Eigenvalue 0')
     eigval1 = Function(H1_scl,name='Eigenvalue 1')
     eigval2 = Function(H1_scl,name='Eigenvalue 2')
-    radial = Function(H1_vec,name='Radial')
-    radial.interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2))
+    normal = Function(H1_vec,name='Radial')
+    # normal.interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2))
+    normal.interpolate(as_vector([0,0,1]))
     magnitude = Function(H1_scl,name='Magnitude')
     norm_q = Function(H1_scl,name='Norm of Q')
     norm_q.assign((q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2)**(1/2))
@@ -230,7 +243,7 @@ def visualize(q_vis,mesh,new_outfile=False):
     eigval0.interpolate(eigvals[0])
     eigval1.interpolate(eigvals[1])
     eigval2.interpolate(eigvals[2])
-    magnitude.interpolate(abs(dot(radial,eigvec0)))
+    magnitude.interpolate(1-abs(dot(normal,eigvec0)))
     
     # Create new outfile if desired
 
@@ -240,6 +253,6 @@ def visualize(q_vis,mesh,new_outfile=False):
 
     # Write the data onto the outfile
 
-    outfile.write(radial, eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
+    outfile.write(normal, eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
 
 # END OF CODE

@@ -3,11 +3,20 @@ from compute_terms import *
 
 # Initial guess and manufactured solution
 
+""" An arbitrary initial condition with trig functions: """
+
 X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
 			[sin(x[1]),cos(x[1]),sin(x[2])],
 			[cos(x[2]),sin(x[2]),sin(x[0])]])
 M = X - trace(X)/3*eye(3)
 m = vectorfy(M)
+
+""" For the HollowedCube mesh found in Ravnik: """
+
+# n = Matrix([0,0,1])
+# X = outerp(n,n)
+# M = X - 1/3*eye(3)
+# m = vectorfy(M)
 
 """ Mesh: unit cube
 Center of mesh: (0.5,0.5,0.5)

@@ -16,7 +16,7 @@ nd_const = {}
 
 # Define auxiliary constants
 
-R = 0.42e-6
+R = 3.0e-5
 AM = max(const['A'],const['B'],const['C'])
 # AM = const['A']
 LM = max(const['L1'],const['L2'],const['L3'])

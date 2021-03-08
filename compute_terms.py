@@ -36,7 +36,8 @@ def term_twist_var(q,p):
     Q = QTensor(q)
     P = QTensor(p)
 
-    return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) + 4*const.q0**2*innerp(Q,P)
+    # return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) + 4*const.q0**2*innerp(Q,P)
+    return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) # got rid of the linear 0-th derivative term
 
 ####
 
@@ -79,7 +80,8 @@ def strong_twist(Q):
                 for ll in range(3):
                     term[ii,jj] -= const.q0*levi_civita(ii,ll,kk)*diff(Q[ll,jj],x[kk])
 
-    term += const.q0**2*Q
+    # Got rid of this linear 0-th derivative term below:
+    # term += const.q0**2*Q
 
     return term
 
