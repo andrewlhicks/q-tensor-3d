@@ -11,6 +11,38 @@ def getValues(dictionary,keys):
         values = tuple(values)
         return values
 
+def get_range(range_str):
+    range_str = str(range_str)  # ensures we are working with a string
+    # print(range_str)
+    range_str = range_str.replace(' ','') # get rid of spaces
+    # print(range_str)
+    range_list = range_str.split(',') # split at commas
+    # print(range_list)
+
+    crude_list = []
+
+    for item in range_list:
+        item = item.split('-')
+        item = list(map(int,item))
+        if len(item) == 1:
+            pass
+        elif len(item) == 2:
+            item = list(range(item[0],item[1]+1))
+        else:
+            raise ValueError('Range must be between no more than two integers.')
+        
+        crude_list = crude_list + item
+        # print(crude_list)
+
+    crude_list.sort()
+    # print(crude_list)
+
+    clean_list = []
+    [clean_list.append(item) for item in crude_list if item not in clean_list]
+    # print(clean_list)
+
+    return(clean_list)
+
 # Classes
 
 colors = {'header' : '\033[95m',

@@ -8,7 +8,7 @@ import settings
 import matplotlib.pyplot as plt
 import plot
 
-from misc import Timer
+from misc import Timer, get_range
 
 # Settings info
 
@@ -37,19 +37,7 @@ pr.prelimCompInfo(timer.time_elapsed)
 pr.meshInfo(f'{settings.mesh.name} Mesh',no_refinements=settings.mesh.refs)
 pr.pdeSolveTitle()
 
-# if settings.mesh.refs > 0:
-#     ref_0 = 0
-#     ref_f = settings.mesh.refs
-# elif settings.mesh.refs < 0:
-#     ref_0 = -settings.mesh.refs
-#     ref_f = -settings.mesh.refs+1
-ref_bounds = settings.mesh.refs.split('-')
-ref_bounds = list(map(int,ref_bounds))
-print(ref_bounds)
-refinements = range(ref_bounds[0],ref_bounds[1]+1)
-print(refinements)
-
-for refinement_level in refinements:
+for refinement_level in get_range(settings.mesh.refs):
     fig, ax = plt.subplots(figsize=(10,10))
     fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
 

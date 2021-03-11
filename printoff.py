@@ -114,7 +114,7 @@ def meshInfo(mesh_name,**kwargs):
         elif kw == 'numnodes_final':
             dicts.append({'title':'Final mesh node struc','text':f'{kwargs[kw]} x {kwargs[kw]} x {kwargs[kw]}'})
         elif kw == 'no_refinements':
-            dicts.append({'title':'No. refinements','text':kwargs[kw]})
+            dicts.append({'title':'Refinements','text':kwargs[kw]})
         elif kw == 'file_path':
             dicts.append({'title':'Path','text':f'kwargs[kw]'})
 
