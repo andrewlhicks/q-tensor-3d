@@ -265,17 +265,25 @@ def checkIfQTensor(obj):
     # elif not trace(obj).is_zero:
     #     raise ValueError('Must have trace 0')
 
-def checkIfVector(obj,dim):
+def checkIfVector(obj,dim,raise_error=False):
     """ Checks if 'obj' is a Sympy vector of dimension 'dim'. """
     if not isinstance(obj,MutableDenseMatrix):
-        raise TypeError('Must be type MutableDenseMatrix.')
+        if raise_error:
+            raise TypeError('Must be type MutableDenseMatrix.')
+        else:
+            return False
     elif not obj.shape == (dim,1):
-        raise ShapeError(f'Shape must be ({dim}, 1).')
+        if raise_error:
+            raise ShapeError(f'Shape must be ({dim}, 1).')
+        else:
+            return False
+    else:
+        return True
 
 def tensorfy(vector):
     """ Returns the Q-Tensor form of any 5D vector. """
 
-    checkIfVector(vector,5)
+    checkIfVector(vector,5,raise_error=True)
 
     tensor = zeros(3,3)
 
@@ -288,14 +296,17 @@ def uflfy(expression):
     """ Returns the UFL code for a scalar or a QVector. First checks if
     'expression' is a matrix. If not, then returns C code for the expression. This
     is a crude way to check for a scalar, but in practice it should work.
-    Otherwise, checks if the expression is a 5D vector and returns the C code for
+    Otherwise, checks if the expression is a 3D or 5D vector and returns the C code for
     that expression. """
 
     if not isinstance(expression,MutableDenseMatrix):
         return ccode(expression)
-    else:
-        checkIfVector(expression,5)
+    elif checkIfVector(expression,3):
+        return 'as_vector([' + ','.join([ccode(expression[ii]) for ii in range(3)]) + '])'
+    elif checkIfVector(expression,5):
         return 'as_vector([' + ','.join([ccode(expression[ii]) for ii in range(5)]) + '])'
+    else:
+        raise TypeError('Must be a vector expression of dimension 3 or 5.')
 
 def variationalDerivative(lagrangian,*params,name=None):
     """ Given an instance of Lagrangian, returns a GeneralForm of order 2 which

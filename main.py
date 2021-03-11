@@ -37,14 +37,19 @@ pr.prelimCompInfo(timer.time_elapsed)
 pr.meshInfo(f'{settings.mesh.name} Mesh',no_refinements=settings.mesh.refs)
 pr.pdeSolveTitle()
 
-if settings.mesh.refs > 0:
-    ref_0 = 0
-    ref_f = settings.mesh.refs
-elif settings.mesh.refs < 0:
-    ref_0 = -settings.mesh.refs
-    ref_f = -settings.mesh.refs+1
+# if settings.mesh.refs > 0:
+#     ref_0 = 0
+#     ref_f = settings.mesh.refs
+# elif settings.mesh.refs < 0:
+#     ref_0 = -settings.mesh.refs
+#     ref_f = -settings.mesh.refs+1
+ref_bounds = settings.mesh.refs.split('-')
+ref_bounds = list(map(int,ref_bounds))
+print(ref_bounds)
+refinements = range(ref_bounds[0],ref_bounds[1]+1)
+print(refinements)
 
-for refinement_level in range(ref_0,ref_f):
+for refinement_level in refinements:
     fig, ax = plt.subplots(figsize=(10,10))
     fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
 
@@ -59,8 +64,20 @@ for refinement_level in range(ref_0,ref_f):
         forcing_f = None
         forcing_g = None
 
-    manu_energy = fd.computeEnergy(q_manu,mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
-    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,comp.initial_q,mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
+    manu_energy = fd.computeEnergy(q_manu,mesh,
+        weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
+        forcing_f=forcing_f,
+        forcing_g=forcing_g)
+    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,
+        comp.n_bf_G,
+        comp.n_lf_O,
+        comp.n_lf_G,
+        comp.initial_q,
+        mesh,
+        strong_boundary=[comp.bdycond_s,settings.options.strong_boundary],
+        weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
+        forcing_f=forcing_f,
+        forcing_g=forcing_g)
     # q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,'random',mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
 
     for i in range(1,len(energies)):
@@ -71,7 +88,7 @@ for refinement_level in range(ref_0,ref_f):
 
     h1_error = fd.errorH1(q_soln,q_manu,mesh)
     l2_error = fd.errorL2(q_soln,q_manu,mesh)
-    energy = fd.computeEnergy(q_soln,mesh,forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
+    energy = fd.computeEnergy(q_soln,mesh,weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
     
     pr.pdeSolveInfo(refinement_level=refinement_level,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)
     # pr.pdeSolveInfo(refinement_level=refinement_level,mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)

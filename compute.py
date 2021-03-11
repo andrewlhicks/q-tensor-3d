@@ -1,35 +1,12 @@
 from sympyplus import *
 from compute_terms import *
 
-# Initial guess and manufactured solution
-
-""" An arbitrary initial condition with trig functions: """
-
-X = Matrix([[cos(x[0]),sin(x[1]),cos(x[2])],
-			[sin(x[1]),cos(x[1]),sin(x[2])],
-			[cos(x[2]),sin(x[2]),sin(x[0])]])
-M = X - trace(X)/3*eye(3)
-m = vectorfy(M)
-
-""" For the HollowedCube mesh found in Ravnik: """
-
-# n = Matrix([0,0,1])
-# X = outerp(n,n)
-# M = X - 1/3*eye(3)
-# m = vectorfy(M)
-
-""" Mesh: unit cube
-Center of mesh: (0.5,0.5,0.5)
-"""
-
-# theta = atan2(x[1]-0.5,x[0]-0.5)
-# N = Matrix([cos(theta),sin(theta),0])
-# M = const.S0*(outerp(N,N) - (1/3)*eye(3))
-# m = vectorfy(M)
-
-###
-
-
+import user_expressions.initial_q as initial_q
+import user_expressions.manufac_q as manufac_q
+import user_expressions.forcing_f as forcing_f
+import user_expressions.forcing_g as forcing_g
+import user_expressions.bdycond_s as bdycond_s
+import user_expressions.bdycond_w as bdycond_w
 
 # Energies
 
@@ -77,10 +54,12 @@ newt_bilinearBoundary, newt_linearBoundary = newtonsMethod(bilinearBoundary,line
 # Create relevant UFL strings
 
 class comp:
-    initial_q = uflfy(m)
-    manufac_q = uflfy(m)
-    forcing_f = uflfy(vectorfy(strong_F(M)))
-    forcing_g = uflfy(vectorfy(strong_G(M)))
+    initial_q = initial_q.out
+    manufac_q = manufac_q.out
+    forcing_f = forcing_f.out
+    forcing_g = forcing_g.out
+    bdycond_s = bdycond_s.out
+    bdycond_w = bdycond_w.out
 
     n_bf_O = newt_bilinearDomain()
     n_bf_G = newt_bilinearBoundary()

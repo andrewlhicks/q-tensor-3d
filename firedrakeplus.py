@@ -30,7 +30,7 @@ class nrm:
     def L2(function,mesh):
         return sqrt(assemble(dot(function,function) * dx(domain=mesh)))
 
-def computeEnergy(function,mesh,boundary='weak',forcing_f=None,forcing_g=None):
+def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None):
     from energycomps import elastic, bulk, anchor_n, anchor_pd
 
     H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
@@ -39,13 +39,26 @@ def computeEnergy(function,mesh,boundary='weak',forcing_f=None,forcing_g=None):
     f = interpolate(zero_vec,H1_vec) if forcing_f is None else interpolate(eval(forcing_f),H1_vec)
     g = interpolate(zero_vec,H1_vec) if forcing_g is None else interpolate(eval(forcing_g),H1_vec)
 
-    facet_normal = FacetNormal(mesh)
 
     domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
-    if boundary == 'weak':
-        boundary_integral = assemble((anchor_n(function,facet_normal) + anchor_pd(function,facet_normal) - dot(function,g)) * ds)
-    else:
+
+    if weak_boundary is None: # Let's put this into a function since it is basically repeated in solvePDE()
         boundary_integral = 0
+    elif weak_boundary[1] == 'none':
+        boundary_integral = 0
+    elif weak_boundary[1] == 'all':
+        # weak_director = eval(weak_boundary[0]) # Should usually be set to 'FacetNormal(mesh)'
+        weak_director = FacetNormal(mesh)
+        boundary_integral = assemble((anchor_n(function,weak_director) + anchor_pd(function,weak_director) - dot(function,g)) * ds)
+    elif isinstance(weak_boundary[1],int):
+        if weak_boundary[1] > -1:
+            # weak_director = eval(weak_boundary[0]) # Should usually be set to 'FacetNormal(mesh)'
+            weak_director = FacetNormal(mesh)
+            boundary_integral = assemble((anchor_n(function,weak_director) + anchor_pd(function,weak_director) - dot(function,g)) * ds(weak_boundary[1]))
+        else:
+            raise ValueError('Boundary integer specified must be positive.')
+    else:
+        raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
     
     return domain_integral + boundary_integral
 
@@ -61,19 +74,28 @@ def firedrakefy(func,mesh):
 
     return interpolate(eval(func),H1_vec)
 
-def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,boundary='weak',solver_parameters={}):
+def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
 
-    if boundary == 'strong':
-        bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
+    # make the following a separate function
+
+    bdy_cond = interpolate(eval(strong_boundary[0]),function_space)
+
+    if strong_boundary == None:
+        bcs = None
+    elif strong_boundary[1] == 'none':
+        bcs = None
+    elif strong_boundary[1] == 'all':
         bc = DirichletBC(function_space, bdy_cond, "on_boundary")
         bcs = [bc]
-    elif boundary == 'weak-strong':
-        bdy_cond = interpolate(as_vector([0,0,0,0,0]),function_space)
-        bc = DirichletBC(function_space, bdy_cond, [2]) # 2 refers to the outer boundary of Ravnik
-        bcs = [bc]
-    elif boundary == 'weak' or boundary == 'slab':
-        bcs = None
+    elif isinstance(strong_boundary[1],int):
+        if strong_boundary > -1:
+            bc = DirichletBC(function_space, bdy_cond, [strong_boundary[1]])
+            bcs = [bc]
+        else:
+            raise ValueError('Boundary interger specified must be positive.')
+    else:
+        raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
     q_newt_delt = Function(function_space)
     q_newt_soln = Function(function_space)
@@ -102,7 +124,7 @@ def RandomFunction(function_space):
 
     return function
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,boundary='weak',forcing_f=None,forcing_g=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,strong_boundary=None,weak_boundary=None,forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
@@ -116,10 +138,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     # Facet normal
     
-    if boundary == 'slab':
-        nu = as_vector([0,0,1])
-    else:
-        nu = FacetNormal(mesh)
+    # nu = eval(weak_boundary[0]) # Should usually be set to 'FacetNormal(mesh)'
+    nu = FacetNormal(mesh)
 
     # Test and Trial functions
     
@@ -149,16 +169,26 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     a = eval(bilinear_form) * dx
     L = eval(linear_form) * dx
-    if boundary == 'weak':
+    if weak_boundary is None:
+        pass
+    elif weak_boundary[1] == "none":
+        pass
+    elif weak_boundary[1] == 'all':
         if eval(bilinear_form_bdy) != 0:
             a += eval(bilinear_form_bdy) * ds
         if eval(linear_form_bdy) != 0:
             L += eval(linear_form_bdy) * ds
-    elif boundary == 'weak-strong' or boundary == 'slab': # This is tailor-made for the HollowedCube mesh found in Ravnik, int bdy weak, ext strong
-        if eval(bilinear_form_bdy) != 0:
-            a += eval(bilinear_form_bdy) * ds(1)
-        if eval(linear_form_bdy) != 0:
-            L += eval(linear_form_bdy) * ds(1)
+    elif isinstance(weak_boundary[1],int):
+        if weak_boundary[1] > -1:
+            if eval(bilinear_form_bdy) != 0:
+                a += eval(bilinear_form_bdy) * ds(weak_boundary[1])
+            if eval(linear_form_bdy) != 0:
+                L += eval(linear_form_bdy) * ds(weak_boundary[1])
+        else:
+            raise ValueError('Boundary integer specified must be positive.')
+    else:
+        raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+
 
     # Time loop
 
@@ -174,7 +204,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         # Assign the solution from the previous loop to q_prev
         q_prev.assign(q_soln)
         
-        newtonSolve(a == L, q_soln, q_newt_prev, q_prev, boundary=boundary,
+        newtonSolve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
             solver_parameters={'snes_type' : 'ksponly',                 # Turn off auto Newton's method
                                'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
                                'pc_type'  : solverdata.pc_type,         # preconditioner type
@@ -184,7 +214,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         
         if options.visualize: visualize(q_soln,mesh)
 
-        energies = np.append(energies,computeEnergy(q_soln,mesh,forcing_f=forcing_f,forcing_g=forcing_g))
+        energies = np.append(energies,computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
     timer.stop()
 
@@ -231,7 +261,7 @@ def visualize(q_vis,mesh,new_outfile=False):
     normal.interpolate(as_vector([0,0,1]))
     magnitude = Function(H1_scl,name='Magnitude')
     norm_q = Function(H1_scl,name='Norm of Q')
-    norm_q.assign((q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2)**(1/2))
+    norm_q.interpolate(sqrt(q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2))
 
     # Calculate eigenvectors and eigenvalues
 
