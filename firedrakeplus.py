@@ -124,7 +124,7 @@ def RandomFunction(function_space):
 
     return function
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,strong_boundary=None,weak_boundary=None,forcing_f=None,forcing_g=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,strong_boundary=None,weak_boundary=None,forcing_f=None,forcing_g=None,directory=None):
     from progressbar import progressbar
     from misc import Timer
     from settings import options, timedata, solverdata
@@ -163,7 +163,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     q_soln.assign(q_init)
     
-    if options.visualize: visualize(q_soln,mesh,new_outfile=True)
+    if options.visualize: visualize(q_soln,mesh,new_outfile=True,directory=directory)
 
     # define bilinear form a(q,p), and linear form L(p)
 
@@ -238,9 +238,9 @@ def tensorfy(vector):
     
     return vector[0] * E0 + vector[1] * E1 + vector[2] * E2 + vector[3] * E3 + vector[4] * E4
 
-def visualize(q_vis,mesh,new_outfile=False):
+def visualize(q_vis,mesh,new_outfile=False,directory=None):
     import eigen
-    from settings import visdata
+
     # Create functions to store eigenvectors and eigenvalues
 
     H1_ten = TensorFunctionSpace(mesh, "CG", 1)
@@ -279,7 +279,7 @@ def visualize(q_vis,mesh,new_outfile=False):
 
     if new_outfile == True:
         global outfile
-        outfile = File(visdata.file_path)
+        outfile = File(f'{directory}/vis/vis.pvd')
 
     # Write the data onto the outfile
 

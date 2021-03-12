@@ -4,6 +4,7 @@ Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 
 import firedrakeplus as fd
 import printoff as pr
+import saves
 import settings
 import matplotlib.pyplot as plt
 import plot
@@ -12,14 +13,25 @@ from misc import Timer, get_range
 
 # Settings info
 
-settings._load_file('settings.yml')
+settings_file_path = 'settings.yml'
+settings._load_file(settings_file_path)
+pr._set_settings_file(settings_file_path)
+
+# Saves info
+
+saves._create_directory(settings.saves.name)
 
 # Print info
 
-pr._set_file_path('plots/log.txt')
+pr._set_file_path(f'{saves.current_directory}/log/log.txt')
 pr._clear_file()
 
-pr.prelimInfo()
+pr.constants_info()
+pr.mesh_info()
+pr.options_info()
+pr.saves_info()
+pr.solver_info()
+pr.time_info()
 pr.prelimCompTitle()
 
 # Preliminary computations
@@ -65,7 +77,8 @@ for refinement_level in get_range(settings.mesh.refs):
         strong_boundary=[comp.bdycond_s,settings.options.strong_boundary],
         weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
         forcing_f=forcing_f,
-        forcing_g=forcing_g)
+        forcing_g=forcing_g,
+        directory=saves.current_directory)
     # q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,'random',mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
 
     for i in range(1,len(energies)):
@@ -81,6 +94,6 @@ for refinement_level in get_range(settings.mesh.refs):
     pr.pdeSolveInfo(refinement_level=refinement_level,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)
     # pr.pdeSolveInfo(refinement_level=refinement_level,mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)
 
-    plt.savefig(f'plots/energy_decrease_ref_{refinement_level}.png')
+    plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')
 
 # END OF CODE

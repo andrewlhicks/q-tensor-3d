@@ -2,15 +2,9 @@
 'plogging', i.e. print-logging, where the information is printed to the
 console and then put into a log file. """
 
-import settings
-import constants
 from misc import colors
 from time import sleep
 import functools
-
-settings._load_file('settings.yml')
-constants._load_file(settings.constants.file_path)
-const = constants.const
 
 # Decorators
 
@@ -29,6 +23,18 @@ def plogger(func):
     return wrapper_plogger
 
 # Functions that deal with the file
+
+def _set_settings_file(settings_file_path):
+    import settings as st
+    import constants as ct
+
+    st._load_file(settings_file_path)
+    global settings
+    settings = st
+
+    ct._load_file(settings.constants.file_path)
+    global const
+    const = ct.const
 
 def _set_file_path(new_file_path):
     global file_path
@@ -71,52 +77,102 @@ def print_lines(*args):
 # Plogger functions
 
 @plogger
-def prelimInfo():
-    """ Plogs the preliminary information for the PDE solve. """
+def constants_info():
+    """ Plogs information for the constants """
 
     plog()
-    plog(f'PRELIMINARY INFO:',color='uline')
+    plog('CONSTANTS:',color='uline')
 
     plog()
-    plog(f'Constants: L1 = {const.L1},                   Time step: {settings.timedata.time_step}                         KSP type: \'{settings.solverdata.ksp_type}\'')
-    plog(f'           L2 = {const.L2},                   End time: {settings.timedata.end_time}                         PC type:  \'{settings.solverdata.pc_type}\'')
-    plog(f'           L3 = {const.L3},                   No. time steps: {settings.timedata.end_time/settings.timedata.time_step:0.0f}')
-    plog(f'           q0 = {const.q0}')
-    plog(f'            A = {const.A},')
-    plog(f'            B = {const.B},')
-    plog(f'            C = {const.C},')
-    plog(f'           W0 = {const.W0},')
-    plog(f'           W1 = {const.W1},')
-    plog(f'           W2 = {const.W2},')
-    plog(f'      epsilon = {const.ep},')
-    plog(f'           L0 = {const.L0}')
+    plog(f'     L1 = {const.L1},')
+    plog(f'     L2 = {const.L2},')
+    plog(f'     L3 = {const.L3},')
+    plog(f'     q0 = {const.q0}')
+    plog(f'      A = {const.A},')
+    plog(f'      B = {const.B},')
+    plog(f'      C = {const.C},')
+    plog(f'     W0 = {const.W0},')
+    plog(f'     W1 = {const.W1},')
+    plog(f'     W2 = {const.W2},')
+    plog(f'epsilon = {const.ep},')
+    plog(f'     L0 = {const.L0}')
     plog()
-
-    if settings.options.visualize:
-        plog(f'Paraview file: {settings.visdata.file_path}')
-        plog()
 
 @plogger
-def meshInfo(mesh_name,**kwargs):
+def mesh_info():
     """ Prints the mesh information, namely, the mesh name and any other desired properties. """
 
-    plog(f'MESH INFO:',color='uline')
+    plog('MESH:',color='uline')
 
     # Assemble dicts
 
     dicts = []
 
-    dicts.append({'title':'Mesh','text':mesh_name})
+    dicts.append({'title':'Mesh','text':settings.mesh.name})
+    dicts.append({'title':'Refinements','text':settings.mesh.refs})
 
-    for kw in kwargs:
-        if kw == 'numnodes_init':
-            dicts.append({'title':'Init mesh node struc','text':f'{kwargs[kw]} x {kwargs[kw]} x {kwargs[kw]}'})
-        elif kw == 'numnodes_final':
-            dicts.append({'title':'Final mesh node struc','text':f'{kwargs[kw]} x {kwargs[kw]} x {kwargs[kw]}'})
-        elif kw == 'no_refinements':
-            dicts.append({'title':'Refinements','text':kwargs[kw]})
-        elif kw == 'file_path':
-            dicts.append({'title':'Path','text':f'kwargs[kw]'})
+    # Print lines
+
+    print_lines(*dicts)
+
+@plogger
+def options_info():
+    plog('OPTIONS:',color='uline')
+
+    # Assemble dicts
+
+    dicts = []
+
+    dicts.append({'title':'Visualize','text':settings.options.visualize})
+    dicts.append({'title':'Manufactured','text':settings.options.manufactured})
+    dicts.append({'title':'Weak boundary','text':settings.options.weak_boundary})
+    dicts.append({'title':'Strong boundary','text':settings.options.strong_boundary})
+
+    # Print lines
+
+    print_lines(*dicts)
+
+@plogger
+def saves_info():
+    plog('SAVES:',color='uline')
+
+    # Assemble dicts
+
+    dicts = []
+
+    dicts.append({'title':'Save','text':settings.saves.save})
+    dicts.append({'title':'Save name','text':settings.saves.name})
+
+    # Print lines
+
+    print_lines(*dicts)
+
+@plogger
+def solver_info():
+    plog('SOLVER:',color='uline')
+
+    # Assemble dicts
+
+    dicts = []
+
+    dicts.append({'title':'KSP Type','text':settings.solverdata.ksp_type})
+    dicts.append({'title':'PC Type','text':settings.solverdata.pc_type})
+
+    # Print lines
+
+    print_lines(*dicts)
+
+@plogger
+def time_info():
+    plog('TIME:',color='uline')
+
+    # Assemble dicts
+
+    dicts = []
+
+    dicts.append({'title':'Time step','text':settings.timedata.time_step})
+    dicts.append({'title':'End time','text':settings.timedata.end_time})
+    dicts.append({'title':'No. time steps','text':f'{settings.timedata.end_time/settings.timedata.time_step:0.0f}'})
 
     # Print lines
 

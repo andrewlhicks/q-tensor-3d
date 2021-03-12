@@ -1,5 +1,6 @@
 from misc import getValues
 import yaml
+import os
 
 # Functions that deal with the file
 
@@ -10,14 +11,14 @@ def _load_file(file_path):
 		settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 	# Settings
-	global mesh, options, visdata, solverdata, timedata, constants
+	global mesh, options, visdata, saves, solverdata, timedata, constants
 
 	class mesh: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 		name, refs = getValues(settings_dict['mesh'],'name, refs')
 	class options:
 		visualize, manufactured, weak_boundary, strong_boundary = getValues(settings_dict['options'],'visualize, manufactured, weak_boundary, strong_boundary')
-	class visdata: # I could also make a class for paraview stuff
-		file_path = settings_dict['visdata']['file_path']
+	class saves:
+		save, name = getValues(settings_dict['saves'],'save, name')
 	class solverdata:
 		ksp_type, pc_type = getValues(settings_dict['solverdata'],'ksp_type, pc_type')
 	class timedata:
