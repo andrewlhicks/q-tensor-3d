@@ -46,7 +46,6 @@ timer.stop()
 
 pr.prelimCompInfo(timer.time_elapsed)
 
-pr.meshInfo(f'{settings.mesh.name} Mesh',no_refinements=settings.mesh.refs)
 pr.pdeSolveTitle()
 
 for refinement_level in get_range(settings.mesh.refs):
