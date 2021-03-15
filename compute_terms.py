@@ -1,45 +1,25 @@
-""" Treatment of the L1, L2, and L3 terms, since they are too complicated to write in-line. """
+""" This file's only purpose is to compute the strong form on Omega and on
+Gamma. But since it defines its constants and its S0, Q0, and Pi
+separately from compute.py, this file must eventually be eliminated. It is
+an appendage that is only causing harm to the code as a whole. """
 
 from sympyplus import *
 
-nu = Matrix([x[0],x[1],x[2]])
+# For this next part, I really want to make it to where I don't have to specify the settings file path here, but in main.py
 
-def termL1(grad1,grad2):
-    return innerp(grad1,grad2)
+import settings
+settings_file_name = 'settings.yml'
+settings._load_file(settings_file_name)
 
-def termL2(grad1,grad2):
-    term = 0
+import constants
+constants._load_file(settings.constants.file_path)
+const = constants.const
 
-    for ii in range(5):
-        for jj in range(5):
-            term += (grad1.row(ii) * E[ii]).dot(E[jj] * grad2.row(jj).T)
-    
-    return term
+S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
+Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+Pi = eye(3) - outerp(nu,nu)
 
-def termL3(grad1,grad2):
-    term = 0
-
-    for ii in range(5):
-        for jj in range(5):
-            term += (grad1.row(ii) * E[jj]).dot(E[ii] * grad2.row(jj).T)
-    
-    return term
-
-# def term_twist(q):
-#     """ Returns the twist term from the energy """
-#     Q = QTensor(q)
-
-#     return const.q0*mixedp(Q,Q) + const.q0**2*innerp(Q,Q)
-
-def term_twist_var(q,p):
-    """ Returns the variational derivative of the twist term """
-    Q = QTensor(q)
-    P = QTensor(p)
-
-    # return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) + 4*const.q0**2*innerp(Q,P)
-    return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) # got rid of the linear 0-th derivative term
-
-####
+# Strong terms
 
 def strongL1(Q):
     term = zeros(3,3)
@@ -125,10 +105,6 @@ def strong_twist_gamma(Q):
                     term[ii,jj] += const.q0*nu[kk]*levi_civita(ii,ll,kk)*Q[ll,jj]
 
     return term
-
-S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
-Pi = eye(3) - outerp(nu,nu)
 
 def tilde(Q):
     return Q + S0/3*eye(3)

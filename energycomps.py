@@ -1,8 +1,21 @@
-""" Here we write the code for computing the energy completely in UFL. """
+""" This file's only purpose is to compute the energy. But since it defines
+its constants separately from compute.py, this file must eventually be
+eliminated. It is an appendage that is only causing harm to the code as a
+whole. """
 
 from firedrake import *
 from firedrakeplus import tensorfy
-from sympyplus import levi_civita, const
+from sympyplus import levi_civita
+
+# For this next part, I really want to make it to where I don't have to specify the settings file path here, but in main.py
+
+import settings
+settings_file_name = 'settings.yml'
+settings._load_file(settings_file_name)
+
+import constants
+constants._load_file(settings.constants.file_path)
+const = constants.const
 
 def elastic(q):
 	Q = tensorfy(q)

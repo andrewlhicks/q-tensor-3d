@@ -2,17 +2,6 @@
 The functions here are intended to be used on sympy objects only. """
 
 from sympy import *
-import settings
-import constants
-
-settings._load_file('settings.yml')
-constants._load_file(settings.constants.file_path)
-const = constants.const
-const.dt = settings.timedata.time_step
-
-# Set up variable with respect to which we will take derivatives
-
-x = [Symbol('x0'),Symbol('x1'),Symbol('x2')]
 
 # Basis for the 3D Q-tensor
 
@@ -541,6 +530,10 @@ class QVector(AbstractVector):
         super().__init__(name,5)
         self.tens = QTensor(self)
 
+# Set up variable with respect to which we will take derivatives
+
+x = [Symbol('x0'),Symbol('x1'),Symbol('x2')]
+
 # Set up Qvector objects
 
 nu = AbstractVector('nu')
@@ -563,13 +556,5 @@ QNP = qnp.tens
 
 f = QVector('f')
 g = QVector('g')
-
-S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
-# theta = atan2(x[1]-0.5,x[0]-0.5)
-# N = Matrix([cos(theta),sin(theta),0])
-# Q0 = const.S0*(outerp(N,N) - (1/3)*eye(3))
-QT = Q + S0*eye(3)
-Pi = eye(3) - outerp(nu,nu)
 
 # END OF CODE

@@ -36,9 +36,10 @@ def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None
     H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
     x0, x1, x2 = SpatialCoordinate(mesh)
 
-    f = interpolate(zero_vec,H1_vec) if forcing_f is None else interpolate(eval(forcing_f),H1_vec)
-    g = interpolate(zero_vec,H1_vec) if forcing_g is None else interpolate(eval(forcing_g),H1_vec)
+    nu = FacetNormal(mesh)
 
+    f = zero_vec if forcing_f is None else eval(forcing_f)
+    g = zero_vec if forcing_g is None else eval(forcing_g)
 
     domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
 
@@ -47,14 +48,10 @@ def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None
     elif weak_boundary[1] == 'none':
         boundary_integral = 0
     elif weak_boundary[1] == 'all':
-        # weak_director = eval(weak_boundary[0]) # Should usually be set to 'FacetNormal(mesh)'
-        weak_director = FacetNormal(mesh)
-        boundary_integral = assemble((anchor_n(function,weak_director) + anchor_pd(function,weak_director) - dot(function,g)) * ds)
+        boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds)
     elif isinstance(weak_boundary[1],int):
         if weak_boundary[1] > -1:
-            # weak_director = eval(weak_boundary[0]) # Should usually be set to 'FacetNormal(mesh)'
-            weak_director = FacetNormal(mesh)
-            boundary_integral = assemble((anchor_n(function,weak_director) + anchor_pd(function,weak_director) - dot(function,g)) * ds(weak_boundary[1]))
+            boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds(weak_boundary[1]))
         else:
             raise ValueError('Boundary integer specified must be positive.')
     else:
@@ -154,8 +151,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     # Non-updated constant functions
     # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
 
-    f = interpolate(zero_vec,H1_vec) if forcing_f is None else interpolate(eval(forcing_f),H1_vec)
-    g = interpolate(zero_vec,H1_vec) if forcing_g is None else interpolate(eval(forcing_g),H1_vec)
+    f = zero_vec if forcing_f is None else eval(forcing_f)
+    g = zero_vec if forcing_g is None else eval(forcing_g)
 
     q_init = RandomFunction(H1_vec) if initial_guess == 'random' else interpolate(eval(initial_guess),H1_vec)
 

@@ -40,7 +40,9 @@ timer = Timer()
 
 timer.start()
 
-from compute import comp
+import compute
+compute._set_settings_file(settings_file_path)
+comp = compute.compute()
 
 timer.stop()
 
