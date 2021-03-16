@@ -7,15 +7,8 @@ from firedrake import *
 from firedrakeplus import tensorfy
 from sympyplus import levi_civita
 
-# For this next part, I really want to make it to where I don't have to specify the settings file path here, but in main.py
-
 import settings
-settings_file_name = 'settings.yml'
-settings._load_file(settings_file_name)
-
-import constants
-constants._load_file(settings.constants.file_path)
-const = constants.const
+from constants import const
 
 def elastic(q):
 	Q = tensorfy(q)

@@ -4,47 +4,40 @@ console and then put into a log file. """
 
 from misc import colors
 from time import sleep
+import saves
+import settings
+from constants import const
 import functools
+
+if settings.saves.save:
+    from datetime import datetime
+    with open(f'{saves.current_directory}/log/log.txt','w') as file:
+        now = datetime.now()
+        file.write(now.strftime('%c') + '\n')
 
 # Decorators
 
 def plogger(func):
     @functools.wraps(func)
     def wrapper_plogger(*args, **kwargs):
-        with open(file_path,'a') as file:
-            global plog
+        global plog
+        if settings.saves.save:
+            with open(f'{saves.current_directory}/log/log.txt','a') as file:
+                def plog(string='',color=None):
+                    file.write(string+'\n')
+                    if color is not None:
+                        string = colors[color] + string + colors['end']
+                    print(string)
+                value = func(*args, **kwargs)
+            return value
+        else:
             def plog(string='',color=None):
-                file.write(string+'\n')
                 if color is not None:
                     string = colors[color] + string + colors['end']
                 print(string)
             value = func(*args, **kwargs)
-        return value
+            return value
     return wrapper_plogger
-
-# Functions that deal with the file
-
-def _set_settings_file(settings_file_path):
-    import settings as st
-    import constants as ct
-
-    st._load_file(settings_file_path)
-    global settings
-    settings = st
-
-    ct._load_file(settings.constants.file_path)
-    global const
-    const = ct.const
-
-def _set_file_path(new_file_path):
-    global file_path
-    file_path = new_file_path
-
-def _clear_file():
-    from datetime import datetime
-    with open(file_path,'w') as file:
-        now = datetime.now()
-        file.write(now.strftime('%c') + '\n')
 
 # Functions that print lines
 
@@ -141,7 +134,7 @@ def saves_info():
     dicts = []
 
     dicts.append({'title':'Save','text':settings.saves.save})
-    dicts.append({'title':'Save name','text':settings.saves.name})
+    dicts.append({'title':'Save directory','text':saves.current_directory})
 
     # Print lines
 

@@ -121,11 +121,12 @@ def RandomFunction(function_space):
 
     return function
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,strong_boundary=None,weak_boundary=None,forcing_f=None,forcing_g=None,directory=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,strong_boundary=None,weak_boundary=None,forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
-    from settings import options, timedata, solverdata
+    import settings
     import numpy as np
+    import settings
 
     # Define function space, coordinates, and q_soln
     
@@ -160,7 +161,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
     q_soln.assign(q_init)
     
-    if options.visualize: visualize(q_soln,mesh,new_outfile=True,directory=directory)
+    if settings.options.visualize: visualize(q_soln,mesh,new_outfile=True)
 
     # define bilinear form a(q,p), and linear form L(p)
 
@@ -192,8 +193,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     timer = Timer()
     timer.start()
 
-    no_times = int(timedata.end_time/timedata.time_step)
-    times = np.arange(0,timedata.end_time,timedata.time_step)
+    no_times = int(settings.timedata.end_time/settings.timedata.time_step)
+    times = np.arange(0,settings.timedata.end_time,settings.timedata.time_step)
     energies = np.array([])
 
     for time in progressbar(times,redirect_stdout=True):
@@ -203,13 +204,13 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
         
         newtonSolve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
             solver_parameters={'snes_type' : 'ksponly',                 # Turn off auto Newton's method
-                               'ksp_type' : solverdata.ksp_type,        # Krylov subspace type
-                               'pc_type'  : solverdata.pc_type,         # preconditioner type
+                               'ksp_type' : settings.solverdata.ksp_type,        # Krylov subspace type
+                               'pc_type'  : settings.solverdata.pc_type,         # preconditioner type
                                'mat_type' : 'aij' })
 
         # Write eigenvectors and eigenvalues to Paraview
         
-        if options.visualize: visualize(q_soln,mesh)
+        if settings.options.visualize: visualize(q_soln,mesh)
 
         energies = np.append(energies,computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
@@ -235,8 +236,10 @@ def tensorfy(vector):
     
     return vector[0] * E0 + vector[1] * E1 + vector[2] * E2 + vector[3] * E3 + vector[4] * E4
 
-def visualize(q_vis,mesh,new_outfile=False,directory=None):
+def visualize(q_vis,mesh,new_outfile=False):
     import eigen
+    import saves
+    import settings
 
     # Create functions to store eigenvectors and eigenvalues
 
@@ -274,12 +277,10 @@ def visualize(q_vis,mesh,new_outfile=False,directory=None):
     
     # Create new outfile if desired
 
-    if new_outfile == True:
-        global outfile
-        outfile = File(f'{directory}/vis/vis.pvd')
-
-    # Write the data onto the outfile
-
-    outfile.write(normal, eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
+    if settings.saves.save:
+        if new_outfile == True:
+            global outfile
+            outfile = File(f'{saves.current_directory}/vis/vis.pvd')
+        outfile.write(normal, eigvec0,eigvec1,eigvec2, eigval0,eigval1,eigval2, magnitude, norm_q)
 
 # END OF CODE

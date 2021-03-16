@@ -5,15 +5,8 @@ an appendage that is only causing harm to the code as a whole. """
 
 from sympyplus import *
 
-# For this next part, I really want to make it to where I don't have to specify the settings file path here, but in main.py
-
 import settings
-settings_file_name = 'settings.yml'
-settings._load_file(settings_file_name)
-
-import constants
-constants._load_file(settings.constants.file_path)
-const = constants.const
+from constants import const
 
 S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
 Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))

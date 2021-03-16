@@ -7,23 +7,13 @@ import user_expressions.forcing_g as forcing_g
 import user_expressions.bdycond_s as bdycond_s
 import user_expressions.bdycond_w as bdycond_w
 
-def _set_settings_file(settings_file_path):
-    import settings as st
-    import constants as ct
+import settings
+from constants import const
+const.dt = settings.timedata.time_step
 
-    st._load_file(settings_file_path)
-    global settings
-    settings = st
-
-    ct._load_file(settings.constants.file_path)
-    global const
-    const = ct.const
-    const.dt = settings.timedata.time_step
-
-    global S0, Q0, Pi
-    S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-    Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
-    Pi = eye(3) - outerp(nu,nu)
+S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
+Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+Pi = eye(3) - outerp(nu,nu)
 
 # theta = atan2(x[1]-0.5,x[0]-0.5)
 # N = Matrix([cos(theta),sin(theta),0])
