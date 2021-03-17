@@ -134,7 +134,8 @@ def saves_info():
     dicts = []
 
     dicts.append({'title':'Save','text':settings.saves.save})
-    dicts.append({'title':'Save directory','text':saves.current_directory})
+    if settings.saves.save:
+        dicts.append({'title':'Save directory','text':saves.current_directory})
 
     # Print lines
 
