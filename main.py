@@ -7,8 +7,8 @@ Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 import settings
 settings_file_path = 'settings.yml'
 settings._load_file(settings_file_path)
-import constants
-constants._load_file(settings.constants.file_path)
+import const
+const._load_file(settings.constants.file_path)
 import saves
 if settings.saves.save:
     saves._set_current_directory(saves._choose_directory_name(settings.saves.name)) # Chooses directory name then sets it as saves.current_directory
@@ -22,11 +22,14 @@ import printoff as pr
 import matplotlib.pyplot as plt
 import plot
 
-from misc import Timer, get_range
+from misc import Timer, get_range, check_elastic_constants
 
 # Print info
 
 pr.constants_info()
+
+check_elastic_constants()
+
 pr.mesh_info()
 pr.options_info()
 pr.saves_info()
@@ -83,7 +86,7 @@ for refinement_level in get_range(settings.mesh.refs):
 
     for i in range(1,len(energies)):
         if energies[i]-energies[i-1] > 0:
-            pr.warning(f'Energy decrease failed at time t = {times[i]} by {energies[i]-energies[i-1]}')
+            pr.warning(f'Energy decrease failed at time t = {times[i]} by {energies[i]-energies[i-1]}',spaced=False)
 
     plot.time_vs_energy(ax,times,energies,refinement_level=refinement_level,manu_energy=None)
 

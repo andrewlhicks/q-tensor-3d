@@ -1,3 +1,11 @@
+# Value checkers
+
+def check_elastic_constants():
+    import printoff as pr
+    import const
+    if 0>=const.L1 or -const.L1>=const.L3 or const.L3>=2*const.L1 or -3/5*const.L1-1/10*const.L3>=const.L2:
+        pr.warning('L1, L2, and L3 do not satisfy the proper inequalities')
+
 # Functions
 
 def getValues(dictionary,keys):

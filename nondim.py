@@ -11,7 +11,7 @@ file_path = input('Enter constants file name: ')
 with open(f'constants/{file_path}.yml') as constants_file:
 	constants_dict = yaml.load(constants_file, Loader=yaml.FullLoader)
 
-const = constants_dict['const']
+const = constants_dict
 nd_const = {}
 
 # Define auxiliary constants
@@ -38,7 +38,7 @@ nd_const['ep'] = sqrt(LM/AM)/R
 
 # Replace old constants with new ones in the constants_dict
 
-constants_dict['const'] = nd_const
+constants_dict = nd_const
 
 with open(f'constants/{file_path}_nd.yml','w') as constants_file:
 	constants_file.write(yaml.dump(constants_dict))

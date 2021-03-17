@@ -8,7 +8,7 @@ from firedrakeplus import tensorfy
 from sympyplus import levi_civita
 
 import settings
-from constants import const
+import const
 
 def elastic(q):
 	Q = tensorfy(q)

@@ -6,10 +6,9 @@ an appendage that is only causing harm to the code as a whole. """
 from sympyplus import *
 
 import settings
-from constants import const
+import const
 
-S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
 # Strong terms
@@ -100,7 +99,7 @@ def strong_twist_gamma(Q):
     return term
 
 def tilde(Q):
-    return Q + S0/3*eye(3)
+    return Q + const.S0/3*eye(3)
 
 ###
 
@@ -108,4 +107,4 @@ def strong_F(Q_manu): # plugs Q_manu into the strong form PDE
     return const.L1*strongL1(Q_manu) + const.L2*strongL2(Q_manu) + const.L3*strongL3(Q_manu) + 4*const.L1*strong_twist(Q_manu) + (1/const.ep**2)*(-const.A*Q_manu - const.B*Q_manu*Q_manu + const.C*innerp(Q_manu,Q_manu)*Q_manu)
 
 def strong_G(Q_manu):
-    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + 2*const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-S0**2)*Q_manu
+    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + 2*const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-const.S0**2)*Q_manu

@@ -8,11 +8,9 @@ import user_expressions.bdycond_s as bdycond_s
 import user_expressions.bdycond_w as bdycond_w
 
 import settings
-from constants import const
-const.dt = settings.timedata.time_step
+import const
 
-S0 = (const.B + sqrt(const.B**2 + 24.0*const.A*const.C))/(4.0*const.C)
-Q0 = S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
 # theta = atan2(x[1]-0.5,x[0]-0.5)
@@ -56,104 +54,6 @@ def term_twist_var(q,p):
     # return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) + 4*const.q0**2*innerp(Q,P)
     return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) # got rid of the linear 0-th derivative term
 
-####
-
-def strongL1(Q):
-    term = zeros(3,3)
-    
-    for ii in range(3):
-            for jj in range(3):
-                for kk in range(3):
-                    term[ii,jj] -= diff(Q[ii,jj],x[kk],x[kk])
-    
-    return term
-
-def strongL2(Q):
-    term = zeros(3,3)
-        
-    for ii in range(3):
-        for jj in range(3):
-            for kk in range(3):
-                term[ii,jj] -= diff(Q[ii,kk],x[jj],x[kk])
-    
-    return term
-
-def strongL3(Q):  
-    term = zeros(3,3)
-        
-    for ii in range(3):
-        for jj in range(3):
-            for kk in range(3):
-                term[ii,jj] -= diff(Q[ii,kk],x[kk],x[jj])
-    
-    return term
-
-def strong_twist(Q):
-    term = zeros(3,3)
-
-    for ii in range(3):
-        for jj in range(3):
-            for kk in range(3):
-                for ll in range(3):
-                    term[ii,jj] -= const.q0*levi_civita(ii,ll,kk)*diff(Q[ll,jj],x[kk])
-
-    # Got rid of this linear 0-th derivative term below:
-    # term += const.q0**2*Q
-
-    return term
-
-def strongGammaL1(Q):
-    term = zeros(3,3)
-    
-    for ii in range(3):
-            for jj in range(3):
-                for kk in range(3):
-                    term[ii,jj] += nu[kk]*diff(Q[ii,jj],x[kk])
-    
-    return term
-
-def strongGammaL2(Q):
-    term = zeros(3,3)
-        
-    for ii in range(3):
-        for jj in range(3):
-            for kk in range(3):
-                term[ii,jj] += nu[jj]*diff(Q[ii,kk],x[kk])
-    
-    return term
-
-def strongGammaL3(Q):  
-    term = zeros(3,3)
-        
-    for ii in range(3):
-        for jj in range(3):
-            for kk in range(3):
-                term[ii,jj] += nu[kk]*diff(Q[ii,kk],x[jj])
-    
-    return term
-
-def strong_twist_gamma(Q):
-    term = zeros(3,3)
-
-    for ii in range(3):
-        for jj in range(3):
-            for kk in range(3):
-                for ll in range(3):
-                    term[ii,jj] += const.q0*nu[kk]*levi_civita(ii,ll,kk)*Q[ll,jj]
-
-    return term
-
-def tilde(Q):
-    return Q + S0/3*eye(3)
-
-###
-
-def strong_F(Q_manu): # plugs Q_manu into the strong form PDE
-    return const.L1*strongL1(Q_manu) + const.L2*strongL2(Q_manu) + const.L3*strongL3(Q_manu) + 4*const.L1*strong_twist(Q_manu) + (1/const.ep**2)*(-const.A*Q_manu - const.B*Q_manu*Q_manu + const.C*innerp(Q_manu,Q_manu)*Q_manu)
-
-def strong_G(Q_manu):
-    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + 2*const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-S0**2)*Q_manu
-
 #########################################################
 
 def compute():
@@ -174,7 +74,7 @@ def compute():
 
     bfNAnchor = GeneralForm(const.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
     bfPDAnchor1 = GeneralForm(const.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1') # This was WRONG and nonlinear. Why didn't the code catch this?
-    bfPDAnchor2 = GeneralForm(const.W2*((innerp(Q,Q) - 2*S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
+    bfPDAnchor2 = GeneralForm(const.W2*((innerp(Q,Q) - 2*const.S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
 
     # Linear forms
 
@@ -182,7 +82,7 @@ def compute():
     lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
     lfNAnchor = GeneralForm(const.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
-    lfPDAnchor1 = GeneralForm(const.W1*innerp(-S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
+    lfPDAnchor1 = GeneralForm(const.W1*innerp(-const.S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
 
     lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
     lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')

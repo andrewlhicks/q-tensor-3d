@@ -6,7 +6,7 @@ from misc import colors
 from time import sleep
 import saves
 import settings
-from constants import const
+import const
 import functools
 
 if settings.saves.save:
@@ -84,6 +84,7 @@ def constants_info():
     plog(f'      A = {const.A},')
     plog(f'      B = {const.B},')
     plog(f'      C = {const.C},')
+    plog(f'     S0 = {const.S0},')
     plog(f'     W0 = {const.W0},')
     plog(f'     W1 = {const.W1},')
     plog(f'     W2 = {const.W2},')
@@ -224,11 +225,12 @@ def pdeSolveInfo(**kwargs):
     print_lines(*dicts)
 
 @plogger
-def warning(text):
+def warning(text,spaced=True):
     """ Plogs a warning. """
 
     if not isinstance(text,str):
         raise TypeError('Warnings must be composed of a string.')
     plog(f'Warning: {text}',color='warning')
+    if spaced: plog('')
 
 # END OF CODE
