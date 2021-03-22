@@ -81,45 +81,29 @@ def fnorm(A):
 
 # Checks
 
-def isLinear(expression,*args):
-    for arg in args:
-        if not isinstance(arg,QVector) and not isinstance(arg,AbstractVectorGradient):
-            raise TypeError('Must be checking for linearity with respect to type QVector or AbstractVectorGradient.')
-    for arg in args:
-        if isinstance(arg,QVector):
-            for ii in range(5):
-                secondderivative = diff(expression,arg[ii],2)
-                if not secondderivative.is_zero:
-                    # print('Second der not zero')
-                    return False
-            for ii in range(5):
-                expression = expression.subs(arg[ii],0)
-            if not expression.is_zero:
-                # print('0 maps to nonzero')
-                return False
-        elif isinstance(arg,AbstractVectorGradient):
-            for ii in range(5):
-                for jj in range(3):
-                    secondderivative = diff(expression,arg[ii,jj],2)
-                    if not secondderivative.is_zero:
-                        # print('Second der not zero')
-                        return False
-            for ii in range(5):
-                for jj in range(3):
-                    expression = expression.subs(arg[ii,jj],0)
-            if not expression.is_zero:
-                # print('0 maps to nonzero')
-                return False
-    return True
+def is_linear_param(expression,parameter):
+    """ Checks if the expression is linear in this single parameter. """
+    if not isinstance(parameter,Param):
+        raise TypeError('Parameter given must be type Param.')
+    args = parameter.explode()
 
-def isLinearParam(expression,param):
-    if not isinstance(param,Param):
-        raise TypeError('Second positional argument must be type Param.')
+    # Begin with the second derivative test for all parameters
 
-    if isLinear(expression,param.der) or isLinear(expression,param.vec):
-        return True
-    else:
+    for arg in args:
+        second_derivative = diff(expression,arg,2)
+        if not second_derivative.is_zero:
+            return False
+
+    # Next, set all args equal to zero and see if expression becomes zero
+
+    for arg in args:
+        expression = expression.subs(arg,0)
+    if not expression.is_zero:
         return False
+
+    # If the two tests do not return False, return True
+
+    return True
 
 def checkIfParam(param):
     if not isinstance(param,list):
@@ -343,6 +327,9 @@ class Param:
                 raise TypeError('Second argument of parameter must be type QVector.')
             self.der = param[0]
             self.vec = param[1]
+    def explode(self):
+        """ Returns the Symbols of the Param as a list. """
+        return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
 
 class QTensor(Matrix):
     """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.
@@ -470,12 +457,10 @@ class lhsForm:
     def __call__(self):
         expr = 0
         for form in self.forms:
-            if not isLinearParam(form.expr,self.trial_func):
-                # raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the trial function.')
-                print(f'Sympyplus detects form \'{form}\' of \'{self}\' to be nonlinear in the trial function; however, this is an error.')
-            elif not isLinearParam(form.expr,self.test_func):
-                # raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the test function.')
-                print(f'Sympyplus detects form \'{form}\' of \'{self}\' to be nonlinear in the test function; however, this is an error.')
+            if not is_linear_param(form.expr,self.trial_func):
+                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the trial function.')
+            elif not is_linear_param(form.expr,self.test_func):
+                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear in the test function.')
             expr += form.expr
         return uflfy(expr)
 
@@ -500,9 +485,8 @@ class rhsForm:
     def __call__(self):
         expr = 0
         for form in self.forms:
-            if not isLinearParam(form.expr,self.test_func):
-                # raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear.')
-                print(f'Sympyplus detects form \'{form}\' of \'{self}\' to be nonlinear; however, this is an error.')
+            if not is_linear_param(form.expr,self.test_func):
+                raise ValueError(f'The form \'{form}\' of \'{self}\' is nonlinear.')
             expr += form.expr
         return uflfy(expr)
 
