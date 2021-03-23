@@ -86,7 +86,7 @@ def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong
         bc = DirichletBC(function_space, bdy_cond, "on_boundary")
         bcs = [bc]
     elif isinstance(strong_boundary[1],int):
-        if strong_boundary > -1:
+        if strong_boundary[1] > -1:
             bc = DirichletBC(function_space, bdy_cond, [strong_boundary[1]])
             bcs = [bc]
         else:
@@ -251,9 +251,9 @@ def visualize(q_vis,mesh,new_outfile=False):
     eigvecs = Function(H1_ten)
     eigvals = Function(H1_vec)
 
-    normal = interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2),H1_vec)
-    # normal = interpolate(as_vector([0,0,1]),H1_vec)
-    normal.rename('Radial')
+    # normal = interpolate(as_vector([x0,x1,x2])/(x0**2+x1**2+x2**2)**(1/2),H1_vec)
+    normal = interpolate(as_vector([0,0,1]),H1_vec)
+    normal.rename('Upward-pointing vector')
     norm_q = interpolate(sqrt(q_vis[0]**2+q_vis[1]**2+q_vis[2]**2+q_vis[3]**2+q_vis[4]**2),H1_scl)
     norm_q.rename('Norm of Q')
 

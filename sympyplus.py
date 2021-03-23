@@ -264,6 +264,7 @@ def secondVariationalDerivative(binaryform,*params,name=None):
 class AbstractVectorGradient(Matrix):
     """ Defines a gradient or Jacobian matrix for a given AbstractVector, using
     the built in dx() method of the AbstractVector. """
+
     def __new__(cls,abstractvector,dim=3):
         if not isinstance(abstractvector,AbstractVector):
             raise TypeError('Must be type AbstractVector.')
@@ -280,8 +281,7 @@ class AbstractVector(Matrix):
     'name' and subscripted from 0 to dim-1. The name chosen should match the
     variable name that will later be used by Firedrake. The dx() method is a
     similar vector but with the '.dx()' suffix attached to each entry of the
-    vector, to indicate in UFL code that the derivative is being taken.
-    """
+    vector, to indicate in UFL code that the derivative is being taken. """
 
     def __new__(cls,name,dim=3):
         if not isinstance(name,str):
