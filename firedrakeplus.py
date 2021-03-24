@@ -38,8 +38,8 @@ def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None
 
     nu = FacetNormal(mesh)
 
-    f = zero_vec if forcing_f is None else eval(forcing_f)
-    g = zero_vec if forcing_g is None else eval(forcing_g)
+    f = zero_vec if forcing_f is None else forcing_f
+    g = zero_vec if forcing_g is None else forcing_g
 
     domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
 
@@ -57,7 +57,7 @@ def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None
     else:
         raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
-    return domain_integral + boundary_integral
+    return float(domain_integral + boundary_integral)
 
 def errorH1(func_comp,func_true,mesh):
     return nrm.H1(func_comp - func_true,mesh)
@@ -121,12 +121,13 @@ def RandomFunction(function_space):
 
     return function
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial_guess,mesh,strong_boundary=None,weak_boundary=None,forcing_f=None,forcing_g=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,strong_boundary=None,weak_boundary=None,initial_q=None,initial_t=0,forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
     import settings
     import numpy as np
     import settings
+    import saves
 
     # Define function space, coordinates, and q_soln
 
@@ -152,10 +153,9 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     # Non-updated constant functions
     # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
 
-    f = zero_vec if forcing_f is None else eval(forcing_f)
-    g = zero_vec if forcing_g is None else eval(forcing_g)
-
-    q_init = RandomFunction(H1_vec) if initial_guess == 'random' else interpolate(eval(initial_guess),H1_vec)
+    f = zero_vec if forcing_f is None else forcing_f
+    g = zero_vec if forcing_g is None else forcing_g
+    q_init = zero_vec if initial_q is None else initial_q
 
     # First q_soln is taken to be the initial guess
 
@@ -194,8 +194,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
     timer.start()
 
     no_times = int(settings.timedata.end_time/settings.timedata.time_step)
-    times = np.arange(0,settings.timedata.end_time,settings.timedata.time_step)
-    energies = np.array([])
+    times = list(range(initial_t,initial_t+settings.timedata.end_time,settings.timedata.time_step))
+    energies = []
 
     for time in progressbar(times,redirect_stdout=True):
 
@@ -212,9 +212,11 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,initial
 
         if settings.options.visualize: visualize(q_soln,mesh)
 
-        energies = np.append(energies,computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
+        energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
     timer.stop()
+
+    if settings.saves.save: saves.save_checkpoint(q_soln)
 
     return (q_soln, timer.time_elapsed, times, energies)
 

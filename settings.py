@@ -18,7 +18,7 @@ def _load_file(file_path):
 	class options:
 		visualize, manufactured, weak_boundary, strong_boundary = getValues(settings_dict['options'],'visualize, manufactured, weak_boundary, strong_boundary')
 	class saves:
-		save, name = getValues(settings_dict['saves'],'save, name')
+		save, mode, name = getValues(settings_dict['saves'],'save, mode, name')
 	class solverdata:
 		ksp_type, pc_type = getValues(settings_dict['solverdata'],'ksp_type, pc_type')
 	class timedata:

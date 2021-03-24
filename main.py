@@ -11,12 +11,11 @@ import const
 const._load_file(settings.constants.file_path)
 import saves
 if settings.saves.save:
-    saves._set_current_directory(saves._choose_directory_name(settings.saves.name)) # Chooses directory name then sets it as saves.current_directory
-    saves._create_directory(saves.current_directory)
+    saves._set_current_directory() # Chooses directory name then sets it as saves.current_directory
 
 # Import other modules
 
-import firedrakeplus as fd
+from firedrakeplus import *
 import printoff as pr
 
 import matplotlib.pyplot as plt
@@ -57,32 +56,41 @@ for refinement_level in get_range(settings.mesh.refs):
     fig, ax = plt.subplots(figsize=(10,10))
     fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
 
-    mesh = fd.Mesh(f'meshes/{settings.mesh.name}{refinement_level}.msh')
+    mesh = Mesh(f'meshes/{settings.mesh.name}{refinement_level}.msh')
+    H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
 
-    q_manu = fd.firedrakefy(comp.manufac_q,mesh)
+    q_manu = firedrakefy(comp.manufac_q,mesh)
 
-    if settings.options.manufactured:
-        forcing_f = comp.forcing_f
-        forcing_g = comp.forcing_g
-    else:
-        forcing_f = None
-        forcing_g = None
+    forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec
+    forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
 
-    manu_energy = fd.computeEnergy(q_manu,mesh,
+    initial_q = saves.load_checkpoint(H1_vec) if settings.saves.save and settings.saves.mode == 'resume' else eval(comp.initial_q)
+    initial_t = saves.load_times()[-1] + settings.timedata.time_step if settings.saves.save and settings.saves.mode == 'resume' else 0
+
+    manu_energy = computeEnergy(q_manu,mesh,
         weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
         forcing_f=forcing_f,
         forcing_g=forcing_g)
-    q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,
+
+    q_soln, time_elapsed, times, energies = solvePDE(comp.n_bf_O,
         comp.n_bf_G,
         comp.n_lf_O,
         comp.n_lf_G,
-        comp.initial_q,
-        mesh,
+        mesh=mesh,
         strong_boundary=[comp.bdycond_s,settings.options.strong_boundary],
         weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
+        initial_q=initial_q,
+        initial_t=initial_t,
         forcing_f=forcing_f,
         forcing_g=forcing_g)
-    # q_soln, time_elapsed, times, energies = fd.solvePDE(comp.n_bf_O,comp.n_bf_G,comp.n_lf_O,comp.n_lf_G,'random',mesh,boundary=settings.options.boundary,forcing_f=forcing_f,forcing_g=forcing_g)
+
+    if settings.saves.save:
+        old_energies = saves.load_energies() if settings.saves.mode == 'resume' else []
+        old_times = saves.load_times() if settings.saves.mode == 'resume' else []
+        energies = old_energies + energies
+        times = old_times + times
+        saves.save_times(times)
+        saves.save_energies(energies)
 
     for i in range(1,len(energies)):
         if energies[i]-energies[i-1] > 0:
@@ -90,12 +98,15 @@ for refinement_level in get_range(settings.mesh.refs):
 
     plot.time_vs_energy(ax,times,energies,refinement_level=refinement_level,manu_energy=None)
 
-    h1_error = fd.errorH1(q_soln,q_manu,mesh)
-    l2_error = fd.errorL2(q_soln,q_manu,mesh)
-    energy = fd.computeEnergy(q_soln,mesh,weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],forcing_f=comp.forcing_f,forcing_g=comp.forcing_g)
-    
-    pr.pdeSolveInfo(refinement_level=refinement_level,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)
-    # pr.pdeSolveInfo(refinement_level=refinement_level,mesh_numnodes=numnodes,h1_error=h1_error,l2_error=l2_error,energy=energy,custom={'title':'Manu. Sol. Energy','text':manu_energy},time_elapsed=time_elapsed)
+    h1_error = errorH1(q_soln,q_manu,mesh)
+    l2_error = errorL2(q_soln,q_manu,mesh)
+
+    pr.pdeSolveInfo(refinement_level=refinement_level,
+        h1_error=h1_error,
+        l2_error=l2_error,
+        energy=energies[-1],
+        custom={'title':'Manu. Sol. Energy','text':manu_energy},
+        time_elapsed=time_elapsed)
 
     if settings.saves.save:
         plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')

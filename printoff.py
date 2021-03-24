@@ -136,6 +136,7 @@ def saves_info():
 
     dicts.append({'title':'Save','text':settings.saves.save})
     if settings.saves.save:
+        dicts.append({'title':'Mode','text':settings.saves.mode})
         dicts.append({'title':'Save directory','text':saves.current_directory})
 
     # Print lines
@@ -176,9 +177,9 @@ def time_info():
 @plogger
 def prelimCompTitle():
     """ Prints title for the preliminary computations. """
-    
+
     sleep(1)
-    
+
     plog(f'PRELIMINARY COMPUTATIONS:',color='uline')
     plog()
 
@@ -192,9 +193,9 @@ def prelimCompInfo(time_elapsed):
 @plogger
 def pdeSolveTitle():
     """ Prints title for the PDE solving. """
-    
+
     sleep(1)
-    
+
     plog(f'PDE SOLVE:',color='uline')
     plog()
 
