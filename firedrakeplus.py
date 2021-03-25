@@ -161,7 +161,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     q_soln.assign(q_init)
 
-    if settings.options.visualize: visualize(q_soln,mesh,new_outfile=True)
+    if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh)
 
     # define bilinear form a(q,p), and linear form L(p)
 
@@ -278,9 +278,6 @@ def visualize(q_vis,mesh,new_outfile=False):
     # Create new outfile if desired
 
     if settings.saves.save:
-        if new_outfile == True:
-            global outfile
-            outfile = File(f'{saves.current_directory}/vis/vis.pvd')
-        outfile.write(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q)
+        saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q)
 
 # END OF CODE

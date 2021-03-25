@@ -1,6 +1,8 @@
 import os
 import settings
 
+outfile = None
+
 def _choose_directory_name(directory_protoname):
 	""" Chooses a directory name and returns it. More specifically, takes an
 	arbitrary name, and then places a digit behind it to create a unique
@@ -97,3 +99,12 @@ def save_times(times):
 
 	with open(f'{current_directory}/energy/times.yml','w') as times_file:
 		times_file.write(yaml.dump(times))
+
+def save_pvd(*args):
+	from firedrake import File
+	global outfile
+	if outfile is None:
+		print('Outfile is None')
+		mode = 'a' if settings.saves.mode == 'resume' else 'w'
+		outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
+	outfile.write(*args)
