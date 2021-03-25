@@ -76,35 +76,39 @@ def load_energies():
 	import yaml
 
 	with open(f'{current_directory}/energy/energies.yml') as energies_file:
-		energies = yaml.load(energies_file, Loader=yaml.FullLoader)
+		yaml_load = yaml.load(energies_file, Loader=yaml.FullLoader)
 
-	return energies
+	times = yaml_load['times']
+	energies = yaml_load['energies']
 
-def save_energies(energies):
+	return list(times), list(energies)
+
+def save_energies(times,energies):
 	import yaml
+
+	yaml_dump = {'times':times, 'energies':energies}
 
 	with open(f'{current_directory}/energy/energies.yml','w') as energies_file:
-		energies_file.write(yaml.dump(energies))
+		energies_file.write(yaml.dump(yaml_dump))
 
-def load_times():
-	import yaml
-
-	with open(f'{current_directory}/energy/times.yml') as times_file:
-		times = yaml.load(times_file, Loader=yaml.FullLoader)
-
-	return times
-
-def save_times(times):
-	import yaml
-
-	with open(f'{current_directory}/energy/times.yml','w') as times_file:
-		times_file.write(yaml.dump(times))
+# def load_times():
+# 	import yaml
+#
+# 	with open(f'{current_directory}/energy/times.yml') as times_file:
+# 		times = yaml.load(times_file, Loader=yaml.FullLoader)
+#
+# 	return times
+#
+# def save_times(times):
+# 	import yaml
+#
+# 	with open(f'{current_directory}/energy/times.yml','w') as times_file:
+# 		times_file.write(yaml.dump(times))
 
 def save_pvd(*args):
 	from firedrake import File
 	global outfile
 	if outfile is None:
-		print('Outfile is None')
 		mode = 'a' if settings.saves.mode == 'resume' else 'w'
 		outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
 	outfile.write(*args)
