@@ -11,7 +11,8 @@ import functools
 
 if settings.saves.save:
     from datetime import datetime
-    with open(f'{saves.current_directory}/log/log.txt','w') as file:
+    mode = 'a' if settings.saves.mode == 'resume' else 'w'
+    with open(f'{saves.current_directory}/log/log.txt',mode) as file:
         now = datetime.now()
         file.write(now.strftime('%c') + '\n')
 
