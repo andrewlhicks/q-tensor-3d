@@ -11,7 +11,7 @@ def _load_file(file_path):
 		settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 	# Settings
-	global mesh, options, visdata, saves, solverdata, timedata, constants
+	global mesh, options, visdata, saves, solverdata, timedata, constants, vis
 
 	class mesh: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 		name, refs = getValues(settings_dict['mesh'],'name, refs')
@@ -25,6 +25,8 @@ def _load_file(file_path):
 		time_step, end_time = getValues(settings_dict['timedata'],'time_step, end_time')
 	class constants:
 		file_path = settings_dict['constants']['file_path']
+	class vis:
+		normal = settings_dict['vis']['normal']
 
 	if not isinstance(options.manufactured,bool):
 	    raise ValueError("Variable 'manufactured' must be a boolean.")

@@ -16,7 +16,7 @@ nd_const = {}
 
 # Define auxiliary constants
 
-R = 3.0e-5
+R = 3.0e-5 # Zoomed Slab for Lagerwall
 AM = max(const['A'],const['B'],const['C'])
 # AM = const['A']
 LM = max(const['L1'],const['L2'],const['L3'])

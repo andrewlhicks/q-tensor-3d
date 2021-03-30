@@ -58,13 +58,14 @@ for refinement_level in get_range(settings.mesh.refs):
 
     mesh = Mesh(f'meshes/{settings.mesh.name}{refinement_level}.msh')
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
+    x0, x1, x2 = SpatialCoordinate(mesh)
 
     q_manu = firedrakefy(comp.manufac_q,mesh)
 
     forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec
     forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
 
-    initial_q = saves.load_checkpoint(H1_vec) if settings.saves.save and settings.saves.mode == 'resume' else eval(comp.initial_q)
+    initial_q = saves.load_checkpoint(H1_vec) if settings.saves.save and settings.saves.mode == 'resume' else interpolate(eval(comp.initial_q),H1_vec)
 
     if settings.saves.save and settings.saves.mode == 'resume':
         old_times, old_energies = saves.load_energies()
