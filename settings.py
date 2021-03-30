@@ -11,7 +11,7 @@ def _load_file(file_path):
 		settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 	# Settings
-	global mesh, options, visdata, saves, solverdata, timedata, constants, vis
+	global mesh, options, visdata, saves, solver, time, constants, vis
 
 	class mesh: # Perhaps I could make a class that constains both the mesh and the meshdata later on
 		name, refs = getValues(settings_dict['mesh'],'name, refs')
@@ -19,10 +19,10 @@ def _load_file(file_path):
 		visualize, manufactured, weak_boundary, strong_boundary = getValues(settings_dict['options'],'visualize, manufactured, weak_boundary, strong_boundary')
 	class saves:
 		save, mode, name = getValues(settings_dict['saves'],'save, mode, name')
-	class solverdata:
-		ksp_type, pc_type = getValues(settings_dict['solverdata'],'ksp_type, pc_type')
-	class timedata:
-		time_step, end_time = getValues(settings_dict['timedata'],'time_step, end_time')
+	class solver:
+		ksp_type, pc_type = getValues(settings_dict['solver'],'ksp_type, pc_type')
+	class time:
+		step, end = getValues(settings_dict['time'],'step, end')
 	class constants:
 		file_path = settings_dict['constants']['file_path']
 	class vis:

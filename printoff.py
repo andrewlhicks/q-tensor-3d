@@ -152,8 +152,8 @@ def solver_info():
 
     dicts = []
 
-    dicts.append({'title':'KSP Type','text':settings.solverdata.ksp_type})
-    dicts.append({'title':'PC Type','text':settings.solverdata.pc_type})
+    dicts.append({'title':'KSP Type','text':settings.solver.ksp_type})
+    dicts.append({'title':'PC Type','text':settings.solver.pc_type})
 
     # Print lines
 
@@ -167,9 +167,9 @@ def time_info():
 
     dicts = []
 
-    dicts.append({'title':'Time step','text':settings.timedata.time_step})
-    dicts.append({'title':'End time','text':settings.timedata.end_time})
-    dicts.append({'title':'No. time steps','text':f'{settings.timedata.end_time/settings.timedata.time_step:0.0f}'})
+    dicts.append({'title':'Time step','text':settings.time.step})
+    dicts.append({'title':'End time','text':settings.time.end})
+    dicts.append({'title':'No. time steps','text':f'{settings.time.end/settings.time.step:0.0f}'})
 
     # Print lines
 

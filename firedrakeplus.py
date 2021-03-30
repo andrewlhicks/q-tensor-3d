@@ -193,8 +193,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     timer = Timer()
     timer.start()
 
-    no_times = int(settings.timedata.end_time/settings.timedata.time_step)
-    times = list(range(initial_t,initial_t+settings.timedata.end_time,settings.timedata.time_step))
+    no_times = int(settings.time.end/settings.time.step)
+    times = list(range(initial_t,initial_t+settings.time.end,settings.time.step))
     energies = []
 
     for time in progressbar(times,redirect_stdout=True):
@@ -204,8 +204,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
         newtonSolve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
             solver_parameters={'snes_type' : 'ksponly',                 # Turn off auto Newton's method
-                               'ksp_type' : settings.solverdata.ksp_type,        # Krylov subspace type
-                               'pc_type'  : settings.solverdata.pc_type,         # preconditioner type
+                               'ksp_type' : settings.solver.ksp_type,        # Krylov subspace type
+                               'pc_type'  : settings.solver.pc_type,         # preconditioner type
                                'mat_type' : 'aij' })
 
         # Write eigenvectors and eigenvalues to Paraview

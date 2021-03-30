@@ -69,7 +69,7 @@ for refinement_level in get_range(settings.mesh.refs):
 
     if settings.saves.save and settings.saves.mode == 'resume':
         old_times, old_energies = saves.load_energies()
-        initial_t = old_times[-1] + settings.timedata.time_step
+        initial_t = old_times[-1] + settings.time.step
     else:
         old_times, old_energies = [], []
         initial_t = 0
