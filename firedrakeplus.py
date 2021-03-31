@@ -148,6 +148,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     # Updated constant functions
 
     q_prev = Function(H1_vec)
+    q_prev_prev = Function(H1_vec)
     q_newt_prev = Function(H1_vec)
 
     # Non-updated constant functions
@@ -157,9 +158,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     g = zero_vec if forcing_g is None else forcing_g
     q_init = zero_vec if initial_q is None else initial_q
 
-    # First q_soln is taken to be the initial guess
+    # First q_soln is taken to be the initial guess, and q_prev is taken to be the same thing
 
     q_soln.assign(q_init)
+    q_prev.assign(q_soln)
 
     if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh)
 
@@ -199,7 +201,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     for time in progressbar(times,redirect_stdout=True):
 
-        # Assign the solution from the previous loop to q_prev
+        # Assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
+        q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
         newtonSolve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,

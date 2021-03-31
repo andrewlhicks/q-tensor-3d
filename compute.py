@@ -28,7 +28,7 @@ def termL2(grad1,grad2):
     for ii in range(5):
         for jj in range(5):
             term += (grad1.row(ii) * E[ii]).dot(E[jj] * grad2.row(jj).T)
-    
+
     return term
 
 def termL3(grad1,grad2):
@@ -37,7 +37,7 @@ def termL3(grad1,grad2):
     for ii in range(5):
         for jj in range(5):
             term += (grad1.row(ii) * E[jj]).dot(E[ii] * grad2.row(jj).T)
-    
+
     return term
 
 # def term_twist(q):
@@ -87,13 +87,20 @@ def compute():
     lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
     lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')
 
+    lf_TimeStep2 = GeneralForm( (1/const.ep**2)*(1/const.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
+
     # Assemble LHS, RHS
 
-    bilinearDomain = lhsForm([Dq,q],[Dp,p],forms=[bfTimeStep,bfElastic,bfBulkC,bfTwist])
-    bilinearBoundary = lhsForm([Dq,q],[Dp,p],forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
+    bilinearDomain = lhsForm([Dq,q],[Dp,p],name='Bilinear Domain',forms=[bfTimeStep,bfElastic,bfBulkC,bfTwist])
+    bilinearBoundary = lhsForm([Dq,q],[Dp,p],name='Bilinear Boundary',forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
 
-    linearDomain = rhsForm([Dp,p],forms=[lfTimeStep,lfBulkE,lf_ForcingF])
-    linearBoundary = rhsForm([Dp,p],forms=[lfNAnchor,lfPDAnchor1,lf_ForcingG])
+    linearDomain = rhsForm([Dp,p],name='Linear Domain',forms=[lfTimeStep,lfBulkE,lf_ForcingF])
+    linearBoundary = rhsForm([Dp,p],name='Linear Boundary',forms=[lfNAnchor,lfPDAnchor1,lf_ForcingG])
+
+    # If gradient descent is modified to the Heavy Ball method
+
+    if settings.solver.grad_desc == 'modified':
+        linearDomain.add_form(lf_TimeStep2)
 
     # Newton's method
 

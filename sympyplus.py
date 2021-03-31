@@ -519,6 +519,10 @@ qp = QVector('q_prev')
 Dqp = qp.grad
 QP = qp.tens
 
+qpp = QVector('q_prev_prev')
+Dqpp = qpp.grad
+QPP = qpp.tens
+
 qnp = QVector('q_newt_prev')
 Dqnp = qnp.grad
 QNP = qnp.tens

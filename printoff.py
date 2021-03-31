@@ -152,6 +152,7 @@ def solver_info():
 
     dicts = []
 
+    dicts.append({'title':'Gadient descent','text':settings.solver.grad_desc})
     dicts.append({'title':'KSP Type','text':settings.solver.ksp_type})
     dicts.append({'title':'PC Type','text':settings.solver.pc_type})
 
@@ -170,6 +171,20 @@ def time_info():
     dicts.append({'title':'Time step','text':settings.time.step})
     dicts.append({'title':'End time','text':settings.time.end})
     dicts.append({'title':'No. time steps','text':f'{settings.time.end/settings.time.step:0.0f}'})
+
+    # Print lines
+
+    print_lines(*dicts)
+
+@plogger
+def vis_info():
+    plog('VIS:',color='uline')
+
+    # Assemble dicts
+
+    dicts = []
+
+    dicts.append({'title':'Normal vector','text':settings.vis.normal})
 
     # Print lines
 

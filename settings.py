@@ -20,7 +20,7 @@ def _load_file(file_path):
 	class saves:
 		save, mode, name = getValues(settings_dict['saves'],'save, mode, name')
 	class solver:
-		ksp_type, pc_type = getValues(settings_dict['solver'],'ksp_type, pc_type')
+		grad_desc, ksp_type, pc_type = getValues(settings_dict['solver'],'grad_desc, ksp_type, pc_type')
 	class time:
 		step, end = getValues(settings_dict['time'],'step, end')
 	class constants:
