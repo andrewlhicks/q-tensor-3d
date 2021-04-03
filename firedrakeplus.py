@@ -163,7 +163,13 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     q_soln.assign(q_init)
     q_prev.assign(q_soln)
 
-    if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh)
+    # Initilize the list of times and energies
+
+    no_times = int(settings.time.end/settings.time.step)
+    times = list(range(initial_t,initial_t+settings.time.end,settings.time.step))
+    energies = []
+
+    if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh,time=times[0])
 
     # define bilinear form a(q,p), and linear form L(p)
 
@@ -195,11 +201,9 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     timer = Timer()
     timer.start()
 
-    no_times = int(settings.time.end/settings.time.step)
-    times = list(range(initial_t,initial_t+settings.time.end,settings.time.step))
-    energies = []
-
     for time in progressbar(times,redirect_stdout=True):
+        # Note: 'time' is actually the previous time. So I have written a line to get the current time. I may adjust this later.
+        current_time = time+settings.time.step
 
         # Assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
         q_prev_prev.assign(q_prev)
@@ -213,7 +217,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
         # Write eigenvectors and eigenvalues to Paraview
 
-        if settings.options.visualize: visualize(q_soln,mesh)
+        if settings.options.visualize and (current_time/settings.time.step % settings.vis.save_every == 0): visualize(q_soln,mesh,time=current_time)
 
         energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
@@ -241,7 +245,7 @@ def tensorfy(vector):
 
     return vector[0] * E0 + vector[1] * E1 + vector[2] * E2 + vector[3] * E3 + vector[4] * E4
 
-def visualize(q_vis,mesh,new_outfile=False):
+def visualize(q_vis,mesh,time=None,new_outfile=False):
     import eigen
     import saves
     import settings
@@ -285,6 +289,6 @@ def visualize(q_vis,mesh,new_outfile=False):
     # Create new outfile if desired
 
     if settings.saves.save:
-        saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q)
+        saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q, time=time)
 
 # END OF CODE

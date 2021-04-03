@@ -27,6 +27,7 @@ def _load_file(file_path):
 		file_path = settings_dict['constants']['file_path']
 	class vis:
 		normal = settings_dict['vis']['normal']
+		save_every = settings_dict['vis']['save_every']
 
 	if not isinstance(options.manufactured,bool):
 	    raise ValueError("Variable 'manufactured' must be a boolean.")

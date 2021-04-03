@@ -105,10 +105,10 @@ def save_energies(times,energies):
 # 	with open(f'{current_directory}/energy/times.yml','w') as times_file:
 # 		times_file.write(yaml.dump(times))
 
-def save_pvd(*args):
+def save_pvd(*args,time=None):
 	from firedrake import File
 	global outfile
 	if outfile is None:
 		mode = 'a' if settings.saves.mode == 'resume' else 'w'
 		outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
-	outfile.write(*args)
+	outfile.write(*args,time=time)
