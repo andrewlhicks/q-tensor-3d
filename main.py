@@ -56,7 +56,7 @@ for refinement_level in get_range(settings.mesh.refs):
     fig, ax = plt.subplots(figsize=(10,10))
     fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
 
-    mesh = Mesh(f'meshes/{settings.mesh.name}{refinement_level}.msh')
+    mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
     x0, x1, x2 = SpatialCoordinate(mesh)
 
