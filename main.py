@@ -59,6 +59,7 @@ for refinement_level in get_range(settings.mesh.refs):
     mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
     x0, x1, x2 = SpatialCoordinate(mesh)
+    nu = FacetNormal(mesh)
 
     q_manu = firedrakefy(comp.manufac_q,mesh)
 

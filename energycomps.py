@@ -36,4 +36,5 @@ def anchor_n(q,nu):
 def anchor_pd(q,nu):
 	Q = tensorfy(q) + const.S0/3*Identity(3)
 	Pi = Identity(3) - outer(nu,nu)
-	return const.W1/2*(inner(Q-Pi*Q*Pi,Q-Pi*Q*Pi) - 1/3*inner(Q,outer(nu,nu))**2) + const.W2/4*(inner(Q,Q)-const.S0**2)**2 # energy is "trace-free"
+	# return const.W1/2*(inner(Q-Pi*Q*Pi,Q-Pi*Q*Pi) - 1/3*inner(Q,outer(nu,nu))**2) + const.W2/4*(inner(Q,Q)-const.S0**2)**2 # This version is trace-free
+	return const.W1/2*(inner(Q-Pi*Q*Pi,Q-Pi*Q*Pi)) + const.W2/4*(inner(Q,Q)-const.S0**2)**2 # This version is not trace-free

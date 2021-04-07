@@ -25,6 +25,10 @@ class nrm:
     def inf(function):
         from numpy import abs
         return abs(function.dat.data.max())
+        # abs_function = Function(function._function_space).interpolate(abs(function))
+        # with abs_function.dat.vec_ro as v:
+        #     norm = v.max()[1]
+        # return norm
     def H1(function,mesh):
         return sqrt(assemble((inner(grad(function),grad(function)) + dot(function,function)) * dx(domain=mesh)))
     def L2(function,mesh):
