@@ -19,6 +19,9 @@ if settings.saves.save:
 # Decorators
 
 def plogger(func):
+    from firedrake import COMM_WORLD
+    if COMM_WORLD.rank != 0:
+        return
     @functools.wraps(func)
     def wrapper_plogger(*args, **kwargs):
         global plog
