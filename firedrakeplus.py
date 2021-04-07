@@ -10,12 +10,12 @@ Example of a decorator:
 
 def decorator(func):
     @functools.wraps(func)
-    def wrapper_decorator(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         # Do something before
         value = func(*args, **kwargs)
         # Do something after
         return value
-    return wrapper_decorator
+    return wrapper
 
 """
 

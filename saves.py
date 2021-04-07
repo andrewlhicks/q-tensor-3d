@@ -1,8 +1,22 @@
 import os
 import settings
+from firedrake import COMM_WORLD
+import functools
 
 outfile = None
 
+# Decorators
+
+def one_core(func):
+	@functools.wraps(func)
+	def wrapper(*args, **kwargs):
+		if COMM_WORLD.rank != 0:
+			return
+		value = func(*args, **kwargs)
+		return value
+	return wrapper
+
+@one_core
 def _choose_directory_name(directory_protoname):
 	""" Chooses a directory name and returns it. More specifically, takes an
 	arbitrary name, and then places a digit behind it to create a unique
@@ -16,6 +30,7 @@ def _choose_directory_name(directory_protoname):
 			return name
 		ii += 1
 
+@one_core
 def _set_current_directory():
 	""" Sets the global variable 'current_directory' to an appropriate path.
 	More specifically, if the save mode is 'new', creates a new directory, using
@@ -40,6 +55,7 @@ def _set_current_directory():
 	else:
 		raise ValueError('Save mode must be \'new\', \'overwrite\', or \'resume\'.')
 
+@one_core
 def _create_directory(path):
 	""" Creates a directory in the path 'path'. """
 
@@ -72,6 +88,7 @@ def save_checkpoint(q_dump):
 	with DumbCheckpoint(f'{current_directory}/chk/dump',mode=FILE_CREATE) as chk:
 	    chk.store(q_dump)
 
+@one_core
 def load_energies():
 	import yaml
 
@@ -83,6 +100,7 @@ def load_energies():
 
 	return list(times), list(energies)
 
+@one_core
 def save_energies(times,energies):
 	import yaml
 
