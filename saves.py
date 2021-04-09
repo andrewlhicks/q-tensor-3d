@@ -30,7 +30,6 @@ def _choose_directory_name(directory_protoname):
 			return name
 		ii += 1
 
-@one_core
 def _set_current_directory():
 	""" Sets the global variable 'current_directory' to an appropriate path.
 	More specifically, if the save mode is 'new', creates a new directory, using
@@ -39,21 +38,38 @@ def _set_current_directory():
 
 	global current_directory
 
-	if settings.saves.mode == 'new':
-		path = f'saves/{_choose_directory_name(settings.saves.name)}'
+	mode = settings.saves.mode
+
+	if mode == 'overwrite' or mode == 'resume':
+		current_directory = f'saves/{settings.saves.name}'
+		return
+
+	if mode == 'new':
+		current_directory = f'saves/{_choose_directory_name(settings.saves.name)}'
+		return
+
+	raise ValueError('Save mode must be \'new\', \'overwrite\', or \'resume\'.')
+
+@one_core
+def initilize_directory(path):
+	""" This should be called after the current directory is set by all cores.
+	This is done on only one core because it creates the directory should it not
+	exist """
+
+	mode = settings.saves.mode
+
+	if mode == 'overwrite' or mode == 'resume':
 		if not os.path.exists(path):
-			current_directory = path
-			_create_directory(path)
-		else:
-			raise OSError(f'Directory {path} already exists.')
-	elif settings.saves.mode == 'overwrite' or settings.saves.mode == 'resume':
-		path = f'saves/{settings.saves.name}'
-		if os.path.exists(path):
-			current_directory = path
-		else:
 			raise OSError(f'Directory {path} does not exist.')
-	else:
-		raise ValueError('Save mode must be \'new\', \'overwrite\', or \'resume\'.')
+		return
+
+	if mode == 'new':
+		if os.path.exists(path):
+			raise OSError(f'Directory {path} already exists.')
+		_create_directory(path)
+		return
+
+	raise ValueError('Save mode must be \'new\', \'overwrite\', or \'resume\'.')
 
 @one_core
 def _create_directory(path):
@@ -88,7 +104,6 @@ def save_checkpoint(q_dump):
 	with DumbCheckpoint(f'{current_directory}/chk/dump',mode=FILE_CREATE) as chk:
 	    chk.store(q_dump)
 
-@one_core
 def load_energies():
 	import yaml
 
@@ -100,7 +115,6 @@ def load_energies():
 
 	return list(times), list(energies)
 
-@one_core
 def save_energies(times,energies):
 	import yaml
 
@@ -108,20 +122,6 @@ def save_energies(times,energies):
 
 	with open(f'{current_directory}/energy/energies.yml','w') as energies_file:
 		energies_file.write(yaml.dump(yaml_dump))
-
-# def load_times():
-# 	import yaml
-#
-# 	with open(f'{current_directory}/energy/times.yml') as times_file:
-# 		times = yaml.load(times_file, Loader=yaml.FullLoader)
-#
-# 	return times
-#
-# def save_times(times):
-# 	import yaml
-#
-# 	with open(f'{current_directory}/energy/times.yml','w') as times_file:
-# 		times_file.write(yaml.dump(times))
 
 def save_pvd(*args,time=None):
 	from firedrake import File

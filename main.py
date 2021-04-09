@@ -12,6 +12,7 @@ const._load_file(settings.constants.file_path)
 import saves
 if settings.saves.save:
     saves._set_current_directory() # Chooses directory name then sets it as saves.current_directory
+    saves.initilize_directory(saves.current_directory)
 
 # Import other modules
 

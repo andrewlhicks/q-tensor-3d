@@ -23,8 +23,6 @@ zero_vec = as_vector([0,0,0,0,0])
 
 class nrm:
     def inf(function):
-        # from numpy import abs
-        # return abs(function.dat.data.max())
         abs_function = Function(function._function_space).interpolate(abs(function))
         with abs_function.dat.vec_ro as v:
             norm = v.max()[1]
@@ -132,6 +130,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     import numpy as np
     import settings
     import saves
+    import printoff as pr
 
     # Define function space, coordinates, and q_soln
 
@@ -205,7 +204,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     timer = Timer()
     timer.start()
 
-    for time in progressbar(times,redirect_stdout=True):
+    # for time in progressbar(times,redirect_stdout=True):
+    for time in times:
         # Note: 'time' is actually the previous time. So I have written a line to get the current time. I may adjust this later.
         current_time = time+settings.time.step
 

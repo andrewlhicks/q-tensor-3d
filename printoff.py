@@ -11,36 +11,46 @@ import functools
 
 if settings.saves.save:
     from datetime import datetime
-    mode = 'a' if settings.saves.mode == 'resume' else 'w'
-    with open(f'{saves.current_directory}/log/log.txt',mode) as file:
-        now = datetime.now()
-        file.write(now.strftime('%c') + '\n')
+    from firedrake import COMM_WORLD
+    if COMM_WORLD.rank == 0:
+        mode = 'a' if settings.saves.mode == 'resume' else 'w'
+        with open(f'{saves.current_directory}/log/log.txt',mode) as file:
+            now = datetime.now()
+            file.write(now.strftime('%c') + '\n')
 
 # Decorators
 
+def color_print(string,color=None):
+    from misc import colors
+    if color is not None:
+        string = colors[color] + string + colors['end']
+    print(string)
+
 def plogger(func):
-    from firedrake import COMM_WORLD
-    if COMM_WORLD.rank != 0:
-        return
+    """ A decorator that defines a plog function every time it is called. The
+    reason for this is to ensure that the 'with' statement is used correctly.
+    """
     @functools.wraps(func)
     def wrapper_plogger(*args, **kwargs):
+        from firedrake import COMM_WORLD
         global plog
-        if settings.saves.save:
-            with open(f'{saves.current_directory}/log/log.txt','a') as file:
-                def plog(string='',color=None):
-                    file.write(string+'\n')
-                    if color is not None:
-                        string = colors[color] + string + colors['end']
-                    print(string)
-                value = func(*args, **kwargs)
-            return value
-        else:
+
+        if COMM_WORLD.rank != 0:
+            return
+
+        if not settings.saves.save:
             def plog(string='',color=None):
-                if color is not None:
-                    string = colors[color] + string + colors['end']
-                print(string)
+                color_print(string,color)
             value = func(*args, **kwargs)
             return value
+
+        with open(f'{saves.current_directory}/log/log.txt','a') as file:
+            def plog(string='',color=None):
+                file.write(string+'\n')
+                color_print(string,color)
+            value = func(*args, **kwargs)
+        return value
+
     return wrapper_plogger
 
 # Functions that print lines
@@ -251,6 +261,13 @@ def warning(text,spaced=True):
     if not isinstance(text,str):
         raise TypeError('Warnings must be composed of a string.')
     plog(f'Warning: {text}',color='warning')
+    if spaced: plog('')
+
+@plogger
+def info(text,spaced=True):
+    if not isinstance(text,str):
+        raise TypeError('Warnings must be composed of a string.')
+    plog(text)
     if spaced: plog('')
 
 # END OF CODE
