@@ -239,6 +239,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
             saves.save_energies(times,energies)
             saves.save_checkpoint(q_soln)
+            pr.info(f'Checkpoint saved at time {current_time}')
 
     timer.stop()
 
