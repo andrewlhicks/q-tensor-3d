@@ -67,15 +67,6 @@ for refinement_level in get_range(settings.mesh.refs):
     forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec
     forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
 
-    initial_q = saves.load_checkpoint(H1_vec) if settings.saves.save and settings.saves.mode == 'resume' else interpolate(eval(comp.initial_q),H1_vec)
-
-    if settings.saves.save and settings.saves.mode == 'resume':
-        old_times, old_energies = saves.load_energies()
-        initial_t = old_times[-1] + settings.time.step
-    else:
-        old_times, old_energies = [], []
-        initial_t = 0
-
     manu_energy = computeEnergy(q_manu,mesh,
         weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
         forcing_f=forcing_f,
@@ -88,15 +79,9 @@ for refinement_level in get_range(settings.mesh.refs):
         mesh=mesh,
         strong_boundary=[comp.bdycond_s,settings.options.strong_boundary],
         weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
-        initial_q=initial_q,
-        initial_t=initial_t,
+        initial_q=comp.initial_q,
         forcing_f=forcing_f,
         forcing_g=forcing_g)
-
-    if settings.saves.save:
-        energies = old_energies + energies
-        times = old_times + times
-        saves.save_energies(times,energies)
 
     for i in range(1,len(energies)):
         if energies[i]-energies[i-1] > 0:

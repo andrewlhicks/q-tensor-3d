@@ -123,7 +123,7 @@ def RandomFunction(function_space):
 
     return function
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,strong_boundary=None,weak_boundary=None,initial_q=None,initial_t=0,forcing_f=None,forcing_g=None):
+def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,strong_boundary=None,weak_boundary=None,initial_q=None,forcing_f=None,forcing_g=None):
     from progressbar import progressbar
     from misc import Timer
     import settings
@@ -159,7 +159,17 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     f = zero_vec if forcing_f is None else forcing_f
     g = zero_vec if forcing_g is None else forcing_g
-    q_init = zero_vec if initial_q is None else initial_q
+
+    # Load data for resumption of computation, if needed
+
+    if settings.saves.save and settings.saves.mode == 'resume':
+        q_init = saves.load_checkpoint(H1_vec)
+        times, energies = saves.load_energies()
+        t_init = times[-1] + settings.time.step
+    else:
+        q_init = interpolate(eval(initial_q),H1_vec)
+        times, energies = [], []
+        t_init = 0
 
     # First q_soln is taken to be the initial guess, and q_prev is taken to be the same thing
 
@@ -168,9 +178,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     # Initilize the list of times and energies
 
-    no_times = int(settings.time.end/settings.time.step)
-    times = list(range(initial_t,initial_t+settings.time.end,settings.time.step))
-    energies = []
+    new_times = list(range(t_init,t_init+settings.time.end,settings.time.step))
+    times = times + new_times
 
     if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh,time=times[0])
 
@@ -204,8 +213,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     timer = Timer()
     timer.start()
 
+    # Had to temporarily remove the progress bar due to constraints in parallel
+
     # for time in progressbar(times,redirect_stdout=True):
-    for time in times:
+    for time in new_times:
         # Note: 'time' is actually the previous time. So I have written a line to get the current time. I may adjust this later.
         current_time = time+settings.time.step
 
@@ -225,9 +236,11 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
         energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
-    timer.stop()
+        if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
+            saves.save_energies(times,energies)
+            saves.save_checkpoint(q_soln)
 
-    if settings.saves.save: saves.save_checkpoint(q_soln)
+    timer.stop()
 
     return (q_soln, timer.time_elapsed, times, energies)
 
