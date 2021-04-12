@@ -22,13 +22,13 @@ import printoff as pr
 import matplotlib.pyplot as plt
 import plot
 
-from misc import Timer, get_range, check_elastic_constants
+from misc import Timer, get_range, check
 
 # Print info
 
 pr.constants_info()
 
-check_elastic_constants()
+check.elastic_constants()
 
 pr.mesh_info()
 pr.options_info()
@@ -54,9 +54,6 @@ pr.prelimCompInfo(timer.time_elapsed)
 pr.pdeSolveTitle()
 
 for refinement_level in get_range(settings.mesh.refs):
-    fig, ax = plt.subplots(figsize=(10,10))
-    fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
-
     mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
     x0, x1, x2 = SpatialCoordinate(mesh)
@@ -83,11 +80,7 @@ for refinement_level in get_range(settings.mesh.refs):
         forcing_f=forcing_f,
         forcing_g=forcing_g)
 
-    for i in range(1,len(energies)):
-        if energies[i]-energies[i-1] > 0:
-            pr.warning(f'Energy decrease failed at time t = {times[i]} by {energies[i]-energies[i-1]}',spaced=False)
-
-    plot.time_vs_energy(ax,times,energies,refinement_level=refinement_level,manu_energy=None)
+    check.energy_decrease(times,energies)
 
     h1_error = errorH1(q_soln,q_manu,mesh)
     l2_error = errorL2(q_soln,q_manu,mesh)
@@ -100,6 +93,6 @@ for refinement_level in get_range(settings.mesh.refs):
         time_elapsed=time_elapsed)
 
     if settings.saves.save:
-        plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')
+        plot.time_vs_energy(times,energies,refinement_level=refinement_level)
 
 # END OF CODE
