@@ -2,7 +2,6 @@
 'plogging', i.e. print-logging, where the information is printed to the
 console and then put into a log file. """
 
-from misc import colors
 from time import sleep
 import saves
 import settings
@@ -21,10 +20,21 @@ if settings.saves.save:
 # Decorators
 
 def color_print(string,color=None):
-    from misc import colors
+    from firedrake.petsc import PETSc
+
+    colors = {'header' : '\033[95m',
+        'blue' : '\033[94m',
+        'green' : '\033[92m',
+        'warning' : '\033[93m',
+        'fail' : '\033[91m',
+        'end' : '\033[0m',
+        'bold' : '\033[1m',
+        'uline' : '\033[4m'}
+
     if color is not None:
         string = colors[color] + string + colors['end']
-    print(string)
+
+    PETSc.Sys.Print(string)
 
 def plogger(func):
     """ A decorator that defines a plog function every time it is called. The
@@ -267,7 +277,7 @@ def warning(text,spaced=True):
 def info(text,spaced=True):
     if not isinstance(text,str):
         raise TypeError('Warnings must be composed of a string.')
-    plog(text)
+    plog(text,color='green')
     if spaced: plog('')
 
 # END OF CODE

@@ -237,9 +237,9 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
         energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
+            saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
             saves.save_energies(times,energies)
-            saves.save_checkpoint(q_soln)
-            pr.info(f'Checkpoint saved at time {current_time}')
+            pr.info(f'Checkpoint saved at time {current_time}',spaced=False)
 
     timer.stop()
 
