@@ -165,6 +165,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     if settings.saves.save and settings.saves.mode == 'resume':
         q_init = saves.load_checkpoint(H1_vec)
         times, energies = saves.load_energies()
+        if len(times) != len(energies):
+            raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
         t_init = times[-1] + settings.time.step
     else:
         q_init = interpolate(eval(initial_q),H1_vec)
@@ -237,6 +239,8 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
         energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
+            if len(times) != len(energies):
+                raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
             saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
             saves.save_energies(times,energies)
             pr.info(f'Checkpoint saved at time {current_time}',spaced=False)

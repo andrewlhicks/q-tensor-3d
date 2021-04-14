@@ -35,6 +35,7 @@ pr.options_info()
 pr.saves_info()
 pr.solver_info()
 pr.time_info()
+pr.vis_info()
 pr.prelimCompTitle()
 
 # Preliminary computations

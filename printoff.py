@@ -208,6 +208,7 @@ def vis_info():
     dicts = []
 
     dicts.append({'title':'Normal vector','text':settings.vis.normal})
+    dicts.append({'title':'Save every','text':settings.vis.save_every})
 
     # Print lines
 
