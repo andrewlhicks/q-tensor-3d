@@ -239,10 +239,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
         energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
-            if len(times) != len(energies):
-                raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
+            if len(times[:len(energies)]) != len(energies):
+                raise ValueError('You wrote the code wrong, dummy.')
             saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
-            saves.save_energies(times,energies)
+            saves.save_energies(times[:len(energies)],energies) # This is to ensure that the length of the energies is equal to the length of the times
             pr.info(f'Checkpoint saved at time {current_time}',spaced=False)
 
     timer.stop()
