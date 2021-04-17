@@ -165,12 +165,13 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     if settings.saves.save and settings.saves.mode == 'resume':
         q_init = saves.load_checkpoint(H1_vec)
         times, energies = saves.load_energies()
+        print(times,energies)
         if len(times) != len(energies):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
-        t_init = times[-1] + settings.time.step
+        t_init = times.final
     else:
         q_init = interpolate(eval(initial_q),H1_vec)
-        times, energies = [], []
+        times, energies = saves.TimeList([]), saves.EnergyList([])
         t_init = 0
 
     # First q_soln is taken to be the initial guess, and q_prev is taken to be the same thing
@@ -180,10 +181,11 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     # Initilize the list of times and energies
 
-    new_times = list(range(t_init,t_init+settings.time.end,settings.time.step))
+    new_times = saves.TimeList.by_prev(t_init,num_times=settings.time.num,step=settings.time.step)
     times = times + new_times
+    print(new_times)
 
-    if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh,time=times[0])
+    if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh,time=0)
 
     # define bilinear form a(q,p), and linear form L(p)
 
@@ -218,18 +220,16 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     # Had to temporarily remove the progress bar due to constraints in parallel
 
     # for time in progressbar(times,redirect_stdout=True):
-    for time in new_times:
-        # Note: 'time' is actually the previous time. So I have written a line to get the current time. I may adjust this later.
-        current_time = time+settings.time.step
-
+    for current_time in new_times:
+        print(f'Current time: {current_time}')
         # Assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
         newtonSolve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
-            solver_parameters={'snes_type' : 'ksponly',                 # Turn off auto Newton's method
-                               'ksp_type' : settings.solver.ksp_type,        # Krylov subspace type
-                               'pc_type'  : settings.solver.pc_type,         # preconditioner type
+            solver_parameters={'snes_type' : 'ksponly',                         # Turn off auto Newton's method
+                               'ksp_type' : settings.solver.ksp_type,           # Krylov subspace type
+                               'pc_type'  : settings.solver.pc_type,            # preconditioner type
                                'mat_type' : 'aij' })
 
         # Write eigenvectors and eigenvalues to Paraview
@@ -239,10 +239,10 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
         energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
-            if len(times[:len(energies)]) != len(energies):
+            if len(times.truncate(len(energies))) != len(energies):
                 raise ValueError('You wrote the code wrong, dummy.')
             saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
-            saves.save_energies(times[:len(energies)],energies) # This is to ensure that the length of the energies is equal to the length of the times
+            saves.save_energies(times.truncate(len(energies)),energies) # This is to ensure that the length of the energies is equal to the length of the times
             pr.info(f'Checkpoint saved at time {current_time}',spaced=False)
 
     timer.stop()
