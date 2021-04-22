@@ -305,7 +305,7 @@ def visualize(q_vis,mesh,time=None,new_outfile=False):
 
     difference = interpolate(eigvals[1]-eigvals[2],H1_scl)
     difference.rename('Eval1-Eval2')
-    magnitude = interpolate(1-abs(dot(normal,eigvec[0])),H1_scl)
+    magnitude = interpolate(abs(dot(normal,eigvec[0])),H1_scl)
     magnitude.rename('Magnitude')
 
     # Create new outfile if desired
