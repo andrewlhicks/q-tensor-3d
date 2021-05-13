@@ -192,8 +192,8 @@ def time_info():
     dicts = []
 
     dicts.append({'title':'Time step','text':settings.time.step})
-    dicts.append({'title':'End time','text':settings.time.end})
-    dicts.append({'title':'No. time steps','text':f'{settings.time.end/settings.time.step:0.0f}'})
+    # dicts.append({'title':'End time','text':settings.time.end})
+    dicts.append({'title':'No. time steps','text':f'{settings.time.num}'})
 
     # Print lines
 
