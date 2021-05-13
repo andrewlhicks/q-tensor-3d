@@ -22,7 +22,7 @@ def _load_file(file_path):
 	class solver:
 		grad_desc, ksp_type, pc_type = getValues(settings_dict['solver'],'grad_desc, ksp_type, pc_type')
 	class time:
-		step, end, num = getValues(settings_dict['time'],'step, end, num')
+		step, num = getValues(settings_dict['time'],'step, num')
 	class constants:
 		file_path = settings_dict['constants']['file_path']
 	class vis:

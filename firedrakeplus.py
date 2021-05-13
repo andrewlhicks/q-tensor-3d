@@ -165,7 +165,6 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     if settings.saves.save and settings.saves.mode == 'resume':
         q_init = saves.load_checkpoint(H1_vec)
         times, energies = saves.load_energies()
-        print(times,energies)
         if len(times) != len(energies):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
         t_init = times.final
@@ -183,7 +182,6 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     new_times = saves.TimeList.by_prev(t_init,num_times=settings.time.num,step=settings.time.step)
     times = times + new_times
-    print(new_times)
 
     if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh,time=0)
 
@@ -221,7 +219,6 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
     # for time in progressbar(times,redirect_stdout=True):
     for current_time in new_times:
-        print(f'Current time: {current_time}')
         # Assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
