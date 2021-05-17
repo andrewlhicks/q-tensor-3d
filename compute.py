@@ -56,6 +56,17 @@ def term_twist_var(q,p):
 
 #########################################################
 
+class energies:
+    domain = [
+        GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'),
+        GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'),
+        GeneralForm((1/const.ep**2)*(- (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+    ]
+    boundary = [
+        GeneralForm(const.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'),
+        GeneralForm(const.W1/2*innerp(Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu))+const.W2/4*(innerp(Q,Q)-2*const.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring')
+    ]
+
 def compute():
     # Energies
 

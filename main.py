@@ -65,7 +65,7 @@ for refinement_level in get_range(settings.mesh.refs):
     forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec
     forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
 
-    manu_energy = computeEnergy(q_manu,mesh,
+    manu_energy = compute_energy(q_manu,mesh,
         weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
         forcing_f=forcing_f,
         forcing_g=forcing_g)

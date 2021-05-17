@@ -61,6 +61,44 @@ def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None
 
     return float(domain_integral + boundary_integral)
 
+# Here we have the new function to compute the energy, which will use SympyPlus
+
+def compute_energy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None):
+    from compute import energies
+    from sympyplus import QVector
+
+    q = function
+    nu = FacetNormal(mesh)
+
+    f = zero_vec if forcing_f is None else forcing_f
+    g = zero_vec if forcing_g is None else forcing_g
+
+    domain_assembly = - dot(q,f)
+    for energy in energies.domain:
+        domain_assembly += eval(energy.uflfy())
+    domain_integral = assemble(domain_assembly*dx)
+
+    if weak_boundary is None or weak_boundary[1] == 'none':
+        boundary_integral = 0
+    else:
+        boundary_assembly = - dot(q,g)
+        for energy in energies.boundary:
+            boundary_assembly += eval(energy.uflfy())
+        boundary_indicator = weak_boundary[1]
+
+        if boundary_indicator == 'all':
+            boundary_integral = assemble(boundary_assembly*ds)
+        elif isinstance(boundary_indicator,int):
+            if boundary_indicator >= 0:
+                boundary_integral = assemble(boundary_assembly*ds(boundary_indicator))
+            else:
+                raise ValueError('Boundary integer specified must be positive.')
+        else:
+            raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+
+
+    return float(domain_integral + boundary_integral)
+
 def errorH1(func_comp,func_true,mesh):
     return nrm.H1(func_comp - func_true,mesh)
 
