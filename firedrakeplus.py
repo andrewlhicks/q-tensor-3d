@@ -267,6 +267,14 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
                                'pc_type'  : settings.solver.pc_type,            # preconditioner type
                                'mat_type' : 'aij' })
 
+        # Line search for optimal timestep
+
+        time_der = 1/settings.time.step * (q_soln - q_prev)
+
+        xi = settings.time.step
+
+        q_soln.assign(q_prev + xi * time_der)
+
         # Write eigenvectors and eigenvalues to Paraview
 
         if settings.options.visualize and (current_time/settings.time.step % settings.vis.save_every == 0): visualize(q_soln,mesh,time=current_time)
