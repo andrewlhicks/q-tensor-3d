@@ -61,7 +61,7 @@ for refinement_level in get_range(settings.mesh.refs):
     nu = FacetNormal(mesh)
 
     q_manu = firedrakefy(comp.manufac_q,mesh)
-    print(EqnGlobals.initial_q)
+
     set_eqn_globals(comp)
 
     manu_energy = compute_energy(q_manu)
