@@ -61,25 +61,12 @@ for refinement_level in get_range(settings.mesh.refs):
     nu = FacetNormal(mesh)
 
     q_manu = firedrakefy(comp.manufac_q,mesh)
+    print(EqnGlobals.initial_q)
+    set_eqn_globals(comp)
 
-    forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec
-    forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
+    manu_energy = compute_energy(q_manu)
 
-    manu_energy = compute_energy(q_manu,mesh,
-        weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
-        forcing_f=forcing_f,
-        forcing_g=forcing_g)
-
-    q_soln, time_elapsed, times, energies = solvePDE(comp.n_bf_O,
-        comp.n_bf_G,
-        comp.n_lf_O,
-        comp.n_lf_G,
-        mesh=mesh,
-        strong_boundary=[comp.bdycond_s,settings.options.strong_boundary],
-        weak_boundary=[comp.bdycond_w,settings.options.weak_boundary],
-        initial_q=comp.initial_q,
-        forcing_f=forcing_f,
-        forcing_g=forcing_g)
+    q_soln, time_elapsed, times, energies = solve_PDE(mesh)
 
     check.energy_decrease(times,energies)
 

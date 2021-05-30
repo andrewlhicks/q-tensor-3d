@@ -21,6 +21,24 @@ def decorator(func):
 
 zero_vec = as_vector([0,0,0,0,0])
 
+def set_eqn_globals(comp):
+    import settings
+
+    global EqnGlobals
+    class EqnGlobals:
+        bilinear_form = comp.n_bf_O
+        bilinear_form_bdy = comp.n_bf_G
+        linear_form = comp.n_lf_O
+        linear_form_bdy = comp.n_lf_G
+
+        initial_q = comp.initial_q
+
+        forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
+        forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
+        strong_boundary = [comp.bdycond_s,settings.options.strong_boundary]
+        weak_boundary = [comp.bdycond_w,settings.options.weak_boundary]
+
+
 class nrm:
     def inf(function):
         abs_function = Function(function._function_space).interpolate(abs(function))
@@ -32,49 +50,52 @@ class nrm:
     def L2(function,mesh):
         return sqrt(assemble(dot(function,function) * dx(domain=mesh)))
 
-def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None):
-    from energycomps import elastic, bulk, anchor_n, anchor_pd
-
-    H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
-    x0, x1, x2 = SpatialCoordinate(mesh)
-
-    nu = FacetNormal(mesh)
-
-    f = zero_vec if forcing_f is None else forcing_f
-    g = zero_vec if forcing_g is None else forcing_g
-
-    domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
-
-    if weak_boundary is None: # Let's put this into a function since it is basically repeated in solvePDE()
-        boundary_integral = 0
-    elif weak_boundary[1] == 'none':
-        boundary_integral = 0
-    elif weak_boundary[1] == 'all':
-        boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds)
-    elif isinstance(weak_boundary[1],int):
-        if weak_boundary[1] > -1:
-            boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds(weak_boundary[1]))
-        else:
-            raise ValueError('Boundary integer specified must be positive.')
-    else:
-        raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
-
-    return float(domain_integral + boundary_integral)
+# def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None):
+#     from energycomps import elastic, bulk, anchor_n, anchor_pd
+#
+#     H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
+#     x0, x1, x2 = SpatialCoordinate(mesh)
+#
+#     nu = FacetNormal(mesh)
+#
+#     f = zero_vec if forcing_f is None else forcing_f
+#     g = zero_vec if forcing_g is None else forcing_g
+#
+#     domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
+#
+#     if weak_boundary is None: # Let's put this into a function since it is basically repeated in solvePDE()
+#         boundary_integral = 0
+#     elif weak_boundary[1] == 'none':
+#         boundary_integral = 0
+#     elif weak_boundary[1] == 'all':
+#         boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds)
+#     elif isinstance(weak_boundary[1],int):
+#         if weak_boundary[1] > -1:
+#             boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds(weak_boundary[1]))
+#         else:
+#             raise ValueError('Boundary integer specified must be positive.')
+#     else:
+#         raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+#
+#     return float(domain_integral + boundary_integral)
 
 # Here we have the new function to compute the energy, which will use SympyPlus
 
-def compute_energy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None):
-    from compute import energies
+def compute_energy(function):
+    import compute
     from sympyplus import QVector
+
+    mesh = function.function_space().mesh()
 
     q = function
     nu = FacetNormal(mesh)
 
-    f = zero_vec if forcing_f is None else forcing_f
-    g = zero_vec if forcing_g is None else forcing_g
+    f = EqnGlobals.forcing_f
+    g = EqnGlobals.forcing_g
+    weak_boundary = EqnGlobals.weak_boundary
 
     domain_assembly = - dot(q,f)
-    for energy in energies.domain:
+    for energy in compute.energies.domain:
         domain_assembly += eval(energy.uflfy())
     domain_integral = assemble(domain_assembly*dx)
 
@@ -82,7 +103,7 @@ def compute_energy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=Non
         boundary_integral = 0
     else:
         boundary_assembly = - dot(q,g)
-        for energy in energies.boundary:
+        for energy in compute.energies.boundary:
             boundary_assembly += eval(energy.uflfy())
         boundary_indicator = weak_boundary[1]
 
@@ -96,7 +117,7 @@ def compute_energy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=Non
         else:
             raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
-
+    print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
 
 def errorH1(func_comp,func_true,mesh):
@@ -111,7 +132,28 @@ def firedrakefy(func,mesh):
 
     return interpolate(eval(func),H1_vec)
 
-def newtonSolve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
+class linesearch:
+    def backtrack(q_prev,time_der,alpha):
+        """ Given the previous guess, the time derivative, and the time step
+        alpha, returns xi computed by backtracking. """
+
+        ###
+        import comp
+        import settings
+        weak_boundary = [comp.bdycond_w,settings.options.weak_boundary]
+        ###
+
+        xi = 8*alpha # Initial guess for xi, doesn't necessarily have to be 8 times the time step
+
+        while xi > 1.0e-8: # Break the loop when xi becomes less than order 8 in magnitude
+            q_next = q_prev + xi*time_der
+            if compute_energy(q_next) < compute_energy(q_prev):
+                return xi
+            xi /= 2
+
+        return xi
+
+def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
 
     # make the following a separate function
@@ -161,7 +203,7 @@ def RandomFunction(function_space):
 
     return function
 
-def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,strong_boundary=None,weak_boundary=None,initial_q=None,forcing_f=None,forcing_g=None):
+def solve_PDE(mesh):
     from progressbar import progressbar
     from misc import Timer
     import settings
@@ -169,6 +211,20 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     import settings
     import saves
     import printoff as pr
+
+    # Initilize
+
+    bilinear_form = EqnGlobals.bilinear_form
+    bilinear_form_bdy = EqnGlobals.bilinear_form_bdy
+    linear_form = EqnGlobals.linear_form
+    linear_form_bdy = EqnGlobals.linear_form_bdy
+
+    initial_q = EqnGlobals.initial_q
+
+    strong_boundary = EqnGlobals.strong_boundary
+    weak_boundary = EqnGlobals.weak_boundary
+    f = EqnGlobals.forcing_f
+    g = EqnGlobals.forcing_g
 
     # Define function space, coordinates, and q_soln
 
@@ -191,12 +247,6 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
     q_prev = Function(H1_vec)
     q_prev_prev = Function(H1_vec)
     q_newt_prev = Function(H1_vec)
-
-    # Non-updated constant functions
-    # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
-
-    f = zero_vec if forcing_f is None else forcing_f
-    g = zero_vec if forcing_g is None else forcing_g
 
     # Load data for resumption of computation, if needed
 
@@ -261,7 +311,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
-        newtonSolve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
+        newton_solve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
             solver_parameters={'snes_type' : 'ksponly',                         # Turn off auto Newton's method
                                'ksp_type' : settings.solver.ksp_type,           # Krylov subspace type
                                'pc_type'  : settings.solver.pc_type,            # preconditioner type
@@ -279,7 +329,7 @@ def solvePDE(bilinear_form,bilinear_form_bdy,linear_form,linear_form_bdy,mesh,st
 
         if settings.options.visualize and (current_time/settings.time.step % settings.vis.save_every == 0): visualize(q_soln,mesh,time=current_time)
 
-        energies.append(computeEnergy(q_soln,mesh,weak_boundary=weak_boundary,forcing_f=forcing_f,forcing_g=forcing_g))
+        energies.append(compute_energy(q_soln))
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
             if len(times.truncate(len(energies))) != len(energies):
