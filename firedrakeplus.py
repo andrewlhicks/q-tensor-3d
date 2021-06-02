@@ -3,6 +3,7 @@ firedrake. The functions here are intended to be used on firedrake objects
 only. """
 
 from firedrake import *
+from misc import time_this
 import functools
 
 """
@@ -33,12 +34,13 @@ def set_eqn_globals(comp):
 
         initial_q = comp.initial_q
 
-        forcing_f = eval(comp.forcing_f) if settings.options.manufactured else zero_vec # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
-        forcing_g = eval(comp.forcing_g) if settings.options.manufactured else zero_vec
+        forcing_f = comp.forcing_f if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
+        forcing_g = comp.forcing_g if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
         strong_boundary = [comp.bdycond_s,settings.options.strong_boundary]
         weak_boundary = [comp.bdycond_w,settings.options.weak_boundary]
 
-
+        energy_0d = comp.energy_0d
+        energy_1d = comp.energy_1d
 class nrm:
     def inf(function):
         abs_function = Function(function._function_space).interpolate(abs(function))
@@ -81,44 +83,53 @@ class nrm:
 
 # Here we have the new function to compute the energy, which will use SympyPlus
 
-def compute_energy(function):
+@time_this
+def compute_energy(*function,der=None):
     import compute
     from sympyplus import QVector
 
-    mesh = function.function_space().mesh()
+    weak_boundary = EqnGlobals.weak_boundary
+    energies = EqnGlobals.energy_1d if der==1 else EqnGlobals.energy_0d
 
-    q = function
+    q = function[0]
+    if len(function) > 1:
+        p = function[1]
+
+    mesh = q.function_space().mesh()
+    x0, x1, x2 = SpatialCoordinate(mesh)
     nu = FacetNormal(mesh)
 
-    f = EqnGlobals.forcing_f
-    g = EqnGlobals.forcing_g
-    weak_boundary = EqnGlobals.weak_boundary
+    f = eval(EqnGlobals.forcing_f)
+    g = eval(EqnGlobals.forcing_g)
 
-    domain_assembly = - dot(q,f)
-    for energy in compute.energies.domain:
+    # Assemble domain integral
+
+    domain_assembly = 0
+    for energy in energies.domain:
         domain_assembly += eval(energy.uflfy())
     domain_integral = assemble(domain_assembly*dx)
 
-    if weak_boundary is None or weak_boundary[1] == 'none':
-        boundary_integral = 0
-    else:
-        boundary_assembly = - dot(q,g)
-        for energy in compute.energies.boundary:
-            boundary_assembly += eval(energy.uflfy())
-        boundary_indicator = weak_boundary[1]
+    # Assemble boundary integral
 
-        if boundary_indicator == 'all':
-            boundary_integral = assemble(boundary_assembly*ds)
-        elif isinstance(boundary_indicator,int):
-            if boundary_indicator >= 0:
-                boundary_integral = assemble(boundary_assembly*ds(boundary_indicator))
-            else:
-                raise ValueError('Boundary integer specified must be positive.')
-        else:
-            raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+    measure = determine_measure(weak_boundary[1])
+    boundary_assembly = 0
+    for energy in energies.boundary:
+        boundary_assembly += eval(energy.uflfy())
+    boundary_integral = assemble(boundary_assembly*measure)
 
     print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
+
+def determine_measure(boundary_indicator):
+    if boundary_indicator == 'none':
+        return None
+    if boundary_indicator == 'all':
+        return ds
+    if isinstance(boundary_indicator,int):
+        if boundary_indicator >=0:
+            return ds(boundary_indicator)
+        raise ValueError('Boundary integer specified must be positive.')
+    raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
 def errorH1(func_comp,func_true,mesh):
     return nrm.H1(func_comp - func_true,mesh)
@@ -137,21 +148,21 @@ class linesearch:
         """ Given the previous guess, the time derivative, and the time step
         alpha, returns xi computed by backtracking. """
 
-        ###
-        import comp
-        import settings
-        weak_boundary = [comp.bdycond_w,settings.options.weak_boundary]
-        ###
+        weak_boundary = EqnGlobals.weak_boundary
+        H1_vec = q_prev.function_space()
 
         xi = 8*alpha # Initial guess for xi, doesn't necessarily have to be 8 times the time step
 
         while xi > 1.0e-8: # Break the loop when xi becomes less than order 8 in magnitude
-            q_next = q_prev + xi*time_der
+            q_next = interpolate(q_prev + xi*time_der,H1_vec)
             if compute_energy(q_next) < compute_energy(q_prev):
                 return xi
             xi /= 2
 
         return xi
+    def exact(q_prev,time_der,alpha):
+        xi = 0 # Initial guess for xi, should be 0 because of initial guess for Newton's method
+        return None
 
 def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
@@ -223,8 +234,6 @@ def solve_PDE(mesh):
 
     strong_boundary = EqnGlobals.strong_boundary
     weak_boundary = EqnGlobals.weak_boundary
-    f = EqnGlobals.forcing_f
-    g = EqnGlobals.forcing_g
 
     # Define function space, coordinates, and q_soln
 
@@ -241,6 +250,9 @@ def solve_PDE(mesh):
 
     q = TrialFunction(H1_vec)
     p = TestFunction(H1_vec)
+
+    f = eval(EqnGlobals.forcing_f)
+    g = eval(EqnGlobals.forcing_g)
 
     # Updated constant functions
 
@@ -321,6 +333,7 @@ def solve_PDE(mesh):
 
         time_der = 1/settings.time.step * (q_soln - q_prev)
 
+        # xi = linesearch.backtrack(q_prev,time_der,settings.time.step)
         xi = settings.time.step
 
         q_soln.assign(q_prev + xi * time_der)

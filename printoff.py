@@ -277,8 +277,15 @@ def warning(text,spaced=True):
 @plogger
 def info(text,spaced=True):
     if not isinstance(text,str):
-        raise TypeError('Warnings must be composed of a string.')
+        raise TypeError('Info must be composed of a string.')
     plog(text,color='green')
+    if spaced: plog('')
+
+@plogger
+def text(text,spaced=True):
+    if not isinstance(text,str):
+        raise TypeError('Text must be composed of a string.')
+    plog(text)
     if spaced: plog('')
 
 # END OF CODE

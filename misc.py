@@ -1,3 +1,5 @@
+import functools
+
 # Value checkers
 
 class check:
@@ -83,5 +85,19 @@ class Timer: # adapted from 'https://realpython.com/python-timer/' on 6/24/20
 
         self.time_elapsed = time() - self._start_time
         self._start_time = None
+
+# Decorators
+
+def time_this(func):
+    import printoff as pr
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        timer = Timer()
+        timer.start()
+        value = func(*args, **kwargs)
+        timer.stop()
+        pr.text(f'Function \'{func.__name__}\' completed in {timer.time_elapsed:0.2f} seconds',spaced=False)
+        return value
+    return wrapper
 
 # END OF CODE
