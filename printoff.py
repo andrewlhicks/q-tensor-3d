@@ -266,26 +266,25 @@ def pdeSolveInfo(**kwargs):
     print_lines(*dicts)
 
 @plogger
+def info(text,spaced=True,color=None):
+    if not isinstance(text,str):
+        raise TypeError('Text must be composed of a string.')
+    plog(text,color=color)
+    if spaced: plog('')
+
+def green(text,spaced=True):
+    info(text,spaced=spaced,color='green')
+
+def blue(text,spaced=True):
+    info(text,spaced=spaced,color='blue')
+
+@plogger
 def warning(text,spaced=True):
     """ Plogs a warning. """
 
     if not isinstance(text,str):
         raise TypeError('Warnings must be composed of a string.')
     plog(f'Warning: {text}',color='warning')
-    if spaced: plog('')
-
-@plogger
-def info(text,spaced=True):
-    if not isinstance(text,str):
-        raise TypeError('Info must be composed of a string.')
-    plog(text,color='green')
-    if spaced: plog('')
-
-@plogger
-def text(text,spaced=True):
-    if not isinstance(text,str):
-        raise TypeError('Text must be composed of a string.')
-    plog(text)
     if spaced: plog('')
 
 # END OF CODE

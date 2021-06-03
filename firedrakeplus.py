@@ -5,6 +5,7 @@ only. """
 from firedrake import *
 from misc import time_this
 import functools
+import printoff as pr
 
 """
 Example of a decorator:
@@ -190,7 +191,6 @@ class linesearch:
             first_der = compute_energy(q_next,time_der,der=1)
             secnd_der = compute_energy(q_next,time_der,time_der,der=2)
             xi = xi_prev - first_der/secnd_der
-            print(abs(xi - xi_prev))
             if abs(xi - xi_prev) < 1.0e-8: break
         return xi
 
@@ -251,7 +251,6 @@ def solve_PDE(mesh):
     import numpy as np
     import settings
     import saves
-    import printoff as pr
 
     # Initilize
 
@@ -380,7 +379,7 @@ def solve_PDE(mesh):
                 raise ValueError('You wrote the code wrong, dummy.')
             saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
             saves.save_energies(times.truncate(len(energies)),energies) # This is to ensure that the length of the energies is equal to the length of the times
-            pr.info(f'Checkpoint saved at time {current_time}',spaced=False)
+            pr.blue(f'Checkpoint saved at time {current_time}',spaced=False)
 
     timer.stop()
 
