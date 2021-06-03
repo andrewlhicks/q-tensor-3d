@@ -107,7 +107,7 @@ def compute():
     lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
     lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')
 
-    lf_TimeStep2 = GeneralForm( (1/const.ep**2)*(1/const.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
+    lf_TimeStep2 = GeneralForm( (0.5)*(1/const.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
 
     # Assemble LHS, RHS
 
@@ -119,7 +119,7 @@ def compute():
 
     # If gradient descent is modified to the Heavy Ball method
 
-    if settings.solver.grad_desc == 'modified':
+    if settings.solver.grad_desc == 'heavyball':
         linearDomain.add_form(lf_TimeStep2)
 
     # Newton's method
