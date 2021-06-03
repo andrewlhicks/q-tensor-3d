@@ -234,7 +234,23 @@ def variationalDerivative(lagrangian,*params,name=None):
 
 def secondVariationalDerivative(binaryform,*params,name=None):
     """ Given an instance of a GeneralForm of order 2, returns the variational
-    derivative as a GeneralForm of order 3. """
+    derivative as a GeneralForm of order 3.
+
+    Note that this in this implementation, we have for a binary form A[Q](P),
+    the derivative dA[Q](P,R) with
+
+    Param 0 = Q
+    Param 1 = R
+    Param 2 = P
+
+    But a better implementation might be
+
+    Param 0 = Q
+    Param 1 = P
+    Param 2 = R
+
+    This may be fixed later.
+    """
 
     if not isinstance(binaryform,GeneralForm):
         raise TypeError('First positional argument must be type GeneralForm.')
@@ -514,6 +530,10 @@ Q = q.tens
 p = QVector('p')
 Dp = p.grad
 P = p.tens
+
+r = QVector('r')
+Dr = r.grad
+R = r.tens
 
 qp = QVector('q_prev')
 Dqp = qp.grad

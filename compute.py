@@ -73,6 +73,9 @@ def compute():
     class energies_der:
         domain = [variationalDerivative(general_form,[Dq,q],[Dp,p]) for general_form in energies.domain]
         boundary = [variationalDerivative(general_form,[Dq,q],[Dp,p]) for general_form in energies.boundary]
+    class energies_der_der:
+        domain = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.domain]
+        boundary = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.boundary]
 
     # Energies
 
@@ -141,6 +144,7 @@ def compute():
 
         energy_0d = energies
         energy_1d = energies_der
+        energy_2d = energies_der_der
 
     return out
 

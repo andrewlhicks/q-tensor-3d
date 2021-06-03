@@ -41,6 +41,7 @@ def set_eqn_globals(comp):
 
         energy_0d = comp.energy_0d
         energy_1d = comp.energy_1d
+        energy_2d = comp.energy_2d
 class nrm:
     def inf(function):
         abs_function = Function(function._function_space).interpolate(abs(function))
@@ -83,17 +84,29 @@ class nrm:
 
 # Here we have the new function to compute the energy, which will use SympyPlus
 
-@time_this
-def compute_energy(*function,der=None):
+# @time_this
+def compute_energy(*function,der=0):
     import compute
     from sympyplus import QVector
 
+    # Check for correct values
+
+    if len(function) not in [1,2,3]:
+        raise ValueError('Must choose 1, 2, or 3 functions.')
+    if der not in [0,1,2]:
+        raise ValueError('Must choose der=0, 1, or 2.')
+
     weak_boundary = EqnGlobals.weak_boundary
-    energies = EqnGlobals.energy_1d if der==1 else EqnGlobals.energy_0d
+    energies = EqnGlobals.energy_2d if der==2 else EqnGlobals.energy_1d if der==1 else EqnGlobals.energy_0d
 
     q = function[0]
-    if len(function) > 1:
+
+    if len(function) == 2:
         p = function[1]
+    if len(function) == 3:
+        # See documentation for secondVariationalDerivative for explanation
+        r = function[1]
+        p = function[2]
 
     mesh = q.function_space().mesh()
     x0, x1, x2 = SpatialCoordinate(mesh)
@@ -117,7 +130,7 @@ def compute_energy(*function,der=None):
         boundary_assembly += eval(energy.uflfy())
     boundary_integral = assemble(boundary_assembly*measure)
 
-    print(float(domain_integral + boundary_integral))
+    # print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
 
 def determine_measure(boundary_indicator):
@@ -160,9 +173,26 @@ class linesearch:
             xi /= 2
 
         return xi
-    def exact(q_prev,time_der,alpha):
+    def exact1(q_prev,time_der,alpha):
+        """ Given the previous guess, the time derivative, and the time step
+        alpha, returns xi computed by exact line search using Newton's
+        method. """
+
+        from numpy import abs
+
+        H1_vec = q_prev.function_space()
+
         xi = 0 # Initial guess for xi, should be 0 because of initial guess for Newton's method
-        return None
+
+        for _ in range(100):
+            xi_prev = xi
+            q_next = interpolate(q_prev+xi_prev*time_der,H1_vec)
+            first_der = compute_energy(q_next,time_der,der=1)
+            secnd_der = compute_energy(q_next,time_der,time_der,der=2)
+            xi = xi_prev - first_der/secnd_der
+            print(abs(xi - xi_prev))
+            if abs(xi - xi_prev) < 1.0e-8: break
+        return xi
 
 def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
@@ -334,7 +364,8 @@ def solve_PDE(mesh):
         time_der = 1/settings.time.step * (q_soln - q_prev)
 
         # xi = linesearch.backtrack(q_prev,time_der,settings.time.step)
-        xi = settings.time.step
+        xi = linesearch.exact1(q_prev,time_der,settings.time.step)
+        # xi = settings.time.step
 
         q_soln.assign(q_prev + xi * time_der)
 
