@@ -362,9 +362,12 @@ def solve_PDE(mesh):
 
         time_der = 1/settings.time.step * (q_soln - q_prev)
 
-        # xi = linesearch.backtrack(q_prev,time_der,settings.time.step)
-        xi = linesearch.exact1(q_prev,time_der,settings.time.step)
-        # xi = settings.time.step
+        if settings.solver.ls_type == 'backtrack':
+            xi = linesearch.backtrack(q_prev,time_der,settings.time.step)
+        elif settings.solver.ls_type == 'exact1':
+            xi = linesearch.exact1(q_prev,time_der,settings.time.step)
+        else:
+            xi = settings.time.step
 
         q_soln.assign(q_prev + xi * time_der)
 
@@ -373,6 +376,8 @@ def solve_PDE(mesh):
         if settings.options.visualize and (current_time/settings.time.step % settings.vis.save_every == 0): visualize(q_soln,mesh,time=current_time)
 
         energies.append(compute_energy(q_soln))
+
+        pr.info(f'Time step {current_time} completed',spaced=False)
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
             if len(times.truncate(len(energies))) != len(energies):
