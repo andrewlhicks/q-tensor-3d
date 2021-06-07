@@ -244,13 +244,12 @@ def RandomFunction(function_space):
 
     return function
 
-def solve_PDE(mesh):
-    from progressbar import progressbar
+def solve_PDE(mesh,refinement_level='Not specified'):
     from misc import Timer
-    import settings
     import numpy as np
-    import settings
+    import plot
     import saves
+    import settings
 
     # Initilize
 
@@ -380,10 +379,13 @@ def solve_PDE(mesh):
         pr.info(f'Time step {current_time} completed',spaced=False)
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
-            if len(times.truncate(len(energies))) != len(energies):
+            truncated_times = times.truncate(len(energies))
+            if len(truncated_times) != len(energies):
                 raise ValueError('You wrote the code wrong, dummy.')
             saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
-            saves.save_energies(times.truncate(len(energies)),energies) # This is to ensure that the length of the energies is equal to the length of the times
+            saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
+            plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
+
             pr.blue(f'Checkpoint saved at time {current_time}',spaced=False)
 
     timer.stop()

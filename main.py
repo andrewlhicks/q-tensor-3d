@@ -66,7 +66,7 @@ for refinement_level in get_range(settings.mesh.refs):
 
     manu_energy = compute_energy(q_manu)
 
-    q_soln, time_elapsed, times, energies = solve_PDE(mesh)
+    q_soln, time_elapsed, times, energies = solve_PDE(mesh,refinement_level=refinement_level)
 
     check.energy_decrease(times,energies)
 
@@ -80,7 +80,7 @@ for refinement_level in get_range(settings.mesh.refs):
         custom={'title':'Manu. Sol. Energy','text':manu_energy},
         time_elapsed=time_elapsed)
 
-    if settings.saves.save:
-        plot.time_vs_energy(times,energies,refinement_level=refinement_level)
+    # if settings.saves.save:
+    #     plot.time_vs_energy(times,energies,refinement_level=refinement_level)
 
 # END OF CODE
