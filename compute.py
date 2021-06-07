@@ -107,7 +107,7 @@ def compute():
     lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
     lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')
 
-    lf_TimeStep2 = GeneralForm( (1.0)*(1/const.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
+    lf_TimeStep2 = GeneralForm( (const.beta)*(1/const.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
 
     # Assemble LHS, RHS
 

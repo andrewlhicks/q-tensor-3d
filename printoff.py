@@ -112,6 +112,7 @@ def constants_info():
     plog(f'     W0 = {const.W0},')
     plog(f'     W1 = {const.W1},')
     plog(f'     W2 = {const.W2},')
+    plog(f'   beta = {const.beta},')
     plog(f'epsilon = {const.ep},')
     plog(f'     L0 = {const.L0}')
     plog()
@@ -177,6 +178,7 @@ def solver_info():
 
     dicts.append({'title':'Gadient descent','text':settings.solver.grad_desc})
     dicts.append({'title':'KSP Type','text':settings.solver.ksp_type})
+    dicts.append({'title':'Line search Type','text':settings.solver.ls_type})
     dicts.append({'title':'PC Type','text':settings.solver.pc_type})
 
     # Print lines
