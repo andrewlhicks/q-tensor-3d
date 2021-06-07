@@ -2,13 +2,33 @@
 Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 """
 
+import sys
+import getopt
+
 # These three modules must be imported in order and before other modules, or else they won't work properly
 
 import settings
+
 settings_file_path = 'settings.yml'
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:],'hs:',['help=','sfile='])
+except getopt.GetoptError:
+    print('main.py -s <settingsfile>')
+    sys.exit(2)
+
+for opt, arg in opts:
+    if opt in ('-h','--help'):
+        print('main.py -s <settingsfile>')
+        sys.exit()
+    elif opt in ('-s','--sfile'):
+        settings_file_path = arg
+
 settings._load_file(settings_file_path)
+
 import const
 const._load_file(settings.constants.file_path)
+
 import saves
 if settings.saves.save:
     saves._set_current_directory() # Chooses directory name then sets it as saves.current_directory
