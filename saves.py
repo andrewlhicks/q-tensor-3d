@@ -83,25 +83,27 @@ def _create_directory(path):
 
 ###
 
-def load_checkpoint(vector_space):
+def load_checkpoint(vector_space,name='dump'):
+	""" Loads a checkpoint and outputs the function with name specified. """
 	from firedrake import Function, DumbCheckpoint, FILE_READ
 
-	q_dump = Function(vector_space,name='dump')
+	q_dump = Function(vector_space,name=name)
 
-	with DumbCheckpoint(f'{current_directory}/chk/dump',mode=FILE_READ) as chk:
+	with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_READ) as chk:
 		chk.load(q_dump)
 
 	return q_dump
 
-def save_checkpoint(q_dump):
+def save_checkpoint(q_dump,name='dump'):
+	""" Saves a checkpoint the input being the function with name specified. """
 	from firedrake import Function, DumbCheckpoint, FILE_CREATE
 
 	if not isinstance(q_dump,Function):
 		raise TypeError('Must be a Firedrake Function.')
 
-	q_dump.rename('dump')
+	q_dump.rename(name)
 
-	with DumbCheckpoint(f'{current_directory}/chk/dump',mode=FILE_CREATE) as chk:
+	with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_CREATE) as chk:
 	    chk.store(q_dump)
 
 def load_energies():

@@ -314,20 +314,19 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     # Load data for resumption of computation, if needed
 
     if settings.saves.save and settings.saves.mode == 'resume':
-        q_init = saves.load_checkpoint(H1_vec)
+        # On resume mode, q_soln and q_prev are loaded from a previous state
+        q_soln = saves.load_checkpoint(H1_vec,'q_soln')
+        q_prev = saves.load_checkpoint(H1_vec,'q_prev')
         times, energies = saves.load_energies()
         if len(times) != len(energies):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
         t_init = times.final
     else:
-        q_init = interpolate(eval(initial_q),H1_vec)
+        # On new or overwrite mode, q_soln and q_prev are taken to be the initial guess
+        q_soln = interpolate(eval(initial_q),H1_vec)
+        q_prev.assign(q_soln)
         times, energies = saves.TimeList([]), saves.EnergyList([])
         t_init = 0
-
-    # First q_soln is taken to be the initial guess, and q_prev is taken to be the same thing
-
-    q_soln.assign(q_init)
-    q_prev.assign(q_soln)
 
     # Initilize the list of times and energies
 
@@ -407,7 +406,8 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             truncated_times = times.truncate(len(energies))
             if len(truncated_times) != len(energies):
                 raise ValueError('You wrote the code wrong, dummy.')
-            saves.save_checkpoint(q_soln) # Save checkpoint first. If you resume on a different number of cores, an error will be raised
+            saves.save_checkpoint(q_soln,name='q_soln') # Save checkpoint first. If you resume on a different number of cores, an error will be raised
+            saves.save_checkpoint(q_prev,name='q_prev')
             saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
