@@ -6,6 +6,7 @@ from firedrake import *
 from misc import time_this
 import functools
 import printoff as pr
+import sys
 
 """
 Example of a decorator:
@@ -192,7 +193,29 @@ class linesearch:
             secnd_der = compute_energy(q_next,time_der,time_der,der=2)
             xi = xi_prev - first_der/secnd_der
             if abs(xi - xi_prev) < 1.0e-8: break
+        print(xi)
         return xi
+    def exact2(q_prev,time_der,alpha):
+        """ Given the previous time, the time derivative, and the time step
+        alpha, returns xi compute by exact line search using the fact that xi is
+        the root of a polynomial. """
+
+        import numpy as np
+        from numpy.polynomial import Polynomial
+
+        H1_vec = q_prev.function_space()
+
+        xi = np.linspace(0,1,5)
+        q_next = [interpolate(q_prev+float(xi[ii])*time_der,H1_vec) for ii in range(5)]
+        E = np.array([compute_energy(q_next[ii]) for ii in range(5)])
+
+        poly = Polynomial.fit(xi,E,4)
+        mins = poly.deriv().roots()
+        real_mins = mins[np.isclose(mins.imag, 0)]
+        index = np.argmin(poly(real_mins))
+        xi = real_mins[index].real
+
+        return float(xi)
 
 def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
@@ -365,6 +388,8 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             xi = linesearch.backtrack(q_prev,time_der,settings.time.step)
         elif settings.solver.ls_type == 'exact1':
             xi = linesearch.exact1(q_prev,time_der,settings.time.step)
+        elif settings.solver.ls_type == 'exact2':
+            xi = linesearch.exact2(q_prev,time_der,settings.time.step)
         else:
             xi = settings.time.step
 
