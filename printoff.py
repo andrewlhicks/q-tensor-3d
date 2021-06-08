@@ -177,9 +177,9 @@ def solver_info():
     dicts = []
 
     dicts.append({'title':'Gadient descent','text':settings.solver.grad_desc})
-    dicts.append({'title':'KSP Type','text':settings.solver.ksp_type})
-    dicts.append({'title':'Line search Type','text':settings.solver.ls_type})
-    dicts.append({'title':'PC Type','text':settings.solver.pc_type})
+    dicts.append({'title':'KSP type','text':settings.solver.ksp_type})
+    dicts.append({'title':'Line search type','text':settings.solver.ls_type})
+    dicts.append({'title':'PC type','text':settings.solver.pc_type})
 
     # Print lines
 
