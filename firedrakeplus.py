@@ -209,11 +209,16 @@ class linesearch:
         q_next = [interpolate(q_prev+float(xi[ii])*time_der,H1_vec) for ii in range(5)]
         E = np.array([compute_energy(q_next[ii]) for ii in range(5)])
 
+
         poly = Polynomial.fit(xi,E,4)
         mins = poly.deriv().roots()
         real_mins = mins[np.isclose(mins.imag, 0)]
         index = np.argmin(poly(real_mins))
         xi = real_mins[index].real
+
+        if xi > np.amin(E):
+            pr.warning('exact2 ls polynomial error')
+            return float(np.amin(E))
 
         return float(xi)
 
