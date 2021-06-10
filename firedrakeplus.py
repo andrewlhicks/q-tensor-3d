@@ -217,7 +217,7 @@ class linesearch:
         xi = real_mins[index].real
 
         if xi > np.amin(E):
-            pr.warning('exact2 ls polynomial error')
+            pr.warning('exact2 ls polynomial error',spaced=False)
             return float(np.amin(E))
 
         return float(xi)
