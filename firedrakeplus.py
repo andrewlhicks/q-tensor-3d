@@ -202,25 +202,26 @@ class linesearch:
 
         import numpy as np
         from numpy.polynomial import Polynomial
+        import plot
 
         H1_vec = q_prev.function_space()
 
-        xi = np.linspace(0,1,5)
-        q_next = [interpolate(q_prev+float(xi[ii])*time_der,H1_vec) for ii in range(5)]
-        E = np.array([compute_energy(q_next[ii]) for ii in range(5)])
+        x = np.linspace(0,1,5)
+        q_next = [interpolate(q_prev+float(x[ii])*time_der,H1_vec) for ii in range(5)]
+        y = np.array([compute_energy(q_next[ii]) for ii in range(5)])
+        x_min = x[np.argmin(y)]
 
+        poly = Polynomial.fit(x,y,4)
+        xi = poly.deriv().roots()
+        xi = xi[np.isclose(xi.imag, 0)]
+        E = poly(xi)
+        xi_min = xi[np.argmin(E)].real
 
-        poly = Polynomial.fit(xi,E,4)
-        mins = poly.deriv().roots()
-        real_mins = mins[np.isclose(mins.imag, 0)]
-        index = np.argmin(poly(real_mins))
-        xi = real_mins[index].real
-
-        if xi > np.amin(E):
+        if poly(xi_min) > np.amin(y):
             pr.warning('exact2 ls polynomial error',spaced=False)
-            return float(np.amin(E))
+            return float(x_min)
 
-        return float(xi)
+        return float(xi_min)
 
 def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
