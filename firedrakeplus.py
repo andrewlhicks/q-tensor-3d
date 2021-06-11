@@ -217,7 +217,7 @@ class linesearch:
         E = poly(xi)
         xi_min = xi[np.argmin(E)].real
 
-        if poly(xi_min) > np.amin(y):
+        if compute_energy(xi_min) > np.amin(y):
             pr.warning('exact2 ls polynomial error',spaced=False)
             return float(x_min)
 
@@ -421,7 +421,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     timer.stop()
 
-    return (q_soln, timer.time_elapsed, times, energies)
+    return (q_soln, timer.str_time, times, energies)
 
 def tensorfy(vector):
     # Basis of Q-tensor for Eigen calculation

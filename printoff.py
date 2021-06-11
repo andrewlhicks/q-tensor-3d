@@ -229,7 +229,7 @@ def prelimCompTitle():
 def prelimCompInfo(time_elapsed):
     """ Prints information after the preliminary computations are finished. """
 
-    plog(f'Finished preliminary computations in {time_elapsed:0.2f} seconds.')
+    plog(f'Finished preliminary computations in {time_elapsed}.')
     plog()
 
 @plogger
@@ -257,7 +257,7 @@ def pdeSolveInfo(**kwargs):
         elif kw == 'l2_error':
             dicts.append({'title':'L2 error','text':f'{kwargs[kw]:0.15f}'})
         elif kw == 'time_elapsed':
-            dicts.append({'title':'Time elapsed','text':f'{kwargs[kw]:0.2f} seconds'})
+            dicts.append({'title':'Time elapsed','text':kwargs[kw]})
         elif kw == 'refinement_level':
             dicts.append({'title':'Refinement level','text':kwargs[kw]})
         elif kw == 'energy':

@@ -68,14 +68,14 @@ class TimeError(Exception):
 class Timer: # adapted from 'https://realpython.com/python-timer/' on 6/24/20
     def __init__(self):
         self._start_time = None
-        self.time_elapsed = None
+        self._time_elapsed = None
 
     def start(self):
         from time import time
         if self._start_time is not None:
             raise TimeError(f"Timer is running. Use .stop() to stop it.")
 
-        self.time_elapsed = None
+        self._time_elapsed = None
         self._start_time = time()
 
     def stop(self):
@@ -83,8 +83,49 @@ class Timer: # adapted from 'https://realpython.com/python-timer/' on 6/24/20
         if self._start_time is None:
             raise TimeError(f"Timer is not running. Use .start() to start it")
 
-        self.time_elapsed = time() - self._start_time
+        self._time_elapsed = time() - self._start_time
         self._start_time = None
+
+    @property
+    def time_elapsed(self):
+        return round(self._time_elapsed)
+
+    @property
+    def str_seconds(self):
+        return f'{self.time_elapsed}s'
+
+    @property
+    def str_minutes(self):
+        rem = self.time_elapsed
+
+        mns = rem // 60 # floor division
+        rem = rem % 60 # remainder
+
+        scs = rem
+
+        return f'{mns}m {scs}s'
+
+    @property
+    def str_hours(self):
+        rem = self.time_elapsed
+
+        hrs = rem // 3600
+        rem = rem % 3600
+
+        mns = rem // 60
+        rem = rem % 60
+
+        scs = rem
+
+        return f'{hrs}h {mns}m {scs}s'
+
+    @property
+    def str_time(self):
+        if self.time_elapsed < 60:
+            return self.str_seconds
+        if self.time_elapsed < 3600:
+            return self.str_minutes
+        return self.str_hours
 
 # Decorators
 
@@ -96,7 +137,7 @@ def time_this(func):
         timer.start()
         value = func(*args, **kwargs)
         timer.stop()
-        pr.text(f'Function \'{func.__name__}\' completed in {timer.time_elapsed:0.2f} seconds',spaced=False)
+        pr.text(f'Function \'{func.__name__}\' completed in {timer.str_time}',spaced=False)
         return value
     return wrapper
 

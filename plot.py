@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import settings
 import saves
+import numpy as np
 
 def time_vs_energy(times,energies,refinement_level='Not specified'):
 	fig, ax = plt.subplots(figsize=(10,10))
@@ -15,3 +16,20 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 	ax.set_title(f'Refinement level: {refinement_level}')
 
 	plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')
+	plt.close()
+
+def scatter_vs_poly(scatter,poly):
+	fig, ax = plt.subplots(figsize=(10,10))
+	fig.suptitle(f'Scatter vs. curve',fontsize=16)
+
+	x = np.linspace(0,10,5)
+	ax.plot(x,scatter,'ro')
+
+	x = np.linspace(0,10,30)
+	ax.plot(poly(x),'b')
+
+	ax.set_xlabel('xi')
+	ax.set_ylabel('E')
+
+	plt.savefig(f'{saves.current_directory}/energy/poly.png')
+	plt.close()

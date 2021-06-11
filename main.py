@@ -70,7 +70,7 @@ comp = compute.compute()
 
 timer.stop()
 
-pr.prelimCompInfo(timer.time_elapsed)
+pr.prelimCompInfo(timer.str_time)
 
 pr.pdeSolveTitle()
 
