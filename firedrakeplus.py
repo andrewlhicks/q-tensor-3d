@@ -217,7 +217,9 @@ class linesearch:
         E = poly(xi)
         xi_min = xi[np.argmin(E)].real
 
-        if compute_energy(xi_min) > np.amin(y):
+        q_next = interpolate(q_prev+float(xi_min)*time_der,H1_vec)
+
+        if compute_energy(q_next) > np.amin(y):
             pr.warning('exact2 ls polynomial error',spaced=False)
             return float(x_min)
 
