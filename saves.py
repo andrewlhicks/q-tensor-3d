@@ -110,7 +110,7 @@ def load_energies():
 	import yaml
 
 	with open(f'{current_directory}/energy/energies.yml') as energies_file:
-		yaml_load = yaml.load(energies_file, Loader=yaml.FullLoader)
+		yaml_load = yaml.load(energies_file, Loader=yaml.Loader)
 
 	times = yaml_load['times']
 	energies = yaml_load['energies']
