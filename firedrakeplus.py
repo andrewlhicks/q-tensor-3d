@@ -408,7 +408,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
         energies.append(compute_energy(q_soln))
 
-        pr.info(f'Time step {current_time} completed',spaced=False)
+        pr.Print(f'Time step {current_time} completed',spaced=False)
 
         if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
             truncated_times = times.truncate(len(energies))

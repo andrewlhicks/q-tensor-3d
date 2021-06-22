@@ -19,7 +19,7 @@ if settings.saves.save:
 
 # Decorators
 
-def color_print(string,color=None):
+def Print(string,color=None):
     from firedrake.petsc import PETSc
 
     colors = {'header' : '\033[95m',
@@ -50,14 +50,14 @@ def plogger(func):
 
         if not settings.saves.save:
             def plog(string='',color=None):
-                color_print(string,color)
+                Print(string,color)
             value = func(*args, **kwargs)
             return value
 
         with open(f'{saves.current_directory}/log/log.txt','a') as file:
             def plog(string='',color=None):
                 file.write(string+'\n')
-                color_print(string,color)
+                Print(string,color)
             value = func(*args, **kwargs)
         return value
 
