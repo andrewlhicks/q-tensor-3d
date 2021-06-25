@@ -375,8 +375,11 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     # Had to temporarily remove the progress bar due to constraints in parallel
 
+    counter = 0
+
     # for time in progressbar(times,redirect_stdout=True):
     for current_time in new_times:
+        counter += 1
         # Assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
@@ -404,13 +407,13 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
         # Write eigenvectors and eigenvalues to Paraview
 
-        if settings.options.visualize and (current_time/settings.time.step % settings.vis.save_every == 0): visualize(q_soln,mesh,time=current_time)
+        if settings.options.visualize and (counter == settings.vis.save_every): visualize(q_soln,mesh,time=current_time)
 
         energies.append(compute_energy(q_soln))
 
         pr.Print(f'Time step {current_time} completed')
 
-        if settings.saves.save and (current_time/settings.time.step % settings.vis.save_every == 0):
+        if settings.saves.save and (counter == settings.vis.save_every):
             truncated_times = times.truncate(len(energies))
             if len(truncated_times) != len(energies):
                 raise ValueError('You wrote the code wrong, dummy.')
@@ -420,6 +423,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
             pr.blue(f'Checkpoint saved at time {current_time}',spaced=False)
+            counter = 0
 
     timer.stop()
 
