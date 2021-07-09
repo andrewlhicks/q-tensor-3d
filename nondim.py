@@ -16,7 +16,8 @@ nd_const = {}
 
 # Define auxiliary constants
 
-R = 3.0e-5 # Zoomed Slab for Lagerwall
+# R = 3.0e-5 # Zoomed Slab for Lagerwall
+R = 0.42e-6 # Lavrentovich shell radius
 AM = max(const['A'],const['B'],const['C'])
 # AM = const['A']
 LM = max(const['L1'],const['L2'],const['L3'])
