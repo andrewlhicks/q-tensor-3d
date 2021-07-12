@@ -7,7 +7,7 @@ import os
 def _load_file(file_path):
 	# Open the file and load it using YAML
 
-	with open(f'settings/{file_path}') as settings_file:
+	with open(file_path) as settings_file:
 		settings_dict = yaml.load(settings_file, Loader=yaml.FullLoader)
 
 	# Settings

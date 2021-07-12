@@ -2,35 +2,85 @@
 Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 """
 
+import os
 import sys
 import getopt
+
+help_text = 'python main.py [resume/overwrite <save_name>]'
+
+if len(sys.argv[1:]) == 0:
+    print('Starting default')
+    settings_path = 'settings/settings.yml'
+    constants_path = 'constants/5cb_nd.yml'
+    SaveMode = None
+elif len(sys.argv[1:]) == 2:
+    if sys.argv[1] not in ('resume','overwrite'):
+        print(f"Argument '{sys.argv[1]}' not accepted.")
+        print(help_text)
+        sys.exit()
+    if not os.path.exists(f'saves/{sys.argv[2]}'):
+        print(f"Specified save '{sys.argv[2]}' does not exist.")
+        sys.exit()
+
+    if sys.argv[1] == 'overwrite':
+        while True:
+            answer = input(f"Will overwrite save '{sys.argv[2]}'. Are you sure you want to continue? (y/n) ")
+            if answer in ('y','Y'):
+                print('yes')
+                SaveMode = 'overwrite'
+                break
+            elif answer in ('n','N'):
+                print('no')
+                sys.exit()
+    if sys.argv[1] == 'resume':
+        SaveMode = 'resume'
+        print(f'Resuming {sys.argv[2]}')
+
+    settings_path = f'saves/{sys.argv[2]}/settings.yml'
+    constants_path = f'saves/{sys.argv[2]}/constants.yml'
+else:
+    print("No more than 2 arguments allowed.")
+    print(help_text)
+    sys.exit()
+
+# try:
+#     opts, args = getopt.getopt(sys.argv[1:],'ho:r:',['help'])
+# except getopt.GetoptError:
+#     print('main.py -s <settingsfile>')
+#     sys.exit(2)
+#
+# for opt, arg in opts:
+#     if opt in ('-h','--help'):
+#         print('main.py -r <save_name>')
+#         sys.exit()
+#     elif opt in ('-o'):
+#         settings_path = f'saves/{arg}/settings.yml'
+#         SaveMode = True
+#         print('overwriting')
+#         while True:
+#             answer = input(f"Will overwrite save '{arg}'. Are you sure you want to continue? (y/n) ")
+#             if answer in ['y','n']:
+#                 if answer is 'y':
+#                     print('yes')
+#                     break
+#                 elif answer is 'n':
+#                     sys.exit()
+#     elif opt in ('-r'):
+#         settings_path = f'saves/{arg}/settings.yml'
+#         SaveMode = True
+#         print('resuming')
 
 # These three modules must be imported in order and before other modules, or else they won't work properly
 
 import settings
-
-settings_file_path = 'settings.yml'
-
-try:
-    opts, args = getopt.getopt(sys.argv[1:],'hs:',['help=','sfile='])
-except getopt.GetoptError:
-    print('main.py -s <settingsfile>')
-    sys.exit(2)
-
-for opt, arg in opts:
-    if opt in ('-h','--help'):
-        print('main.py -s <settingsfile>')
-        sys.exit()
-    elif opt in ('-s','--sfile'):
-        settings_file_path = arg
-
-settings._load_file(settings_file_path)
-
+settings._load_file(settings_path)
 import const
 const._load_file(settings.constants.file_path)
+if SaveMode: print('SaveMode is on')
+sys.exit()
 
 import saves
-if settings.saves.save:
+if SaveMode:
     saves._set_current_directory() # Chooses directory name then sets it as saves.current_directory
     saves.initilize_directory(saves.current_directory)
 
