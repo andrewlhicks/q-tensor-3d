@@ -11,14 +11,16 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 
 	plot_energies = saves.EnergyList(energies)
 
+	plot_energies[0] = None
 	for ii in range(len(plot_energies)):
-		plot_energies[ii] -= energies[-1]
+		if ii != 0:
+			plot_energies[ii] -= energies[ii-1]
 
 	ax.plot(times,plot_energies,line_style)
 
 	ax.set_xlabel('Time')
 	ax.set_ylabel('Energy')
-	ax.set_yscale('log')
+	# ax.set_yscale('log')
 	ax.set_title(f'Refinement level: {refinement_level}')
 
 	plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')
