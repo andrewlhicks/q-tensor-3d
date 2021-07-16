@@ -4,8 +4,8 @@ import saves
 import numpy as np
 
 def time_vs_energy(times,energies,refinement_level='Not specified'):
-	fig, ax = plt.subplots(figsize=(10,10))
-	fig.suptitle(f'Energy over {settings.mesh.name} Mesh',fontsize=16)
+	fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
+	fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
 
 	line_style = '--' if len(energies) > 50 else 'o--'
 
@@ -16,12 +16,16 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 		if ii != 0:
 			plot_energies[ii] -= energies[ii-1]
 
-	ax.plot(times,plot_energies,line_style)
+	ax1.plot(times,energies,line_style)
+	ax2.plot(times,plot_energies,line_style,color='red')
 
-	ax.set_xlabel('Time')
-	ax.set_ylabel('Energy')
-	# ax.set_yscale('log')
-	ax.set_title(f'Refinement level: {refinement_level}')
+	ax1.set_xlabel('Time')
+	ax1.set_ylabel('Energy')
+	ax1.set_title('Total energy')
+
+	ax2.set_xlabel('Time')
+	ax2.set_ylabel('Energy')
+	ax2.set_title('Change in energy')
 
 	plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')
 	plt.close()
