@@ -20,10 +20,12 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 	ax2.plot(times,plot_energies,line_style,color='red')
 
 	ax1.set_xlabel('Time')
+	ax1.set_xlim(0,len(times))
 	ax1.set_ylabel('Energy')
 	ax1.set_title('Total energy')
 
 	ax2.set_xlabel('Time')
+	ax2.set_xlim(0,len(times))
 	ax2.set_ylabel('Energy')
 	ax2.set_title('Change in energy')
 
