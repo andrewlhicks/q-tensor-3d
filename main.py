@@ -13,10 +13,10 @@ def print0(*args,**kwargs):
     if comm.rank == 0:
         print(*args,**kwargs)
 
-help_text = 'python main.py [resume/overwrite <save_name>]'
+help_text = "python main.py [resume/overwrite <save_name>]"
 
 if len(sys.argv[1:]) == 0:
-    print0('Starting default')
+    print0("Starting default")
     settings_path = 'settings/settings.yml'
     constants_path = 'constants/5cb_nd.yml'
     SaveMode = None
@@ -34,49 +34,22 @@ elif len(sys.argv[1:]) == 2:
             answer = input(f"Will overwrite save '{sys.argv[2]}'. Are you sure you want to continue? (y/n) ") if comm.rank == 0 else None
             answer = comm.bcast(answer,root=0)
             if answer in ('y','Y'):
-                print0('yes')
                 SaveMode = 'overwrite'
+                print0(f"Overwriting '{sys.argv[2]}'")
                 break
             if answer in ('n','N'):
-                print0('no')
+                print0("Exiting")
                 sys.exit()
     if sys.argv[1] == 'resume':
         SaveMode = 'resume'
-        print0(f'Resuming {sys.argv[2]}')
+        print0(f"Resuming '{sys.argv[2]}'")
 
     settings_path = f'saves/{sys.argv[2]}/settings.yml'
     constants_path = f'saves/{sys.argv[2]}/constants.yml'
 else:
-    print0("No more than 2 arguments allowed.")
+    print0("Wrong number of arguments.")
     print0(help_text)
     sys.exit()
-
-# try:
-#     opts, args = getopt.getopt(sys.argv[1:],'ho:r:',['help'])
-# except getopt.GetoptError:
-#     print('main.py -s <settingsfile>')
-#     sys.exit(2)
-#
-# for opt, arg in opts:
-#     if opt in ('-h','--help'):
-#         print('main.py -r <save_name>')
-#         sys.exit()
-#     elif opt in ('-o'):
-#         settings_path = f'saves/{arg}/settings.yml'
-#         SaveMode = True
-#         print('overwriting')
-#         while True:
-#             answer = input(f"Will overwrite save '{arg}'. Are you sure you want to continue? (y/n) ")
-#             if answer in ['y','n']:
-#                 if answer is 'y':
-#                     print('yes')
-#                     break
-#                 elif answer is 'n':
-#                     sys.exit()
-#     elif opt in ('-r'):
-#         settings_path = f'saves/{arg}/settings.yml'
-#         SaveMode = True
-#         print('resuming')
 
 # These three modules must be imported in order and before other modules, or else they won't work properly
 
@@ -84,7 +57,6 @@ import settings
 settings._load_file(settings_path)
 import const
 const._load_file(settings.constants.file_path)
-if SaveMode: print('SaveMode is on')
 sys.exit()
 
 import saves
