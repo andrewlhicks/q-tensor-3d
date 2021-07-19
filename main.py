@@ -20,32 +20,39 @@ if len(sys.argv[1:]) == 0:
     settings_path = 'settings/settings.yml'
     constants_path = 'constants/5cb_nd.yml'
     SaveMode = None
+    SaveName = None
 elif len(sys.argv[1:]) == 2:
     if sys.argv[1] not in ('resume','overwrite'):
         print0(f"Argument '{sys.argv[1]}' not accepted.")
         print0(help_text)
         sys.exit()
+
     if not os.path.exists(f'saves/{sys.argv[2]}'):
         print0(f"Specified save '{sys.argv[2]}' does not exist.")
         sys.exit()
 
+    SaveName = sys.argv[2]
+
     if sys.argv[1] == 'overwrite':
         while True:
-            answer = input(f"Will overwrite save '{sys.argv[2]}'. Are you sure you want to continue? (y/n) ") if comm.rank == 0 else None
+            answer = input(f"Will overwrite save '{SaveName}'. Are you sure you want to continue? (y/n) ") if comm.rank == 0 else None
             answer = comm.bcast(answer,root=0)
             if answer in ('y','Y'):
                 SaveMode = 'overwrite'
-                print0(f"Overwriting '{sys.argv[2]}'")
+                print0(f"Overwriting '{SaveName}'")
                 break
             if answer in ('n','N'):
                 print0("Exiting")
                 sys.exit()
     if sys.argv[1] == 'resume':
+        if not os.path.exists(f'saves/{SaveName}/chk/q_soln.h5') or not os.path.exists(f'saves/{SaveName}/chk/q_prev.h5'):
+            print0("Cannot resume since no checkpoint found. Try overwriting instead.")
+            sys.exit()
         SaveMode = 'resume'
-        print0(f"Resuming '{sys.argv[2]}'")
+        print0(f"Resuming '{SaveName}'")
 
-    settings_path = f'saves/{sys.argv[2]}/settings.yml'
-    constants_path = f'saves/{sys.argv[2]}/constants.yml'
+    settings_path = f'saves/{SaveName}/settings.yml'
+    constants_path = f'saves/{SaveName}/constants.yml'
 else:
     print0("Wrong number of arguments.")
     print0(help_text)
@@ -57,12 +64,9 @@ import settings
 settings._load_file(settings_path)
 import const
 const._load_file(settings.constants.file_path)
-sys.exit()
 
 import saves
-if SaveMode:
-    saves._set_current_directory() # Chooses directory name then sets it as saves.current_directory
-    saves.initilize_directory(saves.current_directory)
+saves.initialize(SaveMode,SaveName)
 
 # Import other modules
 
@@ -82,7 +86,7 @@ check.elastic_constants()
 
 pr.mesh_info()
 pr.options_info()
-pr.saves_info()
+# pr.saves_info()
 pr.solver_info()
 pr.time_info()
 pr.vis_info()
@@ -129,8 +133,5 @@ for refinement_level in get_range(settings.mesh.refs):
         energy=energies[-1],
         custom={'title':'Manu. Sol. Energy','text':manu_energy},
         time_elapsed=time_elapsed)
-
-    # if settings.saves.save:
-    #     plot.time_vs_energy(times,energies,refinement_level=refinement_level)
 
 # END OF CODE

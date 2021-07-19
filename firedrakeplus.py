@@ -321,7 +321,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     # Load data for resumption of computation, if needed
 
-    if settings.saves.save and settings.saves.mode == 'resume':
+    if saves.SaveMode == 'resume':
         # On resume mode, q_soln and q_prev are loaded from a previous state
         q_soln = saves.load_checkpoint(H1_vec,'q_soln')
         q_prev = saves.load_checkpoint(H1_vec,'q_prev')
@@ -330,7 +330,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
         t_init = times.final
     else:
-        # On new or overwrite mode, q_soln and q_prev are taken to be the initial guess
+        # On overwrite mode or when save is turned off, q_soln and q_prev are taken to be the initial guess
         q_soln = interpolate(eval(initial_q),H1_vec)
         q_prev.assign(q_soln)
         times, energies = saves.TimeList([]), saves.EnergyList([])
@@ -341,7 +341,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     new_times = saves.TimeList.by_prev(t_init,num_times=settings.time.num,step=settings.time.step)
     times = times + new_times
 
-    if settings.options.visualize and (settings.saves.mode == 'overwrite' or settings.saves.mode == 'new'): visualize(q_soln,mesh,time=0)
+    if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define bilinear form a(q,p), and linear form L(p)
 
@@ -407,13 +407,13 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
         # Write eigenvectors and eigenvalues to Paraview
 
-        if settings.options.visualize and (counter == settings.vis.save_every): visualize(q_soln,mesh,time=current_time)
+        if saves.SaveMode and (counter == settings.vis.save_every): visualize(q_soln,mesh,time=current_time)
 
         energies.append(compute_energy(q_soln))
 
         pr.Print(f'Time step {current_time} completed')
 
-        if settings.saves.save and (counter == settings.vis.save_every):
+        if saves.SaveMode and (counter == settings.vis.save_every):
             truncated_times = times.truncate(len(energies))
             if len(truncated_times) != len(energies):
                 raise ValueError('You wrote the code wrong, dummy.')
@@ -490,7 +490,6 @@ def visualize(q_vis,mesh,time=None,new_outfile=False):
 
     # Create new outfile if desired
 
-    if settings.saves.save:
-        saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q, time=time)
+    saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q, time=time)
 
 # END OF CODE
