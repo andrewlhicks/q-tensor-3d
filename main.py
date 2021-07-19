@@ -4,43 +4,51 @@ Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 
 import os
 import sys
-import getopt
+# import getopt
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+
+def print0(*args,**kwargs):
+    if comm.rank == 0:
+        print(*args,**kwargs)
 
 help_text = 'python main.py [resume/overwrite <save_name>]'
 
 if len(sys.argv[1:]) == 0:
-    print('Starting default')
+    print0('Starting default')
     settings_path = 'settings/settings.yml'
     constants_path = 'constants/5cb_nd.yml'
     SaveMode = None
 elif len(sys.argv[1:]) == 2:
     if sys.argv[1] not in ('resume','overwrite'):
-        print(f"Argument '{sys.argv[1]}' not accepted.")
-        print(help_text)
+        print0(f"Argument '{sys.argv[1]}' not accepted.")
+        print0(help_text)
         sys.exit()
     if not os.path.exists(f'saves/{sys.argv[2]}'):
-        print(f"Specified save '{sys.argv[2]}' does not exist.")
+        print0(f"Specified save '{sys.argv[2]}' does not exist.")
         sys.exit()
 
     if sys.argv[1] == 'overwrite':
         while True:
-            answer = input(f"Will overwrite save '{sys.argv[2]}'. Are you sure you want to continue? (y/n) ")
+            answer = input(f"Will overwrite save '{sys.argv[2]}'. Are you sure you want to continue? (y/n) ") if comm.rank == 0 else None
+            answer = comm.bcast(answer,root=0)
             if answer in ('y','Y'):
-                print('yes')
+                print0('yes')
                 SaveMode = 'overwrite'
                 break
-            elif answer in ('n','N'):
-                print('no')
+            if answer in ('n','N'):
+                print0('no')
                 sys.exit()
     if sys.argv[1] == 'resume':
         SaveMode = 'resume'
-        print(f'Resuming {sys.argv[2]}')
+        print0(f'Resuming {sys.argv[2]}')
 
     settings_path = f'saves/{sys.argv[2]}/settings.yml'
     constants_path = f'saves/{sys.argv[2]}/constants.yml'
 else:
-    print("No more than 2 arguments allowed.")
-    print(help_text)
+    print0("No more than 2 arguments allowed.")
+    print0(help_text)
     sys.exit()
 
 # try:
