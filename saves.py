@@ -7,31 +7,6 @@ outfile = None
 SaveMode = None
 SaveName = None
 
-# Decorators
-
-def one_core(func):
-	@functools.wraps(func)
-	def wrapper(*args, **kwargs):
-		if COMM_WORLD.rank != 0:
-			return
-		value = func(*args, **kwargs)
-		return value
-	return wrapper
-
-# @one_core
-# def _choose_directory_name(directory_protoname):
-# 	""" Chooses a directory name and returns it. More specifically, takes an
-# 	arbitrary name, and then places a digit behind it to create a unique
-# 	directory name which hasn't yet been used.  """
-#
-# 	ii = 0
-# 	while True:
-# 		name = f'{directory_protoname}{ii}'
-# 		path = f'saves/{name}'
-# 		if not os.path.exists(path):
-# 			return name
-# 		ii += 1
-
 def initialize(save_mode,save_name):
 	global SaveMode, SaveName, current_directory
 
