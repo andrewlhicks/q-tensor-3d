@@ -39,7 +39,7 @@ def set_eqn_globals(comp):
         forcing_f = comp.forcing_f if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
         forcing_g = comp.forcing_g if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
         strong_boundary = [comp.bdycond_s,settings.options.strong_boundary]
-        weak_boundary = [comp.bdycond_w,settings.options.weak_boundary]
+        weak_boundary = [None,settings.options.weak_boundary]
 
         energy_0d = comp.energy_0d
         energy_1d = comp.energy_1d
@@ -54,35 +54,6 @@ class nrm:
         return sqrt(assemble((inner(grad(function),grad(function)) + dot(function,function)) * dx(domain=mesh)))
     def L2(function,mesh):
         return sqrt(assemble(dot(function,function) * dx(domain=mesh)))
-
-# def computeEnergy(function,mesh,weak_boundary=None,forcing_f=None,forcing_g=None):
-#     from energycomps import elastic, bulk, anchor_n, anchor_pd
-#
-#     H1_vec = VectorFunctionSpace(mesh,'CG',1,5) # Try to make this into a wrapper than can be put on functions
-#     x0, x1, x2 = SpatialCoordinate(mesh)
-#
-#     nu = FacetNormal(mesh)
-#
-#     f = zero_vec if forcing_f is None else forcing_f
-#     g = zero_vec if forcing_g is None else forcing_g
-#
-#     domain_integral = assemble((elastic(function) + bulk(function) - dot(function,f)) * dx)
-#
-#     if weak_boundary is None: # Let's put this into a function since it is basically repeated in solvePDE()
-#         boundary_integral = 0
-#     elif weak_boundary[1] == 'none':
-#         boundary_integral = 0
-#     elif weak_boundary[1] == 'all':
-#         boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds)
-#     elif isinstance(weak_boundary[1],int):
-#         if weak_boundary[1] > -1:
-#             boundary_integral = assemble((anchor_n(function,nu) + anchor_pd(function,nu) - dot(function,g)) * ds(weak_boundary[1]))
-#         else:
-#             raise ValueError('Boundary integer specified must be positive.')
-#     else:
-#         raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
-#
-#     return float(domain_integral + boundary_integral)
 
 # Here we have the new function to compute the energy, which will use SympyPlus
 
@@ -302,7 +273,6 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     # Facet normal
 
-    # nu = eval(weak_boundary[0]) # Should usually be set to 'FacetNormal(mesh)'
     nu = FacetNormal(mesh)
 
     # Test and Trial functions
