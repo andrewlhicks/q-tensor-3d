@@ -63,7 +63,7 @@ else:
 import settings
 settings._load_file(settings_path)
 import const
-const._load_file(settings.constants.file_path)
+const._load_file(constants_path)
 
 import saves
 saves.initialize(SaveMode,SaveName)
@@ -127,11 +127,14 @@ for refinement_level in get_range(settings.mesh.refs):
     h1_error = errorH1(q_soln,q_manu,mesh)
     l2_error = errorL2(q_soln,q_manu,mesh)
 
-    pr.pdeSolveInfo(refinement_level=refinement_level,
-        h1_error=h1_error,
-        l2_error=l2_error,
-        energy=energies[-1],
-        custom={'title':'Manu. Sol. Energy','text':manu_energy},
-        time_elapsed=time_elapsed)
+    if settings.options.manufactured:
+        pr.pdeSolveInfo(refinement_level=refinement_level,
+            h1_error=h1_error,
+            l2_error=l2_error,
+            energy=energies[-1],
+            custom={'title':'Manu. Sol. Energy','text':manu_energy},
+            time_elapsed=time_elapsed)
+    else:
+        pr.pdeSolveInfo(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
 
 # END OF CODE

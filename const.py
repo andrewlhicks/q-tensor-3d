@@ -7,8 +7,8 @@ import settings
 def _load_file(file_path):
 	# Open the file and load it using YAML
 
-	with open(f'constants/{file_path}') as constants_file:
-		constants_dict = yaml.load(constants_file, Loader=yaml.FullLoader)
+	with open(file_path) as constants_file:
+		constants_dict = yaml.load(constants_file, Loader=yaml.Loader)
 
 	global L1, L2, L3, q0, A, B, C, ep, W0, W1, W2, beta, L0, S0, dt
 

@@ -407,13 +407,13 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
         # Write eigenvectors and eigenvalues to Paraview
 
-        if saves.SaveMode and (counter == settings.vis.save_every): visualize(q_soln,mesh,time=current_time)
+        if saves.SaveMode and (counter == settings.time.save_every): visualize(q_soln,mesh,time=current_time)
 
         energies.append(compute_energy(q_soln))
 
         pr.Print(f'Time step {current_time} completed')
 
-        if saves.SaveMode and (counter == settings.vis.save_every):
+        if saves.SaveMode and (counter == settings.time.save_every):
             truncated_times = times.truncate(len(energies))
             if len(truncated_times) != len(energies):
                 raise ValueError('You wrote the code wrong, dummy.')

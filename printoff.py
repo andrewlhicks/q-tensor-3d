@@ -142,7 +142,6 @@ def options_info():
 
     dicts = []
 
-    dicts.append({'title':'Visualize','text':settings.options.visualize})
     dicts.append({'title':'Manufactured','text':settings.options.manufactured})
     dicts.append({'title':'Weak boundary','text':settings.options.weak_boundary})
     dicts.append({'title':'Strong boundary','text':settings.options.strong_boundary})
@@ -193,8 +192,8 @@ def time_info():
 
     dicts = []
 
+    dicts.append({'title':'Save every','text':settings.time.save_every})
     dicts.append({'title':'Time step','text':settings.time.step})
-    # dicts.append({'title':'End time','text':settings.time.end})
     dicts.append({'title':'No. time steps','text':f'{settings.time.num}'})
 
     # Print lines
@@ -210,7 +209,6 @@ def vis_info():
     dicts = []
 
     dicts.append({'title':'Normal vector','text':settings.vis.normal})
-    dicts.append({'title':'Save every','text':settings.vis.save_every})
 
     # Print lines
 
