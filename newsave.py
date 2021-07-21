@@ -40,6 +40,9 @@ def nondimensionalize(const,R):
 	return nd_const
 
 def main():
+	if not os.path.exists('saves'):
+		os.makedirs('saves')
+
 	help_text = 'python newsave.py <name> <settings-file>.yml <constants-file>.yml -n <radius>'
 	radius = None
 
