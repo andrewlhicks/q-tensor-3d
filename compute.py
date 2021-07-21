@@ -5,7 +5,6 @@ import user_expressions.manufac_q as manufac_q
 import user_expressions.forcing_f as forcing_f
 import user_expressions.forcing_g as forcing_g
 import user_expressions.bdycond_s as bdycond_s
-import user_expressions.bdycond_w as bdycond_w
 
 import settings
 import const
@@ -135,7 +134,6 @@ def compute():
         forcing_f = forcing_f.out
         forcing_g = forcing_g.out
         bdycond_s = bdycond_s.out
-        bdycond_w = bdycond_w.out
 
         n_bf_O = newt_bilinearDomain()
         n_bf_G = newt_bilinearBoundary()

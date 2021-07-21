@@ -8,12 +8,12 @@ import settings
 import const
 import functools
 
-if settings.saves.save:
+if saves.SaveMode:
     from datetime import datetime
     from firedrake import COMM_WORLD
     if COMM_WORLD.rank == 0:
-        mode = 'a' if settings.saves.mode == 'resume' else 'w'
-        with open(f'{saves.current_directory}/log/log.txt',mode) as file:
+        mode = 'a' if saves.SaveMode == 'resume' else 'w'
+        with open(f'{saves.current_directory}/log.txt',mode) as file:
             now = datetime.now()
             file.write(now.strftime('%c') + '\n')
 
@@ -48,13 +48,13 @@ def plogger(func):
         if COMM_WORLD.rank != 0:
             return
 
-        if not settings.saves.save:
+        if not saves.SaveMode:
             def plog(string='',color=None):
                 Print(string,color)
             value = func(*args, **kwargs)
             return value
 
-        with open(f'{saves.current_directory}/log/log.txt','a') as file:
+        with open(f'{saves.current_directory}/log.txt','a') as file:
             def plog(string='',color=None):
                 file.write(string+'\n')
                 Print(string,color)
@@ -142,7 +142,6 @@ def options_info():
 
     dicts = []
 
-    dicts.append({'title':'Visualize','text':settings.options.visualize})
     dicts.append({'title':'Manufactured','text':settings.options.manufactured})
     dicts.append({'title':'Weak boundary','text':settings.options.weak_boundary})
     dicts.append({'title':'Strong boundary','text':settings.options.strong_boundary})
@@ -151,22 +150,22 @@ def options_info():
 
     print_lines(*dicts)
 
-@plogger
-def saves_info():
-    plog('SAVES:',color='uline')
-
-    # Assemble dicts
-
-    dicts = []
-
-    dicts.append({'title':'Save','text':settings.saves.save})
-    if settings.saves.save:
-        dicts.append({'title':'Mode','text':settings.saves.mode})
-        dicts.append({'title':'Save directory','text':saves.current_directory})
-
-    # Print lines
-
-    print_lines(*dicts)
+# @plogger
+# def saves_info():
+#     plog('SAVES:',color='uline')
+#
+#     # Assemble dicts
+#
+#     dicts = []
+#
+#     dicts.append({'title':'Save','text':settings.saves.save})
+#     if settings.saves.save:
+#         dicts.append({'title':'Mode','text':settings.saves.mode})
+#         dicts.append({'title':'Save directory','text':saves.current_directory})
+#
+#     # Print lines
+#
+#     print_lines(*dicts)
 
 @plogger
 def solver_info():
@@ -193,8 +192,8 @@ def time_info():
 
     dicts = []
 
+    dicts.append({'title':'Save every','text':settings.time.save_every})
     dicts.append({'title':'Time step','text':settings.time.step})
-    # dicts.append({'title':'End time','text':settings.time.end})
     dicts.append({'title':'No. time steps','text':f'{settings.time.num}'})
 
     # Print lines
@@ -210,7 +209,6 @@ def vis_info():
     dicts = []
 
     dicts.append({'title':'Normal vector','text':settings.vis.normal})
-    dicts.append({'title':'Save every','text':settings.vis.save_every})
 
     # Print lines
 

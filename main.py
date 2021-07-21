@@ -2,37 +2,71 @@
 Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 """
 
+import os
 import sys
-import getopt
+# import getopt
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+
+def print0(*args,**kwargs):
+    if comm.rank == 0:
+        print(*args,**kwargs)
+
+help_text = "python main.py [resume/overwrite <save_name>]"
+
+if len(sys.argv[1:]) == 0:
+    print0("Starting default")
+    settings_path = 'settings/settings.yml'
+    constants_path = 'constants/5cb_nd.yml'
+    SaveMode = None
+    SaveName = None
+elif len(sys.argv[1:]) == 2:
+    if sys.argv[1] not in ('resume','overwrite'):
+        print0(f"Argument '{sys.argv[1]}' not accepted.")
+        print0(help_text)
+        sys.exit()
+
+    if not os.path.exists(f'saves/{sys.argv[2]}'):
+        print0(f"Specified save '{sys.argv[2]}' does not exist.")
+        sys.exit()
+
+    SaveName = sys.argv[2]
+
+    if sys.argv[1] == 'overwrite':
+        while True:
+            answer = input(f"Will overwrite save '{SaveName}'. Are you sure you want to continue? (y/n) ") if comm.rank == 0 else None
+            answer = comm.bcast(answer,root=0)
+            if answer in ('y','Y'):
+                SaveMode = 'overwrite'
+                print0(f"Overwriting '{SaveName}'")
+                break
+            if answer in ('n','N'):
+                print0("Exiting")
+                sys.exit()
+    if sys.argv[1] == 'resume':
+        if not os.path.exists(f'saves/{SaveName}/chk/q_soln.h5') or not os.path.exists(f'saves/{SaveName}/chk/q_prev.h5'):
+            print0("Cannot resume since no checkpoint found. Try overwriting instead.")
+            sys.exit()
+        SaveMode = 'resume'
+        print0(f"Resuming '{SaveName}'")
+
+    settings_path = f'saves/{SaveName}/settings.yml'
+    constants_path = f'saves/{SaveName}/constants.yml'
+else:
+    print0("Wrong number of arguments.")
+    print0(help_text)
+    sys.exit()
 
 # These three modules must be imported in order and before other modules, or else they won't work properly
 
 import settings
-
-settings_file_path = 'settings.yml'
-
-try:
-    opts, args = getopt.getopt(sys.argv[1:],'hs:',['help=','sfile='])
-except getopt.GetoptError:
-    print('main.py -s <settingsfile>')
-    sys.exit(2)
-
-for opt, arg in opts:
-    if opt in ('-h','--help'):
-        print('main.py -s <settingsfile>')
-        sys.exit()
-    elif opt in ('-s','--sfile'):
-        settings_file_path = arg
-
-settings._load_file(settings_file_path)
-
+settings._load_file(settings_path)
 import const
-const._load_file(settings.constants.file_path)
+const._load_file(constants_path)
 
 import saves
-if settings.saves.save:
-    saves._set_current_directory() # Chooses directory name then sets it as saves.current_directory
-    saves.initilize_directory(saves.current_directory)
+saves.initialize(SaveMode,SaveName)
 
 # Import other modules
 
@@ -52,7 +86,7 @@ check.elastic_constants()
 
 pr.mesh_info()
 pr.options_info()
-pr.saves_info()
+# pr.saves_info()
 pr.solver_info()
 pr.time_info()
 pr.vis_info()
@@ -93,14 +127,14 @@ for refinement_level in get_range(settings.mesh.refs):
     h1_error = errorH1(q_soln,q_manu,mesh)
     l2_error = errorL2(q_soln,q_manu,mesh)
 
-    pr.pdeSolveInfo(refinement_level=refinement_level,
-        h1_error=h1_error,
-        l2_error=l2_error,
-        energy=energies[-1],
-        custom={'title':'Manu. Sol. Energy','text':manu_energy},
-        time_elapsed=time_elapsed)
-
-    # if settings.saves.save:
-    #     plot.time_vs_energy(times,energies,refinement_level=refinement_level)
+    if settings.options.manufactured:
+        pr.pdeSolveInfo(refinement_level=refinement_level,
+            h1_error=h1_error,
+            l2_error=l2_error,
+            energy=energies[-1],
+            custom={'title':'Manu. Sol. Energy','text':manu_energy},
+            time_elapsed=time_elapsed)
+    else:
+        pr.pdeSolveInfo(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
 
 # END OF CODE

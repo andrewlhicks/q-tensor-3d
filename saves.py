@@ -4,84 +4,15 @@ from firedrake import COMM_WORLD
 import functools
 
 outfile = None
+SaveMode = None
+SaveName = None
 
-# Decorators
+def initialize(save_mode,save_name):
+	global SaveMode, SaveName, current_directory
 
-def one_core(func):
-	@functools.wraps(func)
-	def wrapper(*args, **kwargs):
-		if COMM_WORLD.rank != 0:
-			return
-		value = func(*args, **kwargs)
-		return value
-	return wrapper
-
-@one_core
-def _choose_directory_name(directory_protoname):
-	""" Chooses a directory name and returns it. More specifically, takes an
-	arbitrary name, and then places a digit behind it to create a unique
-	directory name which hasn't yet been used.  """
-
-	ii = 0
-	while True:
-		name = f'{directory_protoname}{ii}'
-		path = f'saves/{name}'
-		if not os.path.exists(path):
-			return name
-		ii += 1
-
-def _set_current_directory():
-	""" Sets the global variable 'current_directory' to an appropriate path.
-	More specifically, if the save mode is 'new', creates a new directory, using
-	the save name as the protoname. If the save mode is 'overwrite' or 'resume',
-	uses the save name as the explicit directory name. """
-
-	global current_directory
-
-	mode = settings.saves.mode
-
-	if mode == 'overwrite' or mode == 'resume':
-		current_directory = f'saves/{settings.saves.name}'
-		return
-
-	if mode == 'new':
-		current_directory = f'saves/{_choose_directory_name(settings.saves.name)}'
-		return
-
-	raise ValueError('Save mode must be \'new\', \'overwrite\', or \'resume\'.')
-
-@one_core
-def initilize_directory(path):
-	""" This should be called after the current directory is set by all cores.
-	This is done on only one core because it creates the directory should it not
-	exist """
-
-	mode = settings.saves.mode
-
-	if mode == 'overwrite' or mode == 'resume':
-		if not os.path.exists(path):
-			raise OSError(f'Directory {path} does not exist.')
-		return
-
-	if mode == 'new':
-		if os.path.exists(path):
-			raise OSError(f'Directory {path} already exists.')
-		_create_directory(path)
-		return
-
-	raise ValueError('Save mode must be \'new\', \'overwrite\', or \'resume\'.')
-
-@one_core
-def _create_directory(path):
-	""" Creates a directory in the path 'path'. """
-
-	os.makedirs(path)
-	os.makedirs(path+'/chk') # stores checkpoints
-	os.makedirs(path+'/energy') # contains the plot of the energy decrease
-	os.makedirs(path+'/log') # contains the log of what is printed in the terminal
-	os.makedirs(path+'/vis') # contains paraview stuff
-
-###
+	SaveMode = save_mode
+	SaveName = save_name
+	current_directory = f'saves/{SaveName}'
 
 def load_checkpoint(vector_space,name='dump'):
 	""" Loads a checkpoint and outputs the function with name specified. """
@@ -133,7 +64,7 @@ def save_pvd(*args,time=None):
 	from firedrake import File
 	global outfile
 	if outfile is None:
-		mode = 'a' if settings.saves.mode == 'resume' else 'w'
+		mode = 'a' if SaveMode == 'resume' else 'w'
 		outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
 	outfile.write(*args,time=time)
 
