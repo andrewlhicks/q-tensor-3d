@@ -64,8 +64,7 @@ def main():
 		print(err)  # will print something like "option -a not recognized"
 		print(help_text)
 		sys.exit()
-	output = None
-	verbose = False
+
 	for o, a in opts:
 		if o in ("-n", "--nondim"):
 			radius = float(a)
