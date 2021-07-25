@@ -47,3 +47,37 @@ def scatter_vs_poly(scatter,poly):
 
 	plt.savefig(f'{saves.current_directory}/energy/poly.png')
 	plt.close()
+
+def main():
+	def usage():
+		print("usage: python plot.py <save-name>")
+
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'hl:r:', ['help,local=,remote='])
+	except getopt.GetoptError as err:
+		print(err)  # will print something like "option -a not recognized"
+		sys.exit()
+
+	for o, a in opts:
+		if o in ('-h','--help'):
+			usage()
+			sys.exit()
+		elif o in ('-l','--local'):
+			remote = ''
+			save_name = a
+			saves.initialize(None,save_name)
+			settings._load_file(f'saves/{save_name}/settings.yml')
+		elif o in ('-r','--remote'):
+			remote = 'remote '
+			save_name = a
+			saves.initialize(None,save_name,remote=True)
+			settings._load_file(f'saves-remote/{save_name}/settings.yml')
+		else:
+			assert False, "unhandled option"
+
+	times, energies = saves.load_energies()
+	time_vs_energy(times,energies)
+	print(f"Done plotting to {remote}save {save_name}.")
+
+if __name__ == '__main__':
+	main()

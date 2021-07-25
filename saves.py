@@ -1,18 +1,19 @@
 import os
 import settings
-from firedrake import COMM_WORLD
 import functools
 
 outfile = None
 SaveMode = None
 SaveName = None
 
-def initialize(save_mode,save_name):
+def initialize(save_mode,save_name,remote=False):
 	global SaveMode, SaveName, current_directory
 
 	SaveMode = save_mode
 	SaveName = save_name
 	current_directory = f'saves/{SaveName}'
+	if remote == True:
+		current_directory = f'saves-remote/{SaveName}'
 
 def load_checkpoint(vector_space,name='dump'):
 	""" Loads a checkpoint and outputs the function with name specified. """
