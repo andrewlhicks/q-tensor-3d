@@ -1,7 +1,10 @@
+import getopt
 import matplotlib.pyplot as plt
-import settings
-import saves
 import numpy as np
+import saves
+import settings
+import sys
+import yaml
 
 def time_vs_energy(times,energies,refinement_level='Not specified'):
 	fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
