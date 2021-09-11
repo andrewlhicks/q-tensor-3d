@@ -4,31 +4,63 @@ using their non-dimensionalized counterparts. """
 
 import os
 import sys
+import getopt
 import yaml
 from newsave import nondimensionalize
 
-file_name = input("Enter constants file name: ")
+def usage():
+	print("python nondim.py <constants-file>.yml <radius> [-s]")
 
-# Open the file and load it using YAML
+def main():
+	save_mode = False
 
-with open(f'constants/{file_name}.yml') as constants_file:
-	constants_dict = yaml.load(constants_file, Loader=yaml.FullLoader)
+	try:
+		opts, args = getopt.getopt(sys.argv[3:], 'hs', [''])
+	except getopt.GetoptError as err:
+		# print help information and exit:
+		print(err)  # will print something like "option -a not recognized"
+		usage()
+		sys.exit()
 
-# R = 3.0e-5 # Zoomed Slab for Lagerwall
-R = 0.42e-6 # Lavrentovich shell radius
-
-constants_dict = nondimensionalize(constants_dict,R)
-
-if os.path.exists(f'constants/{file_name}_nd.yml'):
-	while True:
-		answer = input(f"Constants file '{file_name}_nd.yml' already exists. Overwrite? (y/n)")
-		if answer in ('y','Y'):
-			break
-		if answer in ('n','N'):
-			print("No file overwritten.")
+	for o, a in opts:
+		if o in ('-h'):
+			usage()
 			sys.exit()
+		if o in ('-s'):
+			save_mode = True
+		else:
+			assert False, "unhandled option"
 
-with open(f'constants/{file_name}_nd.yml','w') as constants_file:
-	constants_file.write(yaml.dump(constants_dict))
+	file = sys.argv[1]
+	file_name = file.split('.yml')[0]
+	R = float(sys.argv[2])
 
-print(f"Successfully created '{file_name}_nd.yml'")
+	if not file.endswith('.yml'):
+		print("Constants file must end in '.yml'.")
+		sys.exit()
+	if not R > 0:
+		print("Radius must be positive.")
+		sys.exit()
+
+	with open(f'constants/{file}') as constants_file:
+		constants_dict = yaml.load(constants_file, Loader=yaml.Loader)
+	constants_dict = nondimensionalize(constants_dict,R)
+
+	print("")
+	print(yaml.dump(constants_dict))
+
+	if save_mode:
+		if os.path.exists(f'constants/{file_name}_nd.yml'):
+			while True:
+				answer = input(f"Constants file '{file_name}_nd.yml' already exists. Overwrite? (y/n)")
+				if answer in ('y','Y'):
+					break
+				if answer in ('n','N'):
+					print("No file overwritten.")
+					sys.exit()
+		with open(f'constants/{file_name}_nd.yml','w') as constants_file:
+			constants_file.write(yaml.dump(constants_dict))
+		print(f"File successfully saved as '{file_name}_nd.yml'.")
+
+if __name__ == '__main__':
+	main()
