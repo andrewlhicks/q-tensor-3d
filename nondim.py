@@ -1,6 +1,5 @@
-""" This is now the legacy version of the non-dimensionalization. Will be phased
-out in favor of newsave.py. Converts a YAML file with constants to a new file
-using their non-dimensionalized counterparts. """
+""" Converts a YAML file with constants to a new file using their
+non-dimensionalized counterparts. """
 
 import os
 import sys
