@@ -13,7 +13,10 @@ def print0(*args,**kwargs):
     if comm.rank == 0:
         print(*args,**kwargs)
 
-help_text = "python main.py [resume/overwrite <save_name>]"
+help_text = """usage: python main.py [resume/overwrite <save_name>]
+                      [conv-check]"""
+def usage():
+    print0(help_text)
 
 if len(sys.argv[1:]) == 0:
     print0("Starting default")
@@ -21,10 +24,23 @@ if len(sys.argv[1:]) == 0:
     constants_path = 'constants/5cb_nd.yml'
     SaveMode = None
     SaveName = None
+elif len(sys.argv[1:]) == 1:
+    if sys.argv[1] == 'help':
+        usage()
+        sys.exit()
+    if sys.argv[1] not in ('conv-check'):
+        print0(f"Argument '{sys.argv[1]}' not accepted.")
+        usage()
+        sys.exit()
+
+    settings_path = 'settings/conv-check.yml'
+    constants_path = 'constants/conv-check.yml'
+    SaveMode = None
+    SaveName = None
 elif len(sys.argv[1:]) == 2:
     if sys.argv[1] not in ('resume','overwrite'):
         print0(f"Argument '{sys.argv[1]}' not accepted.")
-        print0(help_text)
+        usage()
         sys.exit()
 
     if not os.path.exists(f'saves/{sys.argv[2]}'):
@@ -55,7 +71,7 @@ elif len(sys.argv[1:]) == 2:
     constants_path = f'saves/{SaveName}/constants.yml'
 else:
     print0("Wrong number of arguments.")
-    print0(help_text)
+    usage()
     sys.exit()
 
 # These three modules must be imported in order and before other modules, or else they won't work properly
