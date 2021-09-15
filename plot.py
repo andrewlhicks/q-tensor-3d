@@ -5,6 +5,7 @@ import saves
 import settings
 import sys
 import yaml
+import os
 
 def time_vs_energy(times,energies,refinement_level='Not specified'):
 	fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
@@ -19,21 +20,31 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 		if ii != 0:
 			plot_energies[ii] -= energies[ii-1]
 
-	ax1.plot(times,energies,line_style)
-	ax2.plot(times,plot_energies,line_style,color='red')
+	# Truncate to last 1000
+
+	end_value = times[-1]
+	N = 1000
+	start_value = end_value-N/settings.time.step
+
+	ax1.plot(times[-N:],energies[-N:],line_style)
+	ax2.plot(times[-N:],plot_energies[-N:],line_style,color='red')
 
 	ax1.set_xlabel('Time')
-	ax1.set_xlim(0,len(times))
+	ax1.set_xlim(start_value,end_value)
 	ax1.set_ylabel('Energy')
 	ax1.set_title('Total energy')
 
 	ax2.set_xlabel('Time')
-	ax2.set_xlim(0,len(times))
+	ax2.set_xlim(start_value,end_value)
 	ax2.set_ylabel('Energy')
 	ax2.set_title('Change in energy')
+	ax2.set_yscale('symlog')
 
-	plt.savefig(f'{saves.current_directory}/energy/ref_{refinement_level}.png')
+	file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
+	plt.savefig(file_path)
 	plt.close()
+
+	return file_path
 
 def scatter_vs_poly(scatter,poly):
 	fig, ax = plt.subplots(figsize=(10,10))
@@ -53,34 +64,50 @@ def scatter_vs_poly(scatter,poly):
 
 def main():
 	def usage():
-		print("usage: python plot.py <save-name>")
+		print("usage: python plot.py (-l | -r) <save-name>")
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'hl:r:', ['help,local=,remote='])
+		opts, args = getopt.getopt(sys.argv[1:], 'l:r:o', ['help'])
 	except getopt.GetoptError as err:
 		print(err)  # will print something like "option -a not recognized"
 		sys.exit()
 
+	open_file = False
+
 	for o, a in opts:
-		if o in ('-h','--help'):
+		if o in ('--help'):
 			usage()
 			sys.exit()
-		elif o in ('-l','--local'):
+		elif o in ('-l'):
 			remote = ''
 			save_name = a
 			saves.initialize(None,save_name)
 			settings._load_file(f'saves/{save_name}/settings.yml')
-		elif o in ('-r','--remote'):
+		elif o in ('-r'):
 			remote = 'remote '
 			save_name = a
 			saves.initialize(None,save_name,remote=True)
 			settings._load_file(f'saves-remote/{save_name}/settings.yml')
+		elif o in ('-o'):
+			open_file = True
 		else:
 			assert False, "unhandled option"
 
+	try:
+		save_name
+	except:
+		print("Must choose local (-l) or remote (-r).")
+		sys.exit()
+
 	times, energies = saves.load_energies()
-	time_vs_energy(times,energies)
+	file_path = time_vs_energy(times,energies)
 	print(f"Done plotting to {remote}save {save_name}.")
+
+	if open_file:
+		if os.name == 'nt':
+			os.system(f'"{file_path}"')
+		else:
+			print('Failed to open plot; must use Windows.')
 
 if __name__ == '__main__':
 	main()
