@@ -98,10 +98,13 @@ def compute_energy(*function,der=0):
     # Assemble boundary integral
 
     measure = determine_measure(weak_boundary[1])
-    boundary_assembly = 0
-    for energy in energies.boundary:
-        boundary_assembly += eval(energy.uflfy())
-    boundary_integral = assemble(boundary_assembly*measure)
+    if measure is not None:
+        boundary_assembly = 0
+        for energy in energies.boundary:
+            boundary_assembly += eval(energy.uflfy())
+        boundary_integral = assemble(boundary_assembly*measure)
+    else:
+        boundary_integral = 0
 
     # print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
