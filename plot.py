@@ -24,7 +24,7 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 
 	end_value = times[-1]
 	N = 1000
-	start_value = end_value-N/settings.time.step
+	start_value = np.maximum(end_value-N*settings.time.step,0)
 
 	ax1.plot(times[-N:],energies[-N:],line_style)
 	ax2.plot(times[-N:],plot_energies[-N:],line_style,color='red')
