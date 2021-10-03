@@ -9,6 +9,8 @@ import user_expressions.bdycond_s as bdycond_s
 import settings
 import const
 
+const.S0 = 0.700005530940965
+
 Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
@@ -61,7 +63,10 @@ def compute():
         domain = [
             GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'),
             GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'),
-            GeneralForm((1/const.ep**2)*(- (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+            # Standard double well
+            # GeneralForm((1/const.ep**2)*(- (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+            # Alternative double well
+            GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
             GeneralForm(-f.dot(q),[Dq,q],name='Domain Forcing Energy')
         ]
         boundary = [
@@ -79,8 +84,12 @@ def compute():
     # Energies
 
     energyElastic = GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
-    energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
-    energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
+    # Standard double well
+    # energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
+    # energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
+    # Alternative double well
+    energyBulkC = GeneralForm((1/const.ep**2)*(1 + (const.L0 - const.A)/2*trace(Q**2)),[Dq,q])
+    energyBulkE = GeneralForm((1/const.ep**2)*((const.L0/2)*innerp(Q,Q) + (const.B/3)*trace(Q**3) - (const.C/4)*trace(Q**2)**2),[Dq,q])
 
     # Bilinear forms
 
