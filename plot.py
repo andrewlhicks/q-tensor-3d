@@ -23,7 +23,7 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 	# Truncate to last 1000
 
 	end_value = times[-1]
-	N = 1000
+	N = 100000
 	start_value = np.maximum(end_value-N*settings.time.step,0)
 
 	ax1.plot(times[-N:],energies[-N:],line_style)
@@ -33,15 +33,19 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 	ax1.set_xlim(start_value,end_value)
 	ax1.set_ylabel('Energy')
 	ax1.set_title('Total energy')
+	ax1.grid()
 
 	ax2.set_xlabel('Time')
 	ax2.set_xlim(start_value,end_value)
 	ax2.set_ylabel('Energy')
 	ax2.set_title('Change in energy')
 	ax2.set_yscale('symlog')
+	ax2.grid()
 
 	file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
-	plt.savefig(file_path)
+	# plt.savefig(file_path)
+	if os.name == 'nt':
+		plt.show()
 	plt.close()
 
 	return file_path
