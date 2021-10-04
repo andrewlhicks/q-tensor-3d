@@ -460,6 +460,22 @@ class Lagrangian(GeneralForm):
             raise ValueError(f'Lagrangian must contain only one parameter. {len(params)} were given.')
         return super.__init__(self,expr,*params,name=None)
 
+class EnergyForm:
+    def __init__(self,domain=[],boundary=[]):
+        if not isinstance(domain,list) or not isinstance(boundary,list):
+            raise TypeError()
+        for item in domain + boundary:
+            if not isinstance(item,GeneralForm):
+                raise TypeError()
+        self._domain = domain
+        self._boundary = boundary
+    @property
+    def domain(self):
+        return [form.uflfy() for form in self._domain]
+    @property
+    def boundary(self):
+        return [form.uflfy() for form in self._boundary]
+
 class lhsForm:
     def __init__(self,trial_func,test_func,name=None,forms=[]):
         if not isinstance(forms,list):
