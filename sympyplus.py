@@ -347,6 +347,13 @@ class Param:
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
 
+class SymmetricMatrix(Matrix):
+    """ Returns the symmetric part of the matrix. """
+    def __new__(cls,array):
+        X = Matrix(array)
+        M = X - trace(X)/3*eye(3)
+        return super().__new__(cls,M)
+
 class QTensor(Matrix):
     """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.
     The dx() method is the tensorfied dx() of the QVector. """
@@ -459,6 +466,22 @@ class Lagrangian(GeneralForm):
         if len(params) != 1:
             raise ValueError(f'Lagrangian must contain only one parameter. {len(params)} were given.')
         return super.__init__(self,expr,*params,name=None)
+
+class EnergyForm:
+    def __init__(self,domain=[],boundary=[]):
+        if not isinstance(domain,list) or not isinstance(boundary,list):
+            raise TypeError()
+        for item in domain + boundary:
+            if not isinstance(item,GeneralForm):
+                raise TypeError()
+        self._domain = domain
+        self._boundary = boundary
+    @property
+    def domain(self):
+        return [form.uflfy() for form in self._domain]
+    @property
+    def boundary(self):
+        return [form.uflfy() for form in self._boundary]
 
 class lhsForm:
     def __init__(self,trial_func,test_func,name=None,forms=[]):

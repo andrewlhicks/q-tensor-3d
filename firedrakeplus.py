@@ -298,6 +298,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         # On resume mode, q_soln and q_prev are loaded from a previous state
         q_soln = saves.load_checkpoint(H1_vec,'q_soln')
         q_prev = saves.load_checkpoint(H1_vec,'q_prev')
+        # print(compute_energy(q_soln))
         times, energies = saves.load_energies()
         if len(times) != len(energies):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
@@ -305,6 +306,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     else:
         # On overwrite mode or when save is turned off, q_soln and q_prev are taken to be the initial guess
         q_soln = interpolate(eval(initial_q),H1_vec)
+        # print(compute_energy(q_soln))
         q_prev.assign(q_soln)
         times, energies = saves.TimeList([]), saves.EnergyList([])
         t_init = 0
