@@ -347,6 +347,13 @@ class Param:
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
 
+class SymmetricMatrix(Matrix):
+    """ Returns the symmetric part of the matrix. """
+    def __new__(cls,array):
+        X = Matrix(array)
+        M = X - trace(X)/3*eye(3)
+        return super().__new__(cls,M)
+
 class QTensor(Matrix):
     """ Defines a QTensor given a QVector object. Assigns the QVector to .vect.
     The dx() method is the tensorfied dx() of the QVector. """
