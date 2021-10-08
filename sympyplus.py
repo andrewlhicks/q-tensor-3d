@@ -2,6 +2,7 @@
 The functions here are intended to be used on sympy objects only. """
 
 from sympy import *
+import yaml
 
 # Basis for the 3D Q-tensor
 
@@ -347,11 +348,12 @@ class Param:
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
 
-class SymmetricMatrix(Matrix):
-    """ Returns the symmetric part of the matrix. """
+class SymmetricTracelessMatrix(Matrix):
+    """ Returns the symmetric traceless part of the matrix. """
     def __new__(cls,array):
-        X = Matrix(array)
-        M = X - trace(X)/3*eye(3)
+        M = Matrix(array)
+        M = (1/2)*(M + M.T)
+        M = M - trace(M)/3*eye(3)
         return super().__new__(cls,M)
 
 class QTensor(Matrix):
@@ -374,6 +376,20 @@ class QVector(AbstractVector):
     def __init__(self,name):
         super().__init__(name,5)
         self.tens = QTensor(self)
+
+class ICFromTensor(Matrix):
+    def __new__(cls,col_0,col_1,col_2):
+        array = [col_0,col_1,col_2]
+        M = SymmetricTracelessMatrix(array)
+        m = vectorfy(M)
+        return super().__new__(cls,m)
+    def __init__(self,col_0,col_1,col_2):
+        self.col_0 = col_0
+        self.col_1 = col_1
+        self.col_2 = col_2
+
+class ICFromVector:
+    pass
 
 # Forms
 
