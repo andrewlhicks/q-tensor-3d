@@ -43,7 +43,7 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 	ax2.grid()
 
 	file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
-	# plt.savefig(file_path)
+	plt.savefig(file_path)
 	if os.name == 'nt':
 		plt.show()
 	plt.close()
