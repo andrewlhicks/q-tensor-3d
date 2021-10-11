@@ -3,6 +3,7 @@ controls the PDE to be solved. """
 
 import json
 import yaml
+from sympyplus import *
 
 def usage():
     print('')
@@ -46,4 +47,7 @@ settings = load_yml(f'{pathl}setup/settings.yml')
 
 eqndata = {'constants':constants,'settings':settings}
 
-dump_json(eqndata,f'{pathl}eqndata.json')
+A = load_yml(f'{pathl}setup/initial_q.yml')
+print(A)
+
+# dump_json(eqndata,f'{pathl}eqndata.json')
