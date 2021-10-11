@@ -38,6 +38,33 @@ def process_constants(constants):
 
     constants['S0'] = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
 
+def initialq_getufl():
+    dict = load_yml(f'{pathl}setup/initial_q.yml')
+    if dict is None:
+        raise ValueError('Empty dict not accepted for "initial_q.yml".')
+    if len(dict) > 1:
+        raise KeyError('Only one dict key accepted for "initial_q.yml".')
+    for key in dict.keys():
+        if key not in ('ic_simple','ic_piecewise'):
+            raise KeyError(f'Dict keys for "initial_q.yml" may only be "ic_simple" or "ic_piecewise", not "{key}".')
+
+    if dict.keys() == ['ic_simple']:
+        return dict['ic_simple'].uflfy()
+
+    # If nothing is returned, assume ic_piecewise
+
+    dict = dict['ic_piecewise']
+
+    if set(dict.keys()) != {'if','then','else'}:
+        raise KeyError('Keys for a piecewise ic must be "if", "then", and "else".')
+
+    condition = dict['if']
+    ufl_a = dict['then'].uflfy()
+    ufl_b = dict['else'].uflfy()
+
+    return f'conditional({condition},{ufl_a},{ufl_b})'
+
+
 pathl = 'saves/experiment/'
 
 constants = load_yml(f'{pathl}setup/constants.yml')
@@ -47,7 +74,6 @@ settings = load_yml(f'{pathl}setup/settings.yml')
 
 eqndata = {'constants':constants,'settings':settings}
 
-A = load_yml(f'{pathl}setup/initial_q.yml')
-print(A)
+print(initialq_getufl())
 
 # dump_json(eqndata,f'{pathl}eqndata.json')
