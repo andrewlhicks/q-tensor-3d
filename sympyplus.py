@@ -290,7 +290,7 @@ class AbstractVectorGradient(Matrix):
         for ii in range(dim):
             abstractvectorgradient = abstractvectorgradient.col_insert(ii,abstractvector.dx(ii))
 
-        return super(AbstractVectorGradient,cls).__new__(cls,abstractvectorgradient)
+        return super().__new__(cls,abstractvectorgradient)
 
 class AbstractVector(Matrix):
     """ Defines a 'dim'-dimensional vector, whose entries are symbols labeled by
@@ -308,7 +308,7 @@ class AbstractVector(Matrix):
         for ii in range(dim):
             vector[ii] += Symbol(f'{name}[{ii}]')
 
-        return super(AbstractVector,cls).__new__(cls,vector)
+        return super().__new__(cls,vector)
 
     def __init__(self,name,dim=3):
         self.name = name
@@ -361,7 +361,7 @@ class QTensor(Matrix):
     def __new__(cls,qvector):
         if not isinstance(qvector,QVector):
             raise TypeError('Must be type QVector.')
-        return super(QTensor,cls).__new__(cls,tensorfy(qvector))
+        return super().__new__(cls,tensorfy(qvector))
     def __init__(self,qvector):
         self.vect = qvector
     def dx(self,dim_no):
@@ -371,7 +371,7 @@ class QVector(AbstractVector):
     """ Defines an AbstractVector of dimension 5. Adds a .tens variable which is
     the QTensor corresponding to the QVector. """
     def __new__(cls,name):
-        return super(QVector,cls).__new__(cls,name,5)
+        return super().__new__(cls,name,5)
     def __init__(self,name):
         super().__init__(name,5)
         self.tens = QTensor(self)
