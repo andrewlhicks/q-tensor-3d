@@ -2,7 +2,6 @@
 The functions here are intended to be used on sympy objects only. """
 
 from sympy import *
-import yaml
 
 # Basis for the 3D Q-tensor
 
@@ -376,60 +375,6 @@ class QVector(AbstractVector):
     def __init__(self,name):
         super().__init__(name,5)
         self.tens = QTensor(self)
-
-class ICFromTensor(Matrix):
-    def __new__(cls,tensor):
-        M = Matrix(tensor).reshape(3,3)
-        M = SymmetricTracelessMatrix(M)
-        m = vectorfy(M)
-        return super().__new__(cls,m)
-    def __init__(self,tensor):
-        self.tensor = Matrix(tensor).reshape(3,3)
-    def __repr__(self):
-        return f'ICFromTensor {self.tensor}'
-    def uflfy(self):
-        return uflfy(self)
-
-def icft_constructor(loader,node):
-    value = loader.construct_sequence(node)
-    return ICFromTensor(value)
-
-yaml.add_constructor('!ICFromTensor',icft_constructor)
-
-class ICFromVector(Matrix):
-    def __new__(cls,vector):
-        return super().__new__(cls,vector)
-    def __repr__(self):
-        return f'ICFromVector {self}'
-    def uflfy(self):
-        return uflfy(self)
-
-def icfv_constructor(loader,node):
-    value = loader.construct_sequence(node)
-    return ICFromVector(value)
-
-yaml.add_constructor('!ICFromVector',icfv_constructor)
-
-class ICFromDirector(Matrix):
-    def __new__(cls,director):
-        import numpy as np
-        n = Matrix(director)
-        n = n/sqrt(n[0]**2+n[1]**2+n[2]**2)
-        M = outerp(n,n) - 1/3*eye(3)
-        m = vectorfy(M)
-        return super().__new__(cls,m)
-    def __init__(self,director):
-        self.director = Matrix(director)
-    def __repr__(self):
-        return f'ICFromDirector {self.director}'
-    def uflfy(self):
-        return uflfy(self)
-
-def icfd_constructor(loader,node):
-    value = loader.construct_sequence(node)
-    return ICFromDirector(value)
-
-yaml.add_constructor('!ICFromDirector',icfd_constructor)
 
 # Forms
 

@@ -1,30 +1,10 @@
 """ Takes the setup data given and compiles the file eqndata.json, which
 controls the PDE to be solved. """
 
-import json
-import yaml
-from sympyplus import *
+from loaddump import *
 
 def usage():
     print('')
-
-def load_json(path):
-    with open(path) as file:
-        dict = json.loads(file.read())
-    return dict
-
-def dump_json(dump,path):
-    with open(path,'w') as file:
-        file.write(json.dumps(dump))
-
-def load_yml(path):
-    with open(path) as file:
-        dict = yaml.load(file, Loader=yaml.Loader)
-    return dict
-
-def dump_yml(dump,path):
-    with open(path,'w') as file:
-        file.write(yaml.dump(dump))
 
 def process_constants(constants):
     from math import sqrt
@@ -38,22 +18,22 @@ def process_constants(constants):
 
     constants['S0'] = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
 
-def initialq_getufl():
-    dict = load_yml(f'{pathl}setup/initial_q.yml')
+def ux_getufl(path):
+    dict = load_yml(path)
     if dict is None:
-        raise ValueError('Empty dict not accepted for "initial_q.yml".')
+        raise ValueError('Empty dict not accepted for user expression.')
     if len(dict) > 1:
-        raise KeyError('Only one dict key accepted for "initial_q.yml".')
+        raise KeyError('Only one dict key accepted for user expression.')
     for key in dict.keys():
-        if key not in ('ic_simple','ic_piecewise'):
-            raise KeyError(f'Dict keys for "initial_q.yml" may only be "ic_simple" or "ic_piecewise", not "{key}".')
+        if key not in ('ux_simple','ux_piecewise'):
+            raise KeyError(f'Dict keys for user expression may only be "ux_simple" or "ux_piecewise", not "{key}".')
 
-    if dict.keys() == ['ic_simple']:
-        return dict['ic_simple'].uflfy()
+    if 'ux_simple' in dict.keys():
+        return dict['ux_simple'].uflfy()
 
     # If nothing is returned, assume ic_piecewise
 
-    dict = dict['ic_piecewise']
+    dict = dict['ux_piecewise']
 
     if set(dict.keys()) != {'if','then','else'}:
         raise KeyError('Keys for a piecewise ic must be "if", "then", and "else".')
@@ -73,7 +53,10 @@ process_constants(constants)
 settings = load_yml(f'{pathl}setup/settings.yml')
 
 eqndata = {'constants':constants,'settings':settings}
+dump_json(eqndata,f'{pathl}eqndata.json')
 
-print(initialq_getufl())
+from userexpression import *
+
+print(ux_getufl(f'{pathl}setup/initial_q.yml'))
 
 # dump_json(eqndata,f'{pathl}eqndata.json')
