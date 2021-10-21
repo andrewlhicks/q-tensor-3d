@@ -29,21 +29,21 @@ def set_eqn_globals(comp):
 
     global EqnGlobals
     class EqnGlobals:
-        bilinear_form = comp.n_bf_O
-        bilinear_form_bdy = comp.n_bf_G
-        linear_form = comp.n_lf_O
-        linear_form_bdy = comp.n_lf_G
+        bilinear_form = comp['n_bf_O']
+        bilinear_form_bdy = comp['n_bf_G']
+        linear_form = comp['n_lf_O']
+        linear_form_bdy = comp['n_lf_G']
 
-        initial_q = comp.initial_q
+        initial_q = comp['initial_q']
 
-        forcing_f = comp.forcing_f if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
-        forcing_g = comp.forcing_g if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
-        strong_boundary = [comp.bdycond_s,settings.options.strong_boundary]
+        forcing_f = comp['forcing_f'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
+        forcing_g = comp['forcing_g'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
+        strong_boundary = [comp['bdycond_s'],settings.options.strong_boundary]
         weak_boundary = [None,settings.options.weak_boundary]
 
-        energy_0d = comp.energy_0d
-        energy_1d = comp.energy_1d
-        energy_2d = comp.energy_2d
+        energy_0d = comp['energy_0d']
+        energy_1d = comp['energy_1d']
+        energy_2d = comp['energy_2d']
 class nrm:
     def inf(function):
         abs_function = Function(function._function_space).interpolate(abs(function))

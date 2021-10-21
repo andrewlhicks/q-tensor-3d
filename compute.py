@@ -146,21 +146,20 @@ def compute():
 
     # Create relevant UFL strings
 
-    class out:
-        initial_q = initial_q.out
-        manufac_q = manufac_q.out
-        forcing_f = forcing_f.out
-        forcing_g = forcing_g.out
-        bdycond_s = bdycond_s.out
-
-        n_bf_O = newt_bilinearDomain()
-        n_bf_G = newt_bilinearBoundary()
-        n_lf_O = newt_linearDomain()
-        n_lf_G = newt_linearBoundary()
-
-        energy_0d = {'domain':energies.domain,'boundary':energies.boundary}
-        energy_1d = {'domain':energies.domain_1,'boundary':energies.boundary_1}
-        energy_2d = {'domain':energies.domain_2,'boundary':energies.boundary_2}
+    out = {
+        'initial_q' : initial_q.out,
+        'manufac_q' : manufac_q.out,
+        'forcing_f' : forcing_f.out,
+        'forcing_g' : forcing_g.out,
+        'bdycond_s' : bdycond_s.out,
+        'n_bf_O' : newt_bilinearDomain(),
+        'n_bf_G' : newt_bilinearBoundary(),
+        'n_lf_O' : newt_linearDomain(),
+        'n_lf_G' : newt_linearBoundary(),
+        'energy_0d' : {'domain':energies.domain,'boundary':energies.boundary},
+        'energy_1d' : {'domain':energies.domain_1,'boundary':energies.boundary_1},
+        'energy_2d' : {'domain':energies.domain_2,'boundary':energies.boundary_2}
+    }
 
     return out
 
