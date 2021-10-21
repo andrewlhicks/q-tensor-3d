@@ -156,9 +156,7 @@ def compute():
         'n_bf_G' : newt_bilinearBoundary(),
         'n_lf_O' : newt_linearDomain(),
         'n_lf_G' : newt_linearBoundary(),
-        'energy_0d' : {'domain':energies.domain,'boundary':energies.boundary},
-        'energy_1d' : {'domain':energies.domain_1,'boundary':energies.boundary_1},
-        'energy_2d' : {'domain':energies.domain_2,'boundary':energies.boundary_2}
+        'energies' : energies.ufl_dict
     }
 
     return out

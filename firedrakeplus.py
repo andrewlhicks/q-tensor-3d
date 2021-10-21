@@ -41,9 +41,7 @@ def set_eqn_globals(comp):
         strong_boundary = [comp['bdycond_s'],settings.options.strong_boundary]
         weak_boundary = [None,settings.options.weak_boundary]
 
-        energy_0d = comp['energy_0d']
-        energy_1d = comp['energy_1d']
-        energy_2d = comp['energy_2d']
+        energies = comp['energies']
 class nrm:
     def inf(function):
         abs_function = Function(function._function_space).interpolate(abs(function))
@@ -70,7 +68,7 @@ def compute_energy(*function,der=0):
         raise ValueError('Must choose der=0, 1, or 2.')
 
     weak_boundary = EqnGlobals.weak_boundary
-    energies = EqnGlobals.energy_2d if der==2 else EqnGlobals.energy_1d if der==1 else EqnGlobals.energy_0d
+    energies = EqnGlobals.energies[2] if der==2 else EqnGlobals.energies[1] if der==1 else EqnGlobals.energies[0]
 
     q = function[0]
 

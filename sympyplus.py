@@ -520,14 +520,14 @@ class EnergyForm:
         return f'<EnergyForm d={self.domain_repr} b={self.boundary_repr}>'
     
     @property
-    def domain_repr(self):
+    def domain(self):
         return [repr(form) for form in self.__domain]
     @property
-    def boundary_repr(self):
+    def boundary(self):
         return [repr(form) for form in self.__boundary]
 
     @property
-    def domain(self):
+    def domain_0(self):
         return [form.uflfy() for form in self.__domain]
     @property
     def domain_1(self):
@@ -536,7 +536,7 @@ class EnergyForm:
     def domain_2(self):
         return [form.uflfy() for form in self.__domain_2]
     @property
-    def boundary(self):
+    def boundary_0(self):
         return [form.uflfy() for form in self.__boundary]
     @property
     def boundary_1(self):
@@ -545,6 +545,13 @@ class EnergyForm:
     def boundary_2(self):
         return [form.uflfy() for form in self.__boundary_2]
 
+    @property
+    def ufl_dict(self):
+        return [
+            {'domain':self.domain_0,'boundary':self.boundary_0},
+            {'domain':self.domain_1,'boundary':self.boundary_1},
+            {'domain':self.domain_2,'boundary':self.boundary_2}
+        ]
     
     def add_domain(self,*forms):
         if forms == ():
