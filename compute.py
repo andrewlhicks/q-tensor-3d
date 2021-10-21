@@ -59,27 +59,36 @@ def term_twist_var(q,p):
 
 def compute():
     # Classes for direct computation of energy and its derivatives
-    class energies:
-        domain = [
-            GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'),
-            GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'),
-            # Standard double well
-            # GeneralForm((1/const.ep**2)*(- (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
-            # Alternative double well
-            GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
-            GeneralForm(-f.dot(q),[Dq,q],name='Domain Forcing Energy')
-        ]
-        boundary = [
-            GeneralForm(const.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'),
-            GeneralForm(const.W1/2*innerp(Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu))+const.W2/4*(innerp(Q,Q)-2*const.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'),
-            GeneralForm(-g.dot(q),[Dq,q],name='Boundary Forcing Energy')
-        ]
-    class energies_der:
-        domain = [variationalDerivative(general_form,[Dq,q],[Dp,p]) for general_form in energies.domain]
-        boundary = [variationalDerivative(general_form,[Dq,q],[Dp,p]) for general_form in energies.boundary]
-    class energies_der_der:
-        domain = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.domain]
-        boundary = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.boundary]
+    # class energies:
+    #     domain = [
+    #         GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'),
+    #         GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'),
+    #         # Standard double well
+    #         # GeneralForm((1/const.ep**2)*(- (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+    #         # Alternative double well
+    #         GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+    #         GeneralForm(-f.dot(q),[Dq,q],name='Domain Forcing Energy')
+    #     ]
+    #     boundary = [
+    #         GeneralForm(const.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'),
+    #         GeneralForm(const.W1/2*innerp(Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu))+const.W2/4*(innerp(Q,Q)-2*const.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'),
+    #         GeneralForm(-g.dot(q),[Dq,q],name='Boundary Forcing Energy')
+    #     ]
+    # class energies_der:
+    #     domain = [variationalDerivative(general_form,[Dq,q],[Dp,p]) for general_form in energies.domain]
+    #     boundary = [variationalDerivative(general_form,[Dq,q],[Dp,p]) for general_form in energies.boundary]
+    # class energies_der_der:
+    #     domain = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.domain]
+    #     boundary = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.boundary]
+    
+    energies = EnergyForm()
+    energies.add_domain(GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'))
+    energies.add_domain(GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'))
+    energies.add_domain(GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'))
+    energies.add_domain(GeneralForm(-f.dot(q),[Dq,q],name='Domain Forcing Energy'))
+    energies.add_boundary(GeneralForm(const.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'))
+    energies.add_boundary(GeneralForm(const.W1/2*innerp(Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu))+const.W2/4*(innerp(Q,Q)-2*const.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'))
+    energies.add_boundary(GeneralForm(-g.dot(q),[Dq,q],name='Boundary Forcing Energy'))
 
     # Energies
 
@@ -149,9 +158,9 @@ def compute():
         n_lf_O = newt_linearDomain()
         n_lf_G = newt_linearBoundary()
 
-        energy_0d = energies
-        energy_1d = energies_der
-        energy_2d = energies_der_der
+        energy_0d = {'domain':energies.domain,'boundary':energies.boundary}
+        energy_1d = {'domain':energies.domain_1,'boundary':energies.boundary_1}
+        energy_2d = {'domain':energies.domain_2,'boundary':energies.boundary_2}
 
     return out
 

@@ -91,8 +91,8 @@ def compute_energy(*function,der=0):
     # Assemble domain integral
 
     domain_assembly = 0
-    for energy in energies.domain:
-        domain_assembly += eval(energy.uflfy())
+    for energy in energies['domain']:
+        domain_assembly += eval(energy)
     domain_integral = assemble(domain_assembly*dx)
 
     # Assemble boundary integral
@@ -100,8 +100,8 @@ def compute_energy(*function,der=0):
     measure = determine_measure(weak_boundary[1])
     if measure is not None:
         boundary_assembly = 0
-        for energy in energies.boundary:
-            boundary_assembly += eval(energy.uflfy())
+        for energy in energies['boundary']:
+            boundary_assembly += eval(energy)
         boundary_integral = assemble(boundary_assembly*measure)
     else:
         boundary_integral = 0
