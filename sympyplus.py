@@ -503,18 +503,72 @@ class Lagrangian(GeneralForm):
 class EnergyForm:
     def __init__(self,domain=[],boundary=[]):
         if not isinstance(domain,list) or not isinstance(boundary,list):
-            raise TypeError()
+            raise TypeError
         for item in domain + boundary:
             if not isinstance(item,GeneralForm):
-                raise TypeError()
-        self._domain = domain
-        self._boundary = boundary
+                raise TypeError
+        
+        # Initialize domain
+        self.__domain, self.__domain_1, self.__domain_2 = [], [], []
+        self.add_domain(*domain)
+
+        # Initialize boundary
+        self.__boundary, self.__boundary_1, self.__boundary_2 = [], [], []
+        self.add_boundary(*boundary)
+
+    def __repr__(self):
+        return f'<EnergyForm d={self.domain_repr} b={self.boundary_repr}>'
+    
+    @property
+    def domain_repr(self):
+        return [repr(form) for form in self.__domain]
+    @property
+    def boundary_repr(self):
+        return [repr(form) for form in self.__boundary]
+
     @property
     def domain(self):
-        return [form.uflfy() for form in self._domain]
+        return [form.uflfy() for form in self.__domain]
+    @property
+    def domain_1(self):
+        return [form.uflfy() for form in self.__domain_1]
+    @property
+    def domain_2(self):
+        return [form.uflfy() for form in self.__domain_2]
     @property
     def boundary(self):
-        return [form.uflfy() for form in self._boundary]
+        return [form.uflfy() for form in self.__boundary]
+    @property
+    def boundary_1(self):
+        return [form.uflfy() for form in self.__boundary_1]
+    @property
+    def boundary_2(self):
+        return [form.uflfy() for form in self.__boundary_2]
+
+    
+    def add_domain(self,*forms):
+        if forms == ():
+            return
+        for form in forms:
+            if not isinstance(form,GeneralForm):
+                raise TypeError('"forms" must be a list of items of type GeneralForm.')
+            if form.order != 1:
+                raise ValueError
+        self.__domain.extend(list(forms))
+        self.__domain_1.extend([variationalDerivative(form,[Dq,q],[Dp,p]) for form in self.__domain])
+        self.__domain_2.extend([secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in self.__domain_1])
+    def add_boundary(self,*forms):
+        if forms == ():
+            return
+        for form in forms:
+            if not isinstance(form,GeneralForm):
+                raise TypeError('"forms" must be a list of items of type GeneralForm.')
+            if form.order != 1:
+                raise ValueError
+        self.__boundary.extend(list(forms))
+        self.__boundary_1.extend([variationalDerivative(form,[Dq,q],[Dp,p]) for form in self.__boundary])
+        self.__boundary_2.extend([secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in self.__boundary_1])
+
 
 class lhsForm:
     def __init__(self,trial_func,test_func,name=None,forms=[]):
