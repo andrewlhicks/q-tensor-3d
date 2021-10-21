@@ -115,49 +115,64 @@ def checkIfParam(param):
     elif not isinstance(param[1],QVector):
         raise TypeError('Second argument of parameter must be type QVector.')
 
-def checkIfQTensor(obj):
-    """ Checks if 'obj' is a Q-tensor. I want to be able to check for
-    tracelessness and symmetry, but in practice sometimes errors come up when
-    attempting this. """
-
+def check_istensor(obj):
+    """ Raises error if 'obj' is not a Sympy Matrix of shape (3,3). """
     if not isinstance(obj,MutableDenseMatrix):
         raise TypeError('Must be type MutableDenseMatrix.')
-    elif not obj.shape == (3,3):
-        raise ShapeError('Shape must be (3, 3).')
-    # elif not obj.is_symmetric():
-    #     raise ValueError('Must be symmetric.')
-    # The following code does not work as intended:
-    # elif not trace(obj).is_zero:
-    #     raise ValueError('Must have trace 0')
+    if obj.shape != (3,3):
+        raise ShapeError(f'Shape must be (3, 3), not {obj.shape}.')
 
-def checkIfVector(obj,dim,raise_error=False):
-    """ Checks if 'obj' is a Sympy vector of dimension 'dim'. """
+def istensor(obj):
+    """ Checks if 'obj' is a Sympy Matrix of shape (3,3). """
     if not isinstance(obj,MutableDenseMatrix):
-        if raise_error:
-            raise TypeError('Must be type MutableDenseMatrix.')
-        else:
-            return False
-    elif not obj.shape == (dim,1):
-        if raise_error:
-            raise ShapeError(f'Shape must be ({dim}, 1).')
-        else:
-            return False
-    else:
-        return True
+        return False
+    if obj.shape != (3,3):
+        return False
+    return True
+
+def check_isvector(obj,dim=None):
+    """ Raises error if 'obj' is not a Sympy vector of dimension 'dim'. """
+    if not isinstance(obj,MutableDenseMatrix):
+        raise TypeError('Must be type MutableDenseMatrix.')
+    if obj.shape[1] != 1:
+        raise ShapeError(f'Shape must be (*, 1), not {obj.shape}.')
+    if dim is not None and obj.shape[0] != dim:
+        raise ShapeError(f'Shape must be ({dim}, 1).')
+
+def isvector(obj,dim=None):
+    if not isinstance(obj,MutableDenseMatrix):
+        return False
+    if obj.shape[1] != 1:
+        return False
+    if dim is not None and obj.shape[0] != dim:
+        return False
+    return True
 
 # Type alterers
 
-def tensorfy(vector):
-    """ Returns the Q-Tensor form of any 5D vector. """
+def tensorfy(vector,basis):
+    check_isvector(vector)
 
-    checkIfVector(vector,5,raise_error=True)
+    if not isinstance(basis,TensorSpaceBasis):
+        raise TypeError('Argument "basis" must be type TensorSpaceBasis.')
+    if vector.shape[0] != basis.dim:
+        raise DimensionError(f'vector and basis must have same dimension, not {vector.shape[0]} and {basis.dim}')
 
     tensor = zeros(3,3)
 
-    for ii in range(5):
-        tensor += vector[ii]*E[ii]
+    for ii in range(basis.dim):
+        tensor += vector[ii]*basis[ii]
 
     return tensor
+
+def q_tensorfy(vector):
+    """ Returns the Q-Tensor form of any 5D vector. """
+
+    check_isvector(vector,5)
+
+    q_basis = TensorSpaceBasis(E)
+
+    return tensorfy(vector,q_basis)
 
 def uflfy(expression):
     """ Returns the UFL code for a scalar or a QVector. First checks if
@@ -168,9 +183,9 @@ def uflfy(expression):
 
     if not isinstance(expression,MutableDenseMatrix):
         return ccode(expression)
-    elif checkIfVector(expression,3):
+    elif isvector(expression,3):
         return 'as_vector([' + ','.join([ccode(expression[ii]) for ii in range(3)]) + '])'
-    elif checkIfVector(expression,5):
+    elif isvector(expression,5):
         return 'as_vector([' + ','.join([ccode(expression[ii]) for ii in range(5)]) + '])'
     else:
         raise TypeError('Must be a vector expression of dimension 3 or 5.')
@@ -179,7 +194,7 @@ def vectorfy(tensor):
     """ Returns the vector form of a Q-tensor. Checks if 'tensor' is a Q-tensor
     in the mathematical sense, then returns the corresponding vector. """
 
-    checkIfQTensor(tensor)
+    check_istensor(tensor)
 
     vector = zeros(5,1)
 
@@ -275,6 +290,9 @@ def secondVariationalDerivative(binaryform,*params,name=None):
 
 # CLASSES
 
+class DimensionError(Exception):
+    pass
+
 # Vectors and tensors
 
 class AbstractVectorGradient(Matrix):
@@ -324,6 +342,20 @@ class AbstractVector(Matrix):
 
         return vector # Ideally, another AbstractVector would be returned, but in practice this is hard
 
+class TensorSpaceBasis(list):
+    def __init__(self,basis):
+        space_shape = (3,3)
+
+        if not isinstance(basis,list):
+            raise TypeError('TensorSpaceBasis must be type "list".')
+        for item in basis:
+            if not isinstance(item,Matrix):
+                raise TypeError('Basis elements must be tye "Matrix".')
+            if item.shape != space_shape:
+                raise ShapeError(f'Basis elements must have shape {space_shape}')
+        self.dim = len(basis)
+        list.__init__(self,basis)
+
 class Param:
     """ Defines a Param object from a list of length 2, or a Param object. The
     first item in the list is the first derivative and the second is the
@@ -347,11 +379,12 @@ class Param:
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
 
-class SymmetricMatrix(Matrix):
-    """ Returns the symmetric part of the matrix. """
+class SymmetricTracelessMatrix(Matrix):
+    """ Returns the symmetric traceless part of the matrix. """
     def __new__(cls,array):
-        X = Matrix(array)
-        M = X - trace(X)/3*eye(3)
+        M = Matrix(array)
+        M = (1/2)*(M + M.T)
+        M = M - trace(M)/3*eye(3)
         return super().__new__(cls,M)
 
 class QTensor(Matrix):
@@ -360,11 +393,11 @@ class QTensor(Matrix):
     def __new__(cls,qvector):
         if not isinstance(qvector,QVector):
             raise TypeError('Must be type QVector.')
-        return super().__new__(cls,tensorfy(qvector))
+        return super().__new__(cls,q_tensorfy(qvector))
     def __init__(self,qvector):
         self.vect = qvector
     def dx(self,dim_no):
-        return tensorfy(self.vect.dx(dim_no))
+        return q_tensorfy(self.vect.dx(dim_no))
 
 class QVector(AbstractVector):
     """ Defines an AbstractVector of dimension 5. Adds a .tens variable which is
