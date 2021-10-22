@@ -553,10 +553,7 @@ class EnergyForm:
             {'domain':self.domain_2,'boundary':self.boundary_2}
         ]
     
-    def add_domain(self,*forms):
-        # Exit function if no forms given
-        if forms == ():
-            return
+    def differentiate_forms(self,*forms):
         # Preliminary checks
         for form in forms:
             if not isinstance(form,GeneralForm):
@@ -567,6 +564,14 @@ class EnergyForm:
         forms_0 = list(forms)
         forms_1 = [variationalDerivative(form,[Dq,q],[Dp,p]) for form in forms_0]
         forms_2 = [secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in forms_1]
+        # Return derivatives
+        return (forms_0, forms_1, forms_2)
+    def add_domain(self,*forms):
+        # Exit function if no forms given
+        if forms == ():
+            return
+        # Differentiate forms
+        forms_0, forms_1, forms_2 = self.differentiate_forms(*forms)
         # Add to existing forms
         self.__domain_0.extend(forms_0)
         self.__domain_1.extend(forms_1)
@@ -575,16 +580,8 @@ class EnergyForm:
         # Exit function if no forms given
         if forms == ():
             return
-        # Preliminary checks
-        for form in forms:
-            if not isinstance(form,GeneralForm):
-                raise TypeError('"forms" must be a list of items of type GeneralForm.')
-            if form.order != 1:
-                raise ValueError
-        # Get derivatives of forms
-        forms_0 = list(forms)
-        forms_1 = [variationalDerivative(form,[Dq,q],[Dp,p]) for form in forms_0]
-        forms_2 = [secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in forms_1]
+        # Differentiate forms
+        forms_0, forms_1, forms_2 = self.differentiate_forms(*forms)
         # Add to existing forms
         self.__boundary_0.extend(forms_0)
         self.__boundary_1.extend(forms_1)
