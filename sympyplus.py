@@ -508,6 +508,11 @@ class EnergyForm:
             if not isinstance(item,GeneralForm):
                 raise TypeError
         
+        # Initialize params
+
+        params = [[Dq,q],[Dp,p],[Dr,r]] # For now, let the params be fixed, but allow customization later
+        self.__params = [Param(param) for param in params]
+
         # Initialize domain
         self.__domain_0, self.__domain_1, self.__domain_2 = [], [], []
         self.add_domain(*domain)
@@ -525,6 +530,10 @@ class EnergyForm:
     @property
     def boundary(self):
         return [repr(form) for form in self.__boundary_0]
+
+    @property
+    def params(self):
+        return self.__params
 
     @property
     def domain_0(self):
@@ -562,8 +571,8 @@ class EnergyForm:
                 raise ValueError
         # Get derivatives of forms
         forms_0 = list(forms)
-        forms_1 = [variationalDerivative(form,[Dq,q],[Dp,p]) for form in forms_0]
-        forms_2 = [secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in forms_1]
+        forms_1 = [variationalDerivative(form,self.params[0],self.params[1]) for form in forms_0]
+        forms_2 = [secondVariationalDerivative(form,self.params[0],self.params[2],self.params[1]) for form in forms_1]
         # Return derivatives
         return (forms_0, forms_1, forms_2)
     def add_domain(self,*forms):
@@ -587,6 +596,9 @@ class EnergyForm:
         self.__boundary_1.extend(forms_1)
         self.__boundary_2.extend(forms_2)
 
+
+class PDE:
+    pass
 
 class lhsForm:
     def __init__(self,trial_func,test_func,name=None,forms=[]):
