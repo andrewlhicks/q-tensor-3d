@@ -391,6 +391,13 @@ class Param:
             self.vec = param[1]
     def __repr__(self) -> str:
         return f'[{repr(self.der)},{repr(self.vec)}]'
+    def __eq__(self,other) -> bool:
+        if not isinstance(other,Param):
+            raise TypeError('Must compare Param to Param.')
+        if self.der == other.der and self.vec == other.vec:
+            return True
+        else:
+            return False
     def explode(self):
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
@@ -643,33 +650,36 @@ class TestTrialBase: # Not intended for use except as base class
 #         if not isinstance(boundary_PDE,PDE):
 #             raise TypeError
 #         self.__boundary = boundary_PDE
-# class PDE:
-#     """ Takes lhs and rhs forms for domain (_o) and boundary (_g) and returns a PDE object. """
 
-#     def __init__(self,lhs,rhs,over='domain'):
-#         if not isinstance(lhs,lhsForm):
-#             raise TypeError
-#         if not isinstance(rhs,rhsForm):
-#             raise TypeError
-#         if over not in ('domain','boundary'):
-#             raise ValueError
-#         if lhs.test_func != rhs.test_func:
-#             raise ValueError
-#         self.__lhs = lhs
-#         self.__rhs = rhs
-#         self.__over = over
-#         self.__trial_func = lhs.trial_func
-#         self.__test_func = lhs.test_func
-    
-#     @property
-#     def lhs(self):
-#         return self.__lhs
-#     @property
-#     def rhs(self):
-#         return self.__rhs
-#     @property
-#     def over(self):
-#         return self.__over
+class PDE(TestTrialBase):
+    def __init__(self,lhs,rhs,over='domain'):
+        if not isinstance(lhs,lhsForm):
+            raise TypeError
+        if not isinstance(rhs,rhsForm):
+            raise TypeError
+        if over not in ('domain','boundary'):
+            raise ValueError
+        if lhs.test_func != rhs.test_func:
+            print(lhs.test_func,rhs.test_func)
+            raise ValueError
+        self.__lhs = lhs
+        self.__rhs = rhs
+        self.__over = over
+        self.set_trial_func(lhs.trial_func)
+        self.set_test_func(lhs.test_func)
+    def __repr__(self) -> str:
+        lhs = ' + '.join([repr(form) for form in self.lhs.forms])
+        rhs = ' + '.join([repr(form) for form in self.rhs.forms])
+        return f'<PDE : [{lhs} = {rhs}] over {self.over}>'
+    @property
+    def lhs(self):
+        return self.__lhs
+    @property
+    def rhs(self):
+        return self.__rhs
+    @property
+    def over(self):
+        return self.__over
 
 class lhsForm(TestTrialBase):
     def __init__(self,trial_func,test_func,name=None,forms=[]):
