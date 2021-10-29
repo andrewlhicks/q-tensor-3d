@@ -624,10 +624,11 @@ class TestTrialBase: # Not intended for use except as base class
         if test_func is None:
             raise TypeError
         self.__test_func = Param(test_func)
-    def set_trial_func(self,trial_func):
+    def set_trial_func(self,trial_func=None):
         if trial_func is None:
             self.__trial_func = None
-        self.__trial_func = Param(trial_func)
+        else:
+            self.__trial_func = Param(trial_func)
     @property
     def test_func(self):
         return self.__test_func
@@ -715,6 +716,7 @@ class rhsForm(TestTrialBase):
         if not isinstance(forms,list):
             raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
         self.set_test_func(test_func)
+        self.set_trial_func()
         self.name = name
         self.forms = []
         self.add_form(*forms)
