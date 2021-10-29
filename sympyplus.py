@@ -1,6 +1,7 @@
 """ The purpose of this module is to add additional functionality to sympy.
 The functions here are intended to be used on sympy objects only. """
 
+from typing import Type
 from sympy import *
 
 # Basis for the 3D Q-tensor
@@ -309,6 +310,16 @@ class AbstractVectorGradient(Matrix):
             abstractvectorgradient = abstractvectorgradient.col_insert(ii,abstractvector.dx(ii))
 
         return super().__new__(cls,abstractvectorgradient)
+    
+    def __init__(self,abstractvector,dim=3) -> None:
+        self.__name = abstractvector.name
+
+    def __repr__(self):
+        return f'D{self.name}'
+    
+    @property
+    def name(self):
+        return self.__name
 
 class AbstractVector(Matrix):
     """ Defines a 'dim'-dimensional vector, whose entries are symbols labeled by
@@ -333,6 +344,9 @@ class AbstractVector(Matrix):
         self.dim = dim
 
         self.grad = AbstractVectorGradient(self)
+
+    def __repr__(self):
+        return self.name
 
     def dx(self,dim_no):
         vector = zeros(self.dim,1)
@@ -375,6 +389,8 @@ class Param:
                 raise TypeError('Second argument of parameter must be type QVector.')
             self.der = param[0]
             self.vec = param[1]
+    def __repr__(self) -> str:
+        return f'[{repr(self.der)},{repr(self.vec)}]'
     def explode(self):
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
@@ -596,16 +612,71 @@ class EnergyForm:
         self.__boundary_1.extend(forms_1)
         self.__boundary_2.extend(forms_2)
 
+class TestTrialBase: # Not intended for use except as base class
+    def set_test_func(self,test_func):
+        if test_func is None:
+            raise TypeError
+        self.__test_func = Param(test_func)
+    def set_trial_func(self,trial_func):
+        if trial_func is None:
+            self.__trial_func = None
+        self.__trial_func = Param(trial_func)
+    @property
+    def test_func(self):
+        return self.__test_func
+    @property
+    def trial_func(self):
+        return self.__trial_func
 
-class PDE:
-    pass
+# class PDE_System:
+#     def __init__(self,domain_PDE,boundary_PDE=None):
+#         pass
+#     def specify_domain(self,domain_PDE):
+#         if domain_PDE is None:
+#             raise TypeError
+#         if not isinstance(domain_PDE,PDE):
+#             raise TypeError
+#         self.__domain = domain_PDE
+#     def specify_boundary(self,boundary_PDE):
+#         if boundary_PDE is None:
+#             self.__boundary = None
+#         if not isinstance(boundary_PDE,PDE):
+#             raise TypeError
+#         self.__boundary = boundary_PDE
+# class PDE:
+#     """ Takes lhs and rhs forms for domain (_o) and boundary (_g) and returns a PDE object. """
 
-class lhsForm:
+#     def __init__(self,lhs,rhs,over='domain'):
+#         if not isinstance(lhs,lhsForm):
+#             raise TypeError
+#         if not isinstance(rhs,rhsForm):
+#             raise TypeError
+#         if over not in ('domain','boundary'):
+#             raise ValueError
+#         if lhs.test_func != rhs.test_func:
+#             raise ValueError
+#         self.__lhs = lhs
+#         self.__rhs = rhs
+#         self.__over = over
+#         self.__trial_func = lhs.trial_func
+#         self.__test_func = lhs.test_func
+    
+#     @property
+#     def lhs(self):
+#         return self.__lhs
+#     @property
+#     def rhs(self):
+#         return self.__rhs
+#     @property
+#     def over(self):
+#         return self.__over
+
+class lhsForm(TestTrialBase):
     def __init__(self,trial_func,test_func,name=None,forms=[]):
         if not isinstance(forms,list):
             raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
-        self.trial_func = Param(trial_func)
-        self.test_func = Param(test_func)
+        self.set_trial_func(trial_func)
+        self.set_test_func(test_func)
         self.name = name
         self.forms = []
         self.add_form(*forms)
@@ -629,11 +700,11 @@ class lhsForm:
                 raise TypeError('Form must be type GeneralForm.')
             self.forms.append(form)
 
-class rhsForm:
+class rhsForm(TestTrialBase):
     def __init__(self,test_func,name=None,forms=[]):
         if not isinstance(forms,list):
             raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
-        self.test_func = Param(test_func)
+        self.set_test_func(test_func)
         self.name = name
         self.forms = []
         self.add_form(*forms)
