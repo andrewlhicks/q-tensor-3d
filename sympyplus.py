@@ -636,21 +636,37 @@ class TestTrialBase: # Not intended for use except as base class
     def trial_func(self):
         return self.__trial_func
 
-# class PDE_System:
-#     def __init__(self,domain_PDE,boundary_PDE=None):
-#         pass
-#     def specify_domain(self,domain_PDE):
-#         if domain_PDE is None:
-#             raise TypeError
-#         if not isinstance(domain_PDE,PDE):
-#             raise TypeError
-#         self.__domain = domain_PDE
-#     def specify_boundary(self,boundary_PDE):
-#         if boundary_PDE is None:
-#             self.__boundary = None
-#         if not isinstance(boundary_PDE,PDE):
-#             raise TypeError
-#         self.__boundary = boundary_PDE
+class PDE_System:
+    def __init__(self,domain_PDE,boundary_PDE=None):
+        self.set_domain(domain_PDE)
+        self.set_boundary(boundary_PDE)
+    @property
+    def long_repr(self):
+        if self.boundary is None:
+            return f'<PDE System: {self.domain.eqn_str}>'
+        else:
+            return f'<PDE System: {self.domain.eqn_str}\n             {self.boundary.eqn_str}>'
+    @property
+    def domain(self):
+        return self.__domain
+    @property
+    def boundary(self):
+        return self.__boundary
+
+
+    def set_domain(self,domain_PDE):
+        if domain_PDE is None:
+            raise TypeError
+        if not isinstance(domain_PDE,PDE):
+            raise TypeError
+        self.__domain = domain_PDE
+    def set_boundary(self,boundary_PDE):
+        if boundary_PDE is None:
+            self.__boundary = None
+        elif not isinstance(boundary_PDE,PDE):
+            raise TypeError
+        else:
+            self.__boundary = boundary_PDE
 
 class PDE(TestTrialBase):
     def __init__(self,lhs,rhs,over='domain'):
@@ -669,9 +685,7 @@ class PDE(TestTrialBase):
         self.set_trial_func(lhs.trial_func)
         self.set_test_func(lhs.test_func)
     def __repr__(self) -> str:
-        lhs = ' + '.join([repr(form) for form in self.lhs.forms])
-        rhs = ' + '.join([repr(form) for form in self.rhs.forms])
-        return f'<PDE : [{lhs} = {rhs}] over {self.over}>'
+        return f'<PDE : {self.eqn_str}>'
     @property
     def lhs(self):
         return self.__lhs
@@ -681,6 +695,11 @@ class PDE(TestTrialBase):
     @property
     def over(self):
         return self.__over
+    @property
+    def eqn_str(self):
+        lhs = ' + '.join([repr(form) for form in self.lhs.forms])
+        rhs = ' + '.join([repr(form) for form in self.rhs.forms])
+        return f'[{lhs} = {rhs}] over {self.over}'
 
 class lhsForm(TestTrialBase):
     def __init__(self,trial_func,test_func,name=None,forms=[]):
