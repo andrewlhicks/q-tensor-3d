@@ -640,8 +640,7 @@ class PDE_System:
     def __init__(self,domain_PDE,boundary_PDE=None):
         self.set_domain(domain_PDE)
         self.set_boundary(boundary_PDE)
-    @property
-    def long_repr(self):
+    def __repr__(self):
         if self.boundary is None:
             return f'<PDE System: {self.domain.eqn_str}>'
         else:
