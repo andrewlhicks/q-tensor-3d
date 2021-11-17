@@ -71,19 +71,19 @@ class Timer: # adapted from 'https://realpython.com/python-timer/' on 6/24/20
         self._time_elapsed = None
 
     def start(self):
-        from time import time
+        from time import perf_counter
         if self._start_time is not None:
             raise TimeError(f"Timer is running. Use .stop() to stop it.")
 
         self._time_elapsed = None
-        self._start_time = time()
+        self._start_time = perf_counter()
 
     def stop(self):
-        from time import time
+        from time import perf_counter
         if self._start_time is None:
             raise TimeError(f"Timer is not running. Use .start() to start it")
 
-        self._time_elapsed = time() - self._start_time
+        self._time_elapsed = perf_counter() - self._start_time
         self._start_time = None
 
     @property
