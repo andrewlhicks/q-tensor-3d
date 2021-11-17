@@ -383,10 +383,6 @@ class Param:
                 raise TypeError('Parameters must be lists.')
             elif len(param) != 2:
                 raise ValueError('Parameter must be be a list of length 2.')
-            elif not isinstance(param[0],AbstractVectorGradient):
-                raise TypeError('First argument of parameter must be type AbstractVectorGradient.')
-            elif not isinstance(param[1],QVector):
-                raise TypeError('Second argument of parameter must be type QVector.')
             self.der = param[0]
             self.vec = param[1]
     def __repr__(self) -> str:
@@ -401,6 +397,26 @@ class Param:
     def explode(self):
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
+
+    # Properties
+    @property
+    def der(self):
+        return self.__der
+    @property
+    def vec(self):
+        return self.__vec
+    
+    # Setters
+    @der.setter
+    def der(self,val):
+        if not isinstance(val,AbstractVectorGradient):
+            raise TypeError('Must be type AbstractVectorGradient.')
+        self.__der = val
+    @vec.setter
+    def vec(self,val):
+        if not isinstance(val,QVector):
+            raise TypeError('Must be type QVector')
+        self.__vec = val
 
 class SymmetricTracelessMatrix(Matrix):
     """ Returns the symmetric traceless part of the matrix. """
