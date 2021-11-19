@@ -76,7 +76,7 @@ def compute_energy(*function,der=0):
         p = function[1]
     if len(function) == 3:
         # See documentation for secondVariationalDerivative for explanation
-        r = function[1]
+        r = function[1] # Should allow for customization in the future
         p = function[2]
 
     mesh = q.function_space().mesh()
