@@ -1,6 +1,7 @@
 """ The purpose of this module is to add additional functionality to sympy.
 The functions here are intended to be used on sympy objects only. """
 
+from typing import Type
 from sympy import *
 
 # Basis for the 3D Q-tensor
@@ -309,6 +310,16 @@ class AbstractVectorGradient(Matrix):
             abstractvectorgradient = abstractvectorgradient.col_insert(ii,abstractvector.dx(ii))
 
         return super().__new__(cls,abstractvectorgradient)
+    
+    def __init__(self,abstractvector,dim=3) -> None:
+        self.__name = abstractvector.name
+
+    def __repr__(self):
+        return f'D{self.name}'
+    
+    @property
+    def name(self):
+        return self.__name
 
 class AbstractVector(Matrix):
     """ Defines a 'dim'-dimensional vector, whose entries are symbols labeled by
@@ -333,6 +344,9 @@ class AbstractVector(Matrix):
         self.dim = dim
 
         self.grad = AbstractVectorGradient(self)
+
+    def __repr__(self):
+        return self.name
 
     def dx(self,dim_no):
         vector = zeros(self.dim,1)
@@ -369,15 +383,40 @@ class Param:
                 raise TypeError('Parameters must be lists.')
             elif len(param) != 2:
                 raise ValueError('Parameter must be be a list of length 2.')
-            elif not isinstance(param[0],AbstractVectorGradient):
-                raise TypeError('First argument of parameter must be type AbstractVectorGradient.')
-            elif not isinstance(param[1],QVector):
-                raise TypeError('Second argument of parameter must be type QVector.')
             self.der = param[0]
             self.vec = param[1]
+    def __repr__(self) -> str:
+        return f'[{repr(self.der)},{repr(self.vec)}]'
+    def __eq__(self,other) -> bool:
+        if not isinstance(other,Param):
+            raise TypeError('Must compare Param to Param.')
+        if self.der == other.der and self.vec == other.vec:
+            return True
+        else:
+            return False
     def explode(self):
         """ Returns the Symbols of the Param as a list. """
         return [self.der[ii,jj] for ii in range(5) for jj in range(3)] + [self.vec[ii] for ii in range(5)]
+
+    # Properties
+    @property
+    def der(self):
+        return self.__der
+    @property
+    def vec(self):
+        return self.__vec
+    
+    # Setters
+    @der.setter
+    def der(self,val):
+        if not isinstance(val,AbstractVectorGradient):
+            raise TypeError('Must be type AbstractVectorGradient.')
+        self.__der = val
+    @vec.setter
+    def vec(self,val):
+        if not isinstance(val,QVector):
+            raise TypeError('Must be type QVector')
+        self.__vec = val
 
 class SymmetricTracelessMatrix(Matrix):
     """ Returns the symmetric traceless part of the matrix. """
@@ -508,27 +547,36 @@ class EnergyForm:
             if not isinstance(item,GeneralForm):
                 raise TypeError
         
+        # Initialize params
+
+        params = [[Dq,q],[Dp,p],[Dr,r]] # For now, let the params be fixed, but allow customization later
+        self.__params = [Param(param) for param in params]
+
         # Initialize domain
-        self.__domain, self.__domain_1, self.__domain_2 = [], [], []
+        self.__domain_0, self.__domain_1, self.__domain_2 = [], [], []
         self.add_domain(*domain)
 
         # Initialize boundary
-        self.__boundary, self.__boundary_1, self.__boundary_2 = [], [], []
+        self.__boundary_0, self.__boundary_1, self.__boundary_2 = [], [], []
         self.add_boundary(*boundary)
 
     def __repr__(self):
-        return f'<EnergyForm d={self.domain_repr} b={self.boundary_repr}>'
+        return f'<EnergyForm d={self.domain} b={self.boundary}>'
     
     @property
-    def domain_repr(self):
-        return [repr(form) for form in self.__domain]
+    def domain(self):
+        return [repr(form) for form in self.__domain_0]
     @property
-    def boundary_repr(self):
-        return [repr(form) for form in self.__boundary]
+    def boundary(self):
+        return [repr(form) for form in self.__boundary_0]
 
     @property
-    def domain(self):
-        return [form.uflfy() for form in self.__domain]
+    def params(self):
+        return self.__params
+
+    @property
+    def domain_0(self):
+        return [form.uflfy() for form in self.__domain_0]
     @property
     def domain_1(self):
         return [form.uflfy() for form in self.__domain_1]
@@ -536,8 +584,8 @@ class EnergyForm:
     def domain_2(self):
         return [form.uflfy() for form in self.__domain_2]
     @property
-    def boundary(self):
-        return [form.uflfy() for form in self.__boundary]
+    def boundary_0(self):
+        return [form.uflfy() for form in self.__boundary_0]
     @property
     def boundary_1(self):
         return [form.uflfy() for form in self.__boundary_1]
@@ -545,37 +593,135 @@ class EnergyForm:
     def boundary_2(self):
         return [form.uflfy() for form in self.__boundary_2]
 
+    @property
+    def ufl_dict(self):
+        return [
+            {'domain':self.domain_0,'boundary':self.boundary_0},
+            {'domain':self.domain_1,'boundary':self.boundary_1},
+            {'domain':self.domain_2,'boundary':self.boundary_2}
+        ]
     
+    def differentiate_forms(self,*forms):
+        # Preliminary checks
+        for form in forms:
+            if not isinstance(form,GeneralForm):
+                raise TypeError('"forms" must be a list of items of type GeneralForm.')
+            if form.order != 1:
+                raise ValueError
+        # Get derivatives of forms
+        forms_0 = list(forms)
+        forms_1 = [variationalDerivative(form,self.params[0],self.params[1]) for form in forms_0]
+        forms_2 = [secondVariationalDerivative(form,self.params[0],self.params[2],self.params[1]) for form in forms_1]
+        # Return derivatives
+        return (forms_0, forms_1, forms_2)
     def add_domain(self,*forms):
+        # Exit function if no forms given
         if forms == ():
             return
-        for form in forms:
-            if not isinstance(form,GeneralForm):
-                raise TypeError('"forms" must be a list of items of type GeneralForm.')
-            if form.order != 1:
-                raise ValueError
-        self.__domain.extend(list(forms))
-        self.__domain_1.extend([variationalDerivative(form,[Dq,q],[Dp,p]) for form in self.__domain])
-        self.__domain_2.extend([secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in self.__domain_1])
+        # Differentiate forms
+        forms_0, forms_1, forms_2 = self.differentiate_forms(*forms)
+        # Add to existing forms
+        self.__domain_0.extend(forms_0)
+        self.__domain_1.extend(forms_1)
+        self.__domain_2.extend(forms_2)
     def add_boundary(self,*forms):
+        # Exit function if no forms given
         if forms == ():
             return
-        for form in forms:
-            if not isinstance(form,GeneralForm):
-                raise TypeError('"forms" must be a list of items of type GeneralForm.')
-            if form.order != 1:
-                raise ValueError
-        self.__boundary.extend(list(forms))
-        self.__boundary_1.extend([variationalDerivative(form,[Dq,q],[Dp,p]) for form in self.__boundary])
-        self.__boundary_2.extend([secondVariationalDerivative(form,[Dq,q],[Dr,r],[Dp,p]) for form in self.__boundary_1])
+        # Differentiate forms
+        forms_0, forms_1, forms_2 = self.differentiate_forms(*forms)
+        # Add to existing forms
+        self.__boundary_0.extend(forms_0)
+        self.__boundary_1.extend(forms_1)
+        self.__boundary_2.extend(forms_2)
+
+class TestTrialBase: # Not intended for use except as base class
+    def set_test_func(self,test_func):
+        if test_func is None:
+            raise TypeError
+        self.__test_func = Param(test_func)
+    def set_trial_func(self,trial_func=None):
+        if trial_func is None:
+            self.__trial_func = None
+        else:
+            self.__trial_func = Param(trial_func)
+    @property
+    def test_func(self):
+        return self.__test_func
+    @property
+    def trial_func(self):
+        return self.__trial_func
+
+class PDE_System:
+    def __init__(self,domain_PDE,boundary_PDE=None):
+        self.set_domain(domain_PDE)
+        self.set_boundary(boundary_PDE)
+    def __repr__(self):
+        if self.boundary is None:
+            return f'<PDE System: {self.domain.eqn_str}>'
+        else:
+            return f'<PDE System: {self.domain.eqn_str}\n             {self.boundary.eqn_str}>'
+    @property
+    def domain(self):
+        return self.__domain
+    @property
+    def boundary(self):
+        return self.__boundary
 
 
-class lhsForm:
+    def set_domain(self,domain_PDE):
+        if domain_PDE is None:
+            raise TypeError
+        if not isinstance(domain_PDE,PDE):
+            raise TypeError
+        self.__domain = domain_PDE
+    def set_boundary(self,boundary_PDE):
+        if boundary_PDE is None:
+            self.__boundary = None
+        elif not isinstance(boundary_PDE,PDE):
+            raise TypeError
+        else:
+            self.__boundary = boundary_PDE
+
+class PDE(TestTrialBase):
+    def __init__(self,lhs,rhs,over='domain'):
+        if not isinstance(lhs,lhsForm):
+            raise TypeError
+        if not isinstance(rhs,rhsForm):
+            raise TypeError
+        if over not in ('domain','boundary'):
+            raise ValueError
+        if lhs.test_func != rhs.test_func:
+            print(lhs.test_func,rhs.test_func)
+            raise ValueError
+        self.__lhs = lhs
+        self.__rhs = rhs
+        self.__over = over
+        self.set_trial_func(lhs.trial_func)
+        self.set_test_func(lhs.test_func)
+    def __repr__(self) -> str:
+        return f'<PDE : {self.eqn_str}>'
+    @property
+    def lhs(self):
+        return self.__lhs
+    @property
+    def rhs(self):
+        return self.__rhs
+    @property
+    def over(self):
+        return self.__over
+    @property
+    def eqn_str(self):
+        lhs = ' + '.join([repr(form) for form in self.lhs.forms])
+        rhs = ' + '.join([repr(form) for form in self.rhs.forms])
+        return f'[{lhs} = {rhs}] over {self.over}'
+
+class lhsForm(TestTrialBase):
     def __init__(self,trial_func,test_func,name=None,forms=[]):
         if not isinstance(forms,list):
             raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
-        self.trial_func = Param(trial_func)
-        self.test_func = Param(test_func)
+        self.set_trial_func(trial_func)
+        self.set_test_func(test_func)
         self.name = name
         self.forms = []
         self.add_form(*forms)
@@ -599,11 +745,12 @@ class lhsForm:
                 raise TypeError('Form must be type GeneralForm.')
             self.forms.append(form)
 
-class rhsForm:
+class rhsForm(TestTrialBase):
     def __init__(self,test_func,name=None,forms=[]):
         if not isinstance(forms,list):
             raise TypeError('\'forms\' must be a List of items of type GeneralForm.')
-        self.test_func = Param(test_func)
+        self.set_test_func(test_func)
+        self.set_trial_func()
         self.name = name
         self.forms = []
         self.add_form(*forms)

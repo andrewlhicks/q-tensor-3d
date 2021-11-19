@@ -130,7 +130,7 @@ for refinement_level in get_range(settings.mesh.refs):
     x0, x1, x2 = SpatialCoordinate(mesh)
     nu = FacetNormal(mesh)
 
-    q_manu = firedrakefy(comp.manufac_q,mesh)
+    q_manu = firedrakefy(comp['manufac_q'],mesh)
 
     set_eqn_globals(comp)
 

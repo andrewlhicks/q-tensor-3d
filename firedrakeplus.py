@@ -29,21 +29,19 @@ def set_eqn_globals(comp):
 
     global EqnGlobals
     class EqnGlobals:
-        bilinear_form = comp.n_bf_O
-        bilinear_form_bdy = comp.n_bf_G
-        linear_form = comp.n_lf_O
-        linear_form_bdy = comp.n_lf_G
+        bilinear_form = comp['n_bf_O']
+        bilinear_form_bdy = comp['n_bf_G']
+        linear_form = comp['n_lf_O']
+        linear_form_bdy = comp['n_lf_G']
 
-        initial_q = comp.initial_q
+        initial_q = comp['initial_q']
 
-        forcing_f = comp.forcing_f if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
-        forcing_g = comp.forcing_g if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
-        strong_boundary = [comp.bdycond_s,settings.options.strong_boundary]
+        forcing_f = comp['forcing_f'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
+        forcing_g = comp['forcing_g'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
+        strong_boundary = [comp['bdycond_s'],settings.options.strong_boundary]
         weak_boundary = [None,settings.options.weak_boundary]
 
-        energy_0d = comp.energy_0d
-        energy_1d = comp.energy_1d
-        energy_2d = comp.energy_2d
+        energies = comp['energies']
 class nrm:
     def inf(function):
         abs_function = Function(function._function_space).interpolate(abs(function))
@@ -70,7 +68,7 @@ def compute_energy(*function,der=0):
         raise ValueError('Must choose der=0, 1, or 2.')
 
     weak_boundary = EqnGlobals.weak_boundary
-    energies = EqnGlobals.energy_2d if der==2 else EqnGlobals.energy_1d if der==1 else EqnGlobals.energy_0d
+    energies = EqnGlobals.energies[2] if der==2 else EqnGlobals.energies[1] if der==1 else EqnGlobals.energies[0]
 
     q = function[0]
 
@@ -78,7 +76,7 @@ def compute_energy(*function,der=0):
         p = function[1]
     if len(function) == 3:
         # See documentation for secondVariationalDerivative for explanation
-        r = function[1]
+        r = function[1] # Should allow for customization in the future
         p = function[2]
 
     mesh = q.function_space().mesh()
