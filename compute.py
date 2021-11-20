@@ -9,6 +9,37 @@ import user_expressions.bdycond_s as bdycond_s
 import settings
 import const
 
+# Set up Qvector objects
+
+nu = AbstractVector('nu')
+
+q = QVector('q')
+Dq = q.grad
+Q = q.tens
+
+p = QVector('p')
+Dp = p.grad
+P = p.tens
+
+r = QVector('r')
+Dr = r.grad
+R = r.tens
+
+qp = QVector('q_prev')
+Dqp = qp.grad
+QP = qp.tens
+
+qpp = QVector('q_prev_prev')
+Dqpp = qpp.grad
+QPP = qpp.tens
+
+qnp = QVector('q_newt_prev')
+Dqnp = qnp.grad
+QNP = qnp.tens
+
+f = QVector('f')
+g = QVector('g')
+
 const.S0 = 0.700005530940965
 
 Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
@@ -81,7 +112,7 @@ def compute():
     #     domain = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.domain]
     #     boundary = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.boundary]
     
-    energies = EnergyForm()
+    energies = EnergyForm([Dq,q],[Dp,p],[Dr,r])
     energies.add_domain(GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'))
     energies.add_domain(GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'))
     energies.add_domain(GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'))

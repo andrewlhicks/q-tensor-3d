@@ -8,6 +8,37 @@ from sympyplus import *
 import settings
 import const
 
+# Set up Qvector objects
+
+nu = AbstractVector('nu')
+
+q = QVector('q')
+Dq = q.grad
+Q = q.tens
+
+p = QVector('p')
+Dp = p.grad
+P = p.tens
+
+r = QVector('r')
+Dr = r.grad
+R = r.tens
+
+qp = QVector('q_prev')
+Dqp = qp.grad
+QP = qp.tens
+
+qpp = QVector('q_prev_prev')
+Dqpp = qpp.grad
+QPP = qpp.tens
+
+qnp = QVector('q_newt_prev')
+Dqnp = qnp.grad
+QNP = qnp.tens
+
+f = QVector('f')
+g = QVector('g')
+
 Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
