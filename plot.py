@@ -1,5 +1,6 @@
 import getopt
 import matplotlib.pyplot as plt
+from _tkinter import TclError
 import numpy as np
 import saves
 import settings
@@ -43,7 +44,10 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 	ax2.grid()
 
 	file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
-	plt.savefig(file_path)
+	try:
+		plt.savefig(file_path)
+	except TclError as err:
+		print(err)
 	if os.name == 'nt':
 		plt.show()
 	plt.close()
@@ -99,7 +103,7 @@ def main():
 
 	try:
 		save_name
-	except:
+	except NameError:
 		print("Must choose local (-l) or remote (-r).")
 		sys.exit()
 
