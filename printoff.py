@@ -4,8 +4,8 @@ console and then put into a log file. """
 
 from time import sleep
 import saves
-import settings
-import const
+from config import settings
+from config import constants as c
 import functools
 
 if saves.SaveMode:
@@ -101,20 +101,20 @@ def constants_info():
     plog('CONSTANTS:',color='uline')
 
     plog()
-    plog(f'     L1 = {const.L1},')
-    plog(f'     L2 = {const.L2},')
-    plog(f'     L3 = {const.L3},')
-    plog(f'     q0 = {const.q0}')
-    plog(f'      A = {const.A},')
-    plog(f'      B = {const.B},')
-    plog(f'      C = {const.C},')
-    plog(f'     S0 = {const.S0},')
-    plog(f'     W0 = {const.W0},')
-    plog(f'     W1 = {const.W1},')
-    plog(f'     W2 = {const.W2},')
-    plog(f'   beta = {const.beta},')
-    plog(f'epsilon = {const.ep},')
-    plog(f'     L0 = {const.L0}')
+    plog(f'     L1 = {c.L1},')
+    plog(f'     L2 = {c.L2},')
+    plog(f'     L3 = {c.L3},')
+    plog(f'     q0 = {c.q0}')
+    plog(f'      A = {c.A},')
+    plog(f'      B = {c.B},')
+    plog(f'      C = {c.C},')
+    plog(f'     S0 = {c.S0},')
+    plog(f'     W0 = {c.W0},')
+    plog(f'     W1 = {c.W1},')
+    plog(f'     W2 = {c.W2},')
+    plog(f'   beta = {c.beta},')
+    plog(f'epsilon = {c.ep},')
+    plog(f'     L0 = {c.L0}')
     plog()
 
 @plogger

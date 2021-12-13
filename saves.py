@@ -1,5 +1,5 @@
 import os
-import settings
+from config import settings
 import functools
 
 outfile = None

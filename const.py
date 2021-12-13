@@ -2,7 +2,7 @@ from misc import getValues
 import yaml
 from numpy import sqrt
 from math import ceil
-import settings
+from config import settings
 
 def _load_file(file_path):
 	# Open the file and load it using YAML

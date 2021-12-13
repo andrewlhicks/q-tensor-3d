@@ -5,8 +5,7 @@ an appendage that is only causing harm to the code as a whole. """
 
 from sympyplus import *
 
-import settings
-import const
+from config import constants as c
 
 # Set up Qvector objects
 
@@ -39,7 +38,7 @@ QNP = qnp.tens
 f = QVector('f')
 g = QVector('g')
 
-Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+Q0 = c.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
 # Strong terms
@@ -81,10 +80,10 @@ def strong_twist(Q):
         for jj in range(3):
             for kk in range(3):
                 for ll in range(3):
-                    term[ii,jj] -= const.q0*levi_civita(ii,ll,kk)*diff(Q[ll,jj],x[kk])
+                    term[ii,jj] -= c.q0*levi_civita(ii,ll,kk)*diff(Q[ll,jj],x[kk])
 
     # Got rid of this linear 0-th derivative term below:
-    # term += const.q0**2*Q
+    # term += c.q0**2*Q
 
     return term
 
@@ -125,17 +124,17 @@ def strong_twist_gamma(Q):
         for jj in range(3):
             for kk in range(3):
                 for ll in range(3):
-                    term[ii,jj] += const.q0*nu[kk]*levi_civita(ii,ll,kk)*Q[ll,jj]
+                    term[ii,jj] += c.q0*nu[kk]*levi_civita(ii,ll,kk)*Q[ll,jj]
 
     return term
 
 def tilde(Q):
-    return Q + const.S0/3*eye(3)
+    return Q + c.S0/3*eye(3)
 
 ###
 
 def strong_F(Q_manu): # plugs Q_manu into the strong form PDE
-    return const.L1*strongL1(Q_manu) + const.L2*strongL2(Q_manu) + const.L3*strongL3(Q_manu) + 4*const.L1*strong_twist(Q_manu) + (1/const.ep**2)*(-const.A*Q_manu - const.B*Q_manu*Q_manu + const.C*innerp(Q_manu,Q_manu)*Q_manu)
+    return c.L1*strongL1(Q_manu) + c.L2*strongL2(Q_manu) + c.L3*strongL3(Q_manu) + 4*c.L1*strong_twist(Q_manu) + (1/c.ep**2)*(-c.A*Q_manu - c.B*Q_manu*Q_manu + c.C*innerp(Q_manu,Q_manu)*Q_manu)
 
 def strong_G(Q_manu):
-    return const.L1*strongGammaL1(Q_manu) + const.L2*strongGammaL2(Q_manu) + const.L3*strongGammaL3(Q_manu) + 2*const.L1*strong_twist_gamma(Q_manu) + const.W0*(Q_manu-Q0) + const.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + const.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-const.S0**2)*Q_manu
+    return c.L1*strongGammaL1(Q_manu) + c.L2*strongGammaL2(Q_manu) + c.L3*strongGammaL3(Q_manu) + 2*c.L1*strong_twist_gamma(Q_manu) + c.W0*(Q_manu-Q0) + c.W1*(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi-trace(tilde(Q_manu)-Pi*tilde(Q_manu)*Pi)/3*eye(3)) + c.W2*(innerp(tilde(Q_manu),tilde(Q_manu))-c.S0**2)*Q_manu

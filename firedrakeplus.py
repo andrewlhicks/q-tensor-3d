@@ -25,7 +25,7 @@ def decorator(func):
 zero_vec = as_vector([0,0,0,0,0])
 
 def set_eqn_globals(comp):
-    import settings
+    from config import settings
 
     global EqnGlobals
     class EqnGlobals:
@@ -252,7 +252,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     import numpy as np
     import plot
     import saves
-    import settings
+    from config import settings
 
     # Initilize
 
@@ -423,7 +423,7 @@ def tensorfy(vector):
 def visualize(q_vis,mesh,time=None,new_outfile=False):
     import eigen
     import saves
-    import settings
+    from config import settings
 
     # Create functions to store eigenvectors and eigenvalues
 

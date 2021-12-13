@@ -76,10 +76,9 @@ else:
 
 # These three modules must be imported in order and before other modules, or else they won't work properly
 
-import settings
-settings._load_file(settings_path)
-import const
-const._load_file(constants_path)
+import config
+config._config(settings_path,constants_path)
+from config import settings
 
 import saves
 saves.initialize(SaveMode,SaveName)

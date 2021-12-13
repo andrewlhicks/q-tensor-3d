@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from _tkinter import TclError
 import numpy as np
 import saves
-import settings
+from config import settings
 import sys
 import yaml
 import os
