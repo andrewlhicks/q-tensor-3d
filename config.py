@@ -8,6 +8,13 @@ class FromDict:
     def __repr__(self) -> str:
         return repr(self.__dict__)
 
+def process_settings(s: FromDict) -> None:
+    """ Takes the settings FromDict (s) and provided missing data for outdated formats. """
+    try:
+        s.mesh.builtin
+    except AttributeError:
+        s.mesh.builtin = False
+
 def process_constants(c: FromDict) -> None:
     """ Takes the constants FromDict (c) and adds L0, S0, and dt """
     from math import sqrt, ceil
@@ -33,7 +40,8 @@ def _config(settings_path,constants_path):
     settings = FromDict(load_yml(settings_path))
     constants = FromDict(load_yml(constants_path))
 
-    # process constants
+    # process settings, costants
+    process_settings(settings)
     process_constants(constants)
 
 def main():

@@ -4,7 +4,7 @@ Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 
 import os
 import sys
-# import getopt
+import numpy as np
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -124,7 +124,19 @@ pr.prelimCompInfo(timer.str_time)
 pr.pdeSolveTitle()
 
 for refinement_level in get_range(settings.mesh.refs):
-    mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
+    if settings.mesh.builtin:
+        # split mesh.name into args, use numpy array
+        mesh_args = np.array(settings.mesh.name.split())
+        # choose which builtin mesh to use
+        if mesh_args[0] != 'BoxMesh':
+            raise NotImplementedError('Only "BoxMesh" implemented for builtin meshes.')
+        # change args to int
+        args = mesh_args[1:].astype(int)
+        # apply refinement level
+        args[:3] = args[:3]*2**refinement_level
+        mesh = BoxMesh(*args)
+    else:
+        mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
     x0, x1, x2 = SpatialCoordinate(mesh)
     nu = FacetNormal(mesh)
