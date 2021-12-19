@@ -9,50 +9,52 @@ import yaml
 import os
 
 def time_vs_energy(times,energies,refinement_level='Not specified'):
-	fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
-	fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
-
-	line_style = '--' if len(energies) > 50 else 'o--'
-
-	plot_energies = saves.EnergyList(energies)
-
-	plot_energies[0] = None
-	for ii in range(len(plot_energies)):
-		if ii != 0:
-			plot_energies[ii] -= energies[ii-1]
-
-	# Truncate to last 1000
-
-	end_value = times[-1]
-	N = 100000
-	start_value = np.maximum(end_value-N*settings.time.step,0)
-
-	ax1.plot(times[-N:],energies[-N:],line_style)
-	ax2.plot(times[-N:],plot_energies[-N:],line_style,color='red')
-
-	ax1.set_xlabel('Time')
-	ax1.set_xlim(start_value,end_value)
-	ax1.set_ylabel('Energy')
-	ax1.set_title('Total energy')
-	ax1.grid()
-
-	ax2.set_xlabel('Time')
-	ax2.set_xlim(start_value,end_value)
-	ax2.set_ylabel('Energy')
-	ax2.set_title('Change in energy')
-	ax2.set_yscale('symlog')
-	ax2.grid()
-
-	file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
 	try:
+		fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
+		fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
+
+		line_style = '--' if len(energies) > 50 else 'o--'
+
+		plot_energies = saves.EnergyList(energies)
+
+		plot_energies[0] = None
+		for ii in range(len(plot_energies)):
+			if ii != 0:
+				plot_energies[ii] -= energies[ii-1]
+
+		# Truncate to last 1000
+
+		end_value = times[-1]
+		N = 100000
+		start_value = np.maximum(end_value-N*settings.time.step,0)
+
+		ax1.plot(times[-N:],energies[-N:],line_style)
+		ax2.plot(times[-N:],plot_energies[-N:],line_style,color='red')
+
+		ax1.set_xlabel('Time')
+		ax1.set_xlim(start_value,end_value)
+		ax1.set_ylabel('Energy')
+		ax1.set_title('Total energy')
+		ax1.grid()
+
+		ax2.set_xlabel('Time')
+		ax2.set_xlim(start_value,end_value)
+		ax2.set_ylabel('Energy')
+		ax2.set_title('Change in energy')
+		ax2.set_yscale('symlog')
+		ax2.grid()
+
+		file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
+		
 		plt.savefig(file_path)
+
+		if os.name == 'nt':
+			plt.show()
+		plt.close()
+
+		return file_path
 	except TclError as err:
 		print(err)
-	if os.name == 'nt':
-		plt.show()
-	plt.close()
-
-	return file_path
 
 def scatter_vs_poly(scatter,poly):
 	fig, ax = plt.subplots(figsize=(10,10))
