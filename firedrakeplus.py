@@ -465,4 +465,17 @@ def visualize(q_vis,mesh,time=None,new_outfile=False):
 
     saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q, time=time)
 
+def BuiltinMesh(mesh_str: str,ref_level: int):
+    # split mesh.name into args, use numpy array
+    mesh_args = np.array(mesh_str.split())
+    # choose which builtin mesh to use
+    if mesh_args[0] != 'BoxMesh':
+        raise NotImplementedError('Only "BoxMesh" implemented for builtin meshes.')
+    # change args to int, float
+    int_args = mesh_args[1:4].astype(int)
+    float_args = mesh_args[4:7].astype(np.float64)
+    # apply refinement level
+    int_args = int_args*2**ref_level
+    return BoxMesh(*int_args,*float_args)
+
 # END OF CODE

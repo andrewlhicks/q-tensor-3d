@@ -125,16 +125,7 @@ pr.pdeSolveTitle()
 
 for refinement_level in get_range(settings.mesh.refs):
     if settings.mesh.builtin:
-        # split mesh.name into args, use numpy array
-        mesh_args = np.array(settings.mesh.name.split())
-        # choose which builtin mesh to use
-        if mesh_args[0] != 'BoxMesh':
-            raise NotImplementedError('Only "BoxMesh" implemented for builtin meshes.')
-        # change args to int
-        args = np.concatenate(mesh_args[1:4].astype(int),mesh_args[4:7].astype(np.float64))
-        # apply refinement level
-        args[:3] = args[:3]*2**refinement_level
-        mesh = BoxMesh(*args)
+        mesh = BuiltinMesh(settings.mesh.name,refinement_level)
     else:
         mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
