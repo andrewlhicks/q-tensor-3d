@@ -204,6 +204,7 @@ def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,stron
 
     bdy_cond = interpolate(eval(strong_boundary[0]),function_space)
 
+    # The following needs to be rewritten
     if strong_boundary == None:
         bcs = None
     elif strong_boundary[1] == 'none':
@@ -217,6 +218,9 @@ def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,stron
             bcs = [bc]
         else:
             raise ValueError('Boundary interger specified must be positive.')
+    elif isinstance(strong_boundary[1],list):
+        bc = DirichletBC(function_space, bdy_cond, strong_boundary[1])
+        bcs = [bc]
     else:
         raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
