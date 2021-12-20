@@ -131,7 +131,7 @@ for refinement_level in get_range(settings.mesh.refs):
         if mesh_args[0] != 'BoxMesh':
             raise NotImplementedError('Only "BoxMesh" implemented for builtin meshes.')
         # change args to int
-        args = mesh_args[1:].astype(int)
+        args = np.concatenate(mesh_args[1:4].astype(int),mesh_args[4:7].astype(np.float64))
         # apply refinement level
         args[:3] = args[:3]*2**refinement_level
         mesh = BoxMesh(*args)
