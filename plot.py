@@ -1,14 +1,14 @@
-import getopt
 import matplotlib.pyplot as plt
-from _tkinter import TclError
 import numpy as np
-import saves
-from config import settings
-import sys
-import yaml
 import os
+import saves
+
+def usage():
+	print("usage: python plot.py (-l | -r) <save-name>")
 
 def time_vs_energy(times,energies,refinement_level='Not specified'):
+	from _tkinter import TclError
+	from config import settings
 	try:
 		fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
 		fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
@@ -73,8 +73,9 @@ def scatter_vs_poly(scatter,poly):
 	plt.close()
 
 def main():
-	def usage():
-		print("usage: python plot.py (-l | -r) <save-name>")
+	import getopt
+	import sys
+	import config
 
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], 'l:r:o', ['help'])
@@ -92,12 +93,12 @@ def main():
 			remote = ''
 			save_name = a
 			saves.initialize(None,save_name)
-			settings._load_file(f'saves/{save_name}/settings.yml')
+			config.initialize(f'saves/{save_name}/settings.yml') # So plot.py has mesh name
 		elif o in ('-r'):
 			remote = 'remote '
 			save_name = a
 			saves.initialize(None,save_name,remote=True)
-			settings._load_file(f'saves-remote/{save_name}/settings.yml')
+			config.initialize(f'saves-remote/{save_name}/settings.yml') # So plot.py has mesh name
 		elif o in ('-o'):
 			open_file = True
 		else:

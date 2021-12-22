@@ -77,7 +77,7 @@ else:
 # These three modules must be imported in order and before other modules, or else they won't work properly
 
 import config
-config._config(settings_path,constants_path)
+config.initialize(settings_path,constants_path)
 from config import settings
 
 import saves

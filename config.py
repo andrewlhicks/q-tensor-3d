@@ -16,7 +16,9 @@ def process_settings(s: FromDict) -> None:
         s.mesh.builtin = False
 
 def process_constants(c: FromDict) -> None:
-    """ Takes the constants FromDict (c) and adds L0, S0, and dt """
+    """ Takes the constants FromDict (c) and adds L0, S0, and dt.
+    Note that this function may only be called AFTER calling process_settings(). """
+
     from math import sqrt, ceil
 
     # set L0 if not explicitly set
@@ -29,23 +31,32 @@ def process_constants(c: FromDict) -> None:
     # the following should be deprecated (from settings) in future
     c.dt = settings.time.step
 
-def _config(settings_path,constants_path):
+def initialize(settings_path,constants_path=None):
     from loaddump import load_yml
 
-    # make settings, constants global, thus importable
+    # make settings global, thus importable
     global settings
+
+    # load settings as FromDict
+    settings = FromDict(load_yml(settings_path))
+
+    # process settings
+    process_settings(settings)
+
+    # if no constants file given, exit
+    if constants_path is None: return
+    
+    # make constants global, thus importable
     global constants
 
-    # load settings, constants as FromDict
-    settings = FromDict(load_yml(settings_path))
+    # load constants as FromDict
     constants = FromDict(load_yml(constants_path))
 
-    # process settings, costants
-    process_settings(settings)
+    # process constants
     process_constants(constants)
 
 def main():
-    _config('settings/settings.yml','constants/5cb.yml')
+    initialize('settings/settings.yml','constants/5cb.yml')
     print(constants)
 
 if __name__ == '__main__':
