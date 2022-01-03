@@ -470,6 +470,7 @@ def visualize(q_vis,mesh,time=None,new_outfile=False):
     saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q, time=time)
 
 def BuiltinMesh(mesh_str: str,ref_level: int):
+    import numpy as np
     # split mesh.name into args, use numpy array
     mesh_args = np.array(mesh_str.split())
     # choose which builtin mesh to use
