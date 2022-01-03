@@ -4,9 +4,13 @@ import os
 import saves
 
 def usage():
-	print("usage: python plot.py (-l | -r) <save-name>")
+	usage = """usage: python plot.py [-o] (-l | -r) <save-name>
+  l: file in './saves'
+  r: file in './saves-remote'
+  o: open file"""
+	print(usage)
 
-def time_vs_energy(times,energies,refinement_level='Not specified'):
+def time_vs_energy(times,energies,refinement_level='Not specified',open_file=False):
 	from _tkinter import TclError
 	from config import settings
 	try:
@@ -48,8 +52,9 @@ def time_vs_energy(times,energies,refinement_level='Not specified'):
 		
 		plt.savefig(file_path)
 
-		if os.name == 'nt':
+		if open_file:
 			plt.show()
+		
 		plt.close()
 
 		return file_path
@@ -111,14 +116,8 @@ def main():
 		sys.exit()
 
 	times, energies = saves.load_energies()
-	file_path = time_vs_energy(times,energies)
+	file_path = time_vs_energy(times,energies,open_file=open_file)
 	print(f"Done plotting to {remote}save {save_name}.")
-
-	if open_file:
-		if os.name == 'nt':
-			os.system(f'"{file_path}"')
-		else:
-			print('Failed to open plot; must use Windows.')
 
 if __name__ == '__main__':
 	main()
