@@ -8,7 +8,7 @@ path = 'saves/experiment/eqndata.json'
 constants = load_yml(path)['constants']
 S0 = constants['S0']
 
-class UXFromTensor(Matrix):
+class FromTensor(Matrix):
     def __new__(cls,tensor):
         M = Matrix(tensor).reshape(3,3)
         M = SymmetricTracelessMatrix(M)
@@ -17,31 +17,31 @@ class UXFromTensor(Matrix):
     def __init__(self,tensor):
         self.tensor = Matrix(tensor).reshape(3,3)
     def __repr__(self):
-        return f'UXFromTensor {self.tensor}'
+        return f'FromTensor {self.tensor}'
     def uflfy(self):
         return uflfy(self)
 
-def uxft_constructor(loader,node):
+def ft_constructor(loader,node):
     value = loader.construct_sequence(node)
-    return UXFromTensor(value)
+    return FromTensor(value)
 
-yaml.add_constructor('!UXFromTensor',uxft_constructor)
+yaml.add_constructor('!FromTensor',ft_constructor)
 
-class UXFromVector(Matrix):
+class FromVector(Matrix):
     def __new__(cls,vector):
         return super().__new__(cls,vector)
     def __repr__(self):
-        return f'UXFromVector {self}'
+        return f'FromVector {self}'
     def uflfy(self):
         return uflfy(self)
 
-def uxfv_constructor(loader,node):
+def fv_constructor(loader,node):
     value = loader.construct_sequence(node)
-    return UXFromVector(value)
+    return FromVector(value)
 
-yaml.add_constructor('!UXFromVector',uxfv_constructor)
+yaml.add_constructor('!FromVector',fv_constructor)
 
-class UXFromDirector(Matrix):
+class FromDirector(Matrix):
     def __new__(cls,director):
         import numpy as np
         n = Matrix(director)
@@ -52,12 +52,12 @@ class UXFromDirector(Matrix):
     def __init__(self,director):
         self.director = Matrix(director)
     def __repr__(self):
-        return f'UXFromDirector {self.director}'
+        return f'FromDirector {self.director}'
     def uflfy(self):
         return uflfy(self)
 
-def uxfd_constructor(loader,node):
+def fd_constructor(loader,node):
     value = loader.construct_sequence(node)
-    return UXFromDirector(value)
+    return FromDirector(value)
 
-yaml.add_constructor('!UXFromDirector',uxfd_constructor)
+yaml.add_constructor('!FromDirector',fd_constructor)

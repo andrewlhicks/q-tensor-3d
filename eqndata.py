@@ -18,22 +18,22 @@ def process_constants(constants):
 
     constants['S0'] = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
 
-def ux_getufl(path):
+def initcond_getufl(path):
     dict = load_yml(path)
     if dict is None:
         raise ValueError('Empty dict not accepted for user expression.')
     if len(dict) > 1:
         raise KeyError('Only one dict key accepted for user expression.')
     for key in dict.keys():
-        if key not in ('ux_simple','ux_piecewise'):
-            raise KeyError(f'Dict keys for user expression may only be "ux_simple" or "ux_piecewise", not "{key}".')
+        if key not in ('simple','piecewise'):
+            raise KeyError(f'Dict keys for user expression may only be "simple" or "piecewise", not "{key}".')
 
-    if 'ux_simple' in dict.keys():
-        return dict['ux_simple'].uflfy()
+    if 'simple' in dict.keys():
+        return dict['simple'].uflfy()
 
     # If nothing is returned, assume ic_piecewise
 
-    dict = dict['ux_piecewise']
+    dict = dict['piecewise']
 
     if set(dict.keys()) != {'if','then','else'}:
         raise KeyError('Keys for a piecewise ic must be "if", "then", and "else".')
@@ -57,6 +57,6 @@ dump_json(eqndata,f'{pathl}eqndata.json')
 
 from userexpression import *
 
-print(ux_getufl(f'{pathl}setup/initial_q.yml'))
+print(initcond_getufl(f'{pathl}setup/initial_q.yml'))
 
 # dump_json(eqndata,f'{pathl}eqndata.json')
