@@ -6,17 +6,48 @@ import user_expressions.forcing_f as forcing_f
 import user_expressions.forcing_g as forcing_g
 import user_expressions.bdycond_s as bdycond_s
 
-import settings
-import const
+from config import settings
+from config import constants as c
 
-const.S0 = 0.700005530940965
+# Set up Qvector objects
 
-Q0 = const.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+nu = AbstractVector('nu')
+
+q = QVector('q')
+Dq = q.grad
+Q = q.tens
+
+p = QVector('p')
+Dp = p.grad
+P = p.tens
+
+r = QVector('r')
+Dr = r.grad
+R = r.tens
+
+qp = QVector('q_prev')
+Dqp = qp.grad
+QP = qp.tens
+
+qpp = QVector('q_prev_prev')
+Dqpp = qpp.grad
+QPP = qpp.tens
+
+qnp = QVector('q_newt_prev')
+Dqnp = qnp.grad
+QNP = qnp.tens
+
+f = QVector('f')
+g = QVector('g')
+
+c.S0 = 0.700005530940965
+
+Q0 = c.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
 # theta = atan2(x[1]-0.5,x[0]-0.5)
 # N = Matrix([cos(theta),sin(theta),0])
-# Q0 = const.S0*(outerp(N,N) - (1/3)*eye(3))
+# Q0 = c.S0*(outerp(N,N) - (1/3)*eye(3))
 
 #################################################################
 
@@ -45,15 +76,15 @@ def termL3(grad1,grad2):
 #     """ Returns the twist term from the energy """
 #     Q = QTensor(q)
 
-#     return const.q0*mixedp(Q,Q) + const.q0**2*innerp(Q,Q)
+#     return c.q0*mixedp(Q,Q) + c.q0**2*innerp(Q,Q)
 
 def term_twist_var(q,p):
     """ Returns the variational derivative of the twist term """
     Q = QTensor(q)
     P = QTensor(p)
 
-    # return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) + 4*const.q0**2*innerp(Q,P)
-    return 2*const.q0*mixedp(Q,P) + 2*const.q0*mixedp(P,Q) # got rid of the linear 0-th derivative term
+    # return 2*c.q0*mixedp(Q,P) + 2*c.q0*mixedp(P,Q) + 4*c.q0**2*innerp(Q,P)
+    return 2*c.q0*mixedp(Q,P) + 2*c.q0*mixedp(P,Q) # got rid of the linear 0-th derivative term
 
 #########################################################
 
@@ -61,17 +92,17 @@ def compute():
     # Classes for direct computation of energy and its derivatives
     # class energies:
     #     domain = [
-    #         GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'),
-    #         GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'),
+    #         GeneralForm(c.L1/2*termL1(Dq,Dq)+c.L2/2*termL2(Dq,Dq)+c.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'),
+    #         GeneralForm(2*c.L1*c.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'),
     #         # Standard double well
-    #         # GeneralForm((1/const.ep**2)*(- (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+    #         # GeneralForm((1/c.ep**2)*(- (c.A/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
     #         # Alternative double well
-    #         GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
+    #         GeneralForm((1/c.ep**2)*(1 - (c.A/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'),
     #         GeneralForm(-f.dot(q),[Dq,q],name='Domain Forcing Energy')
     #     ]
     #     boundary = [
-    #         GeneralForm(const.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'),
-    #         GeneralForm(const.W1/2*innerp(Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu))+const.W2/4*(innerp(Q,Q)-2*const.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'),
+    #         GeneralForm(c.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'),
+    #         GeneralForm(c.W1/2*innerp(Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu))+c.W2/4*(innerp(Q,Q)-2*c.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'),
     #         GeneralForm(-g.dot(q),[Dq,q],name='Boundary Forcing Energy')
     #     ]
     # class energies_der:
@@ -81,50 +112,50 @@ def compute():
     #     domain = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.domain]
     #     boundary = [secondVariationalDerivative(general_form,[Dq,q],[Dr,r],[Dp,p]) for general_form in energies_der.boundary]
     
-    energies = EnergyForm()
-    energies.add_domain(GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'))
-    energies.add_domain(GeneralForm(2*const.L1*const.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'))
-    energies.add_domain(GeneralForm((1/const.ep**2)*(1 - (const.A/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'))
+    energies = EnergyForm([Dq,q],[Dp,p],[Dr,r])
+    energies.add_domain(GeneralForm(c.L1/2*termL1(Dq,Dq)+c.L2/2*termL2(Dq,Dq)+c.L3/2*termL3(Dq,Dq),[Dq,q],name='Elastic Energy'))
+    energies.add_domain(GeneralForm(2*c.L1*c.q0*mixedp(Q,Q),[Dq,q],name='Twist Energy'))
+    energies.add_domain(GeneralForm((1/c.ep**2)*(1 - (c.A/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),[Dq,q],name='Bulk Energy'))
     energies.add_domain(GeneralForm(-f.dot(q),[Dq,q],name='Domain Forcing Energy'))
-    energies.add_boundary(GeneralForm(const.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'))
-    energies.add_boundary(GeneralForm(const.W1/2*innerp(Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+const.S0/3*outerp(nu,nu))+const.W2/4*(innerp(Q,Q)-2*const.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'))
+    energies.add_boundary(GeneralForm(c.W0/2*innerp(Q-Q0,Q-Q0),[Dq,q],name='Homeotropic Anchoring'))
+    energies.add_boundary(GeneralForm(c.W1/2*innerp(Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu))+c.W2/4*(innerp(Q,Q)-2*c.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'))
     energies.add_boundary(GeneralForm(-g.dot(q),[Dq,q],name='Boundary Forcing Energy'))
 
     # Energies
 
-    energyElastic = GeneralForm(const.L1/2*termL1(Dq,Dq)+const.L2/2*termL2(Dq,Dq)+const.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
+    energyElastic = GeneralForm(c.L1/2*termL1(Dq,Dq)+c.L2/2*termL2(Dq,Dq)+c.L3/2*termL3(Dq,Dq),[Dq,q],name='energyElastic')
     # Standard double well
-    # energyBulkC = GeneralForm((1/const.ep**2)*(((const.L0 - const.A)/2)*innerp(Q,Q) - (const.B/3)*trace(Q**3) + (const.C/4)*trace(Q**2)**2),[Dq,q])
-    # energyBulkE = GeneralForm((1/const.ep**2)*(const.L0/2)*trace(Q**2),[Dq,q])
+    # energyBulkC = GeneralForm((1/c.ep**2)*(((c.L0 - c.A)/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),[Dq,q])
+    # energyBulkE = GeneralForm((1/c.ep**2)*(c.L0/2)*trace(Q**2),[Dq,q])
     # Alternative double well
-    energyBulkC = GeneralForm((1/const.ep**2)*(1 + (const.L0 - const.A)/2*trace(Q**2)),[Dq,q])
-    energyBulkE = GeneralForm((1/const.ep**2)*((const.L0/2)*innerp(Q,Q) + (const.B/3)*trace(Q**3) - (const.C/4)*trace(Q**2)**2),[Dq,q])
+    energyBulkC = GeneralForm((1/c.ep**2)*(1 + (c.L0 - c.A)/2*trace(Q**2)),[Dq,q])
+    energyBulkE = GeneralForm((1/c.ep**2)*((c.L0/2)*innerp(Q,Q) + (c.B/3)*trace(Q**3) - (c.C/4)*trace(Q**2)**2),[Dq,q])
 
     # Bilinear forms
 
-    bfTimeStep = GeneralForm((1/const.dt)*q.dot(p),[Dq,q],[Dp,p],name='bfTimeStep')
+    bfTimeStep = GeneralForm((1/c.dt)*q.dot(p),[Dq,q],[Dp,p],name='bfTimeStep')
     bfElastic = variationalDerivative(energyElastic,[Dq,q],[Dp,p],name='bfElastic')
     bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
     bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
 
-    bfTwist = GeneralForm(const.L1*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
+    bfTwist = GeneralForm(c.L1*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
 
-    bfNAnchor = GeneralForm(const.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
-    bfPDAnchor1 = GeneralForm(const.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1') # This was WRONG and nonlinear. Why didn't the code catch this?
-    bfPDAnchor2 = GeneralForm(const.W2*((innerp(Q,Q) - 2*const.S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
+    bfNAnchor = GeneralForm(c.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
+    bfPDAnchor1 = GeneralForm(c.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1') # This was WRONG and nonlinear. Why didn't the code catch this?
+    bfPDAnchor2 = GeneralForm(c.W2*((innerp(Q,Q) - 2*c.S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
 
     # Linear forms
 
     lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
     lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
-    lfNAnchor = GeneralForm(const.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
-    lfPDAnchor1 = GeneralForm(const.W1*innerp(-const.S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
+    lfNAnchor = GeneralForm(c.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
+    lfPDAnchor1 = GeneralForm(c.W1*innerp(-c.S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
 
     lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
     lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')
 
-    lf_TimeStep2 = GeneralForm( (const.beta)*(1/const.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
+    lf_TimeStep2 = GeneralForm( (c.beta)*(1/c.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
 
     # Assemble LHS, RHS
 

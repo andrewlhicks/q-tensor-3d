@@ -1,7 +1,3 @@
-import os
-import settings
-import functools
-
 outfile = None
 SaveMode = None
 SaveName = None

@@ -25,7 +25,7 @@ def decorator(func):
 zero_vec = as_vector([0,0,0,0,0])
 
 def set_eqn_globals(comp):
-    import settings
+    from config import settings
 
     global EqnGlobals
     class EqnGlobals:
@@ -204,6 +204,7 @@ def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,stron
 
     bdy_cond = interpolate(eval(strong_boundary[0]),function_space)
 
+    # The following needs to be rewritten
     if strong_boundary == None:
         bcs = None
     elif strong_boundary[1] == 'none':
@@ -217,6 +218,9 @@ def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,stron
             bcs = [bc]
         else:
             raise ValueError('Boundary interger specified must be positive.')
+    elif isinstance(strong_boundary[1],list):
+        bc = DirichletBC(function_space, bdy_cond, strong_boundary[1])
+        bcs = [bc]
     else:
         raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
@@ -252,7 +256,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     import numpy as np
     import plot
     import saves
-    import settings
+    from config import settings
 
     # Initilize
 
@@ -296,7 +300,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         # On resume mode, q_soln and q_prev are loaded from a previous state
         q_soln = saves.load_checkpoint(H1_vec,'q_soln')
         q_prev = saves.load_checkpoint(H1_vec,'q_prev')
-        # print(compute_energy(q_soln))
+        pr.Print(f'Initial energy = {compute_energy(q_soln)}')
         times, energies = saves.load_energies()
         if len(times) != len(energies):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
@@ -384,7 +388,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
         energies.append(compute_energy(q_soln))
 
-        pr.Print(f'Time step {current_time} completed')
+        pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f}')
 
         if saves.SaveMode and (counter == settings.time.save_every):
             truncated_times = times.truncate(len(energies))
@@ -395,7 +399,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
-            pr.blue(f'Checkpoint saved at time {current_time}',spaced=False)
+            pr.blue(f'Checkpoint saved at time {current_time:.2f}',spaced=False)
             counter = 0
 
     timer.stop()
@@ -423,7 +427,7 @@ def tensorfy(vector):
 def visualize(q_vis,mesh,time=None,new_outfile=False):
     import eigen
     import saves
-    import settings
+    from config import settings
 
     # Create functions to store eigenvectors and eigenvalues
 
@@ -464,5 +468,19 @@ def visualize(q_vis,mesh,time=None,new_outfile=False):
     # Create new outfile if desired
 
     saves.save_pvd(normal, eigvec[0],eigvec[1],eigvec[2], eigval[0],eigval[1],eigval[2],difference, magnitude, norm_q, time=time)
+
+def BuiltinMesh(mesh_str: str,ref_level: int):
+    import numpy as np
+    # split mesh.name into args, use numpy array
+    mesh_args = np.array(mesh_str.split())
+    # choose which builtin mesh to use
+    if mesh_args[0] != 'BoxMesh':
+        raise NotImplementedError('Only "BoxMesh" implemented for builtin meshes.')
+    # change args to int, float
+    int_args = mesh_args[1:4].astype(int)
+    float_args = mesh_args[4:7].astype(np.float64)
+    # apply refinement level
+    int_args = int_args*2**ref_level
+    return BoxMesh(*int_args,*float_args)
 
 # END OF CODE

@@ -1,54 +1,70 @@
-import getopt
 import matplotlib.pyplot as plt
 import numpy as np
-import saves
-import settings
-import sys
-import yaml
 import os
+import saves
 
-def time_vs_energy(times,energies,refinement_level='Not specified'):
-	fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
-	fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
+def usage():
+	usage = """usage: python plot.py [-o] (-l | -r) <save-name>
+  l: file in './saves'
+  r: file in './saves-remote'
+  o: open file"""
+	print(usage)
 
-	line_style = '--' if len(energies) > 50 else 'o--'
+def time_vs_energy(times,energies,refinement_level='Not specified',open_file=False):
+	from _tkinter import TclError
+	from config import settings
+	import matplotlib
 
-	plot_energies = saves.EnergyList(energies)
+	if not open_file:
+		matplotlib.use('Agg')
 
-	plot_energies[0] = None
-	for ii in range(len(plot_energies)):
-		if ii != 0:
-			plot_energies[ii] -= energies[ii-1]
+	try:
+		fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
+		fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
 
-	# Truncate to last 1000
+		line_style = '--' if len(energies) > 50 else 'o--'
 
-	end_value = times[-1]
-	N = 100000
-	start_value = np.maximum(end_value-N*settings.time.step,0)
+		plot_energies = saves.EnergyList(energies)
 
-	ax1.plot(times[-N:],energies[-N:],line_style)
-	ax2.plot(times[-N:],plot_energies[-N:],line_style,color='red')
+		plot_energies[0] = None
+		for ii in range(len(plot_energies)):
+			if ii != 0:
+				plot_energies[ii] -= energies[ii-1]
 
-	ax1.set_xlabel('Time')
-	ax1.set_xlim(start_value,end_value)
-	ax1.set_ylabel('Energy')
-	ax1.set_title('Total energy')
-	ax1.grid()
+		# Truncate to last 1000
 
-	ax2.set_xlabel('Time')
-	ax2.set_xlim(start_value,end_value)
-	ax2.set_ylabel('Energy')
-	ax2.set_title('Change in energy')
-	ax2.set_yscale('symlog')
-	ax2.grid()
+		end_value = times[-1]
+		N = 100000
+		start_value = np.maximum(end_value-N*settings.time.step,0)
 
-	file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
-	plt.savefig(file_path)
-	if os.name == 'nt':
-		plt.show()
-	plt.close()
+		ax1.plot(times[-N:],energies[-N:],line_style)
+		ax2.plot(times[-N:],plot_energies[-N:],line_style,color='red')
 
-	return file_path
+		ax1.set_xlabel('Time')
+		ax1.set_xlim(start_value,end_value)
+		ax1.set_ylabel('Energy')
+		ax1.set_title('Total energy')
+		ax1.grid()
+
+		ax2.set_xlabel('Time')
+		ax2.set_xlim(start_value,end_value)
+		ax2.set_ylabel('Energy')
+		ax2.set_title('Change in energy')
+		ax2.set_yscale('symlog')
+		ax2.grid()
+
+		file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
+		
+		plt.savefig(file_path)
+
+		if open_file:
+			plt.show()
+		
+		plt.close()
+
+		return file_path
+	except TclError as err:
+		print(err)
 
 def scatter_vs_poly(scatter,poly):
 	fig, ax = plt.subplots(figsize=(10,10))
@@ -67,8 +83,9 @@ def scatter_vs_poly(scatter,poly):
 	plt.close()
 
 def main():
-	def usage():
-		print("usage: python plot.py (-l | -r) <save-name>")
+	import getopt
+	import sys
+	import config
 
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], 'l:r:o', ['help'])
@@ -86,12 +103,12 @@ def main():
 			remote = ''
 			save_name = a
 			saves.initialize(None,save_name)
-			settings._load_file(f'saves/{save_name}/settings.yml')
+			config.initialize(f'saves/{save_name}/settings.yml') # So plot.py has mesh name
 		elif o in ('-r'):
 			remote = 'remote '
 			save_name = a
 			saves.initialize(None,save_name,remote=True)
-			settings._load_file(f'saves-remote/{save_name}/settings.yml')
+			config.initialize(f'saves-remote/{save_name}/settings.yml') # So plot.py has mesh name
 		elif o in ('-o'):
 			open_file = True
 		else:
@@ -99,19 +116,13 @@ def main():
 
 	try:
 		save_name
-	except:
+	except NameError:
 		print("Must choose local (-l) or remote (-r).")
 		sys.exit()
 
 	times, energies = saves.load_energies()
-	file_path = time_vs_energy(times,energies)
+	file_path = time_vs_energy(times,energies,open_file=open_file)
 	print(f"Done plotting to {remote}save {save_name}.")
-
-	if open_file:
-		if os.name == 'nt':
-			os.system(f'"{file_path}"')
-		else:
-			print('Failed to open plot; must use Windows.')
 
 if __name__ == '__main__':
 	main()
