@@ -8,7 +8,7 @@ def load_json(path):
 
 def dump_json(dump,path):
     with open(path,'w') as file:
-        file.write(json.dumps(dump))
+        file.write(json.dumps(dump,indent=2))
 
 def load_yml(path):
     with open(path) as file:

@@ -4,10 +4,6 @@ from sympyplus import *
 import yaml
 from loaddump import *
 
-path = 'saves/experiment/eqndata.json'
-constants = load_yml(path)['constants']
-S0 = constants['S0']
-
 class FromTensor(Matrix):
     def __new__(cls,tensor):
         M = Matrix(tensor).reshape(3,3)
@@ -43,10 +39,10 @@ yaml.add_constructor('!FromVector',fv_constructor)
 
 class FromDirector(Matrix):
     def __new__(cls,director):
-        import numpy as np
+        from config import constants as c
         n = Matrix(director)
         n = n/sqrt(n[0]**2+n[1]**2+n[2]**2)
-        M = S0*(outerp(n,n) - 1/3*eye(3))
+        M = c.S0*(outerp(n,n) - 1/3*eye(3))
         m = vectorfy(M)
         return super().__new__(cls,m)
     def __init__(self,director):

@@ -1,25 +1,13 @@
-""" Takes the setup data given and compiles the file eqndata.json, which
+""" Takes the setup data given and compiles the file uflcache.json, which
 controls the PDE to be solved. """
 
 from loaddump import *
+from userexpression import *
 
 def usage():
     print('')
 
-def process_constants(constants):
-    from math import sqrt
-
-    A = constants['A']
-    B = constants['B']
-    C = constants['C']
-
-    if constants['L0'] == 'auto':
-        constants['L0'] = ceil(2*(A+B**2/C))
-
-    constants['S0'] = (B + sqrt(B**2 + 24.0*A*C))/(4.0*C)
-
-def initcond_getufl(path):
-    dict = load_yml(path)
+def initcond_getufl(dict):
     if dict is None:
         raise ValueError('Empty dict not accepted for user expression.')
     if len(dict) > 1:
@@ -44,19 +32,13 @@ def initcond_getufl(path):
 
     return f'conditional({condition},{ufl_a},{ufl_b})'
 
+def main():
+    import config
+    config.initialize('saves/ver/settings.yml','saves/ver/constants.yml')
+    userexpr = load_yml('saves/ver/userexpr.yml')
+    initcond = userexpr['initcond']
+    uflcache = {'initcond':initcond_getufl(initcond)}
+    dump_json(uflcache,f'saves/ver/uflcache.json')
 
-pathl = 'saves/experiment/'
-
-constants = load_yml(f'{pathl}setup/constants.yml')
-process_constants(constants)
-
-settings = load_yml(f'{pathl}setup/settings.yml')
-
-eqndata = {'constants':constants,'settings':settings}
-dump_json(eqndata,f'{pathl}eqndata.json')
-
-from userexpression import *
-
-print(initcond_getufl(f'{pathl}setup/initial_q.yml'))
-
-# dump_json(eqndata,f'{pathl}eqndata.json')
+if __name__ == '__main__':
+    main()
