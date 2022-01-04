@@ -13,6 +13,11 @@ def usage():
 def time_vs_energy(times,energies,refinement_level='Not specified',open_file=False):
 	from _tkinter import TclError
 	from config import settings
+	import matplotlib
+
+	if not open_file:
+		matplotlib.use('Agg')
+
 	try:
 		fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
 		fig.suptitle(f'{settings.mesh.name} Mesh, Ref. {refinement_level}',fontsize=16)
