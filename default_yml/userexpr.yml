@@ -1,0 +1,6 @@
+initcond:
+  # simple: !FromDirector [1,0,0]
+  piecewise:
+    if: eq(abs(x2-0.25),0.25)
+    then: !FromDirector [1,0,0]
+    else: !FromDirector [x0-0.21,x1-0.27,x2-0.26]

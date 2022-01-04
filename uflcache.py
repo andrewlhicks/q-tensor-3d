@@ -5,7 +5,10 @@ from loaddump import *
 from userexpr import *
 
 def usage():
-    print('')
+    usage = """usage: python uflcache.py (-l | -r) <save-name>
+  l: file in './saves'
+  r: file in './saves-remote'"""
+    print(usage)
 
 def initcond_getufl(dict):
     if dict is None:
@@ -33,12 +36,50 @@ def initcond_getufl(dict):
     return f'conditional({condition},{ufl_a},{ufl_b})'
 
 def main():
+    import getopt
+    import sys
     import config
-    config.initialize('saves/ver/settings.yml','saves/ver/constants.yml')
-    userexpr_yml = load_yml('saves/ver/userexpr.yml')
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'l:r:', ['help'])
+    except getopt.GetoptError as err:
+        print(err)  # will print something like "option -a not recognized"
+        sys.exit()
+
+    for o, a in opts:
+        if o in ('--help'):
+            usage()
+            sys.exit()
+        elif o in ('-l'):
+            remote = ''
+            save_name = a
+        elif o in ('-r'):
+            remote = '-remote'
+            save_name = a
+        else:
+            assert False, "unhandled option"
+
+    try:
+        save_name
+    except NameError:
+        print("Must choose local (-l) or remote (-r).")
+        sys.exit()
+    
+    path_head = f'saves{remote}/{save_name}'
+
+    config.initialize(f'{path_head}/settings.yml',f'{path_head}/constants.yml') # So userexpr.py has constants.S0
+
+    try:
+        userexpr_yml = load_yml(f'{path_head}/userexpr.yml')
+    except FileNotFoundError:
+        userexpr_yml = load_yml('default_yml/userexpr.yml')
+        print(f'File "{path_head}/userexpr.yml" not found, falling back to default.')
+
     initcond = userexpr_yml['initcond']
     uflcache = {'initcond':initcond_getufl(initcond)}
-    dump_json(uflcache,f'saves/ver/uflcache.json')
+    dump_json(uflcache,f'{path_head}/uflcache.json')
+
+    print(f"Done writing uflcache.json at '{path_head}'.")
 
 if __name__ == '__main__':
     main()
