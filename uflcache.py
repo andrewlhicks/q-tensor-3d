@@ -2,7 +2,7 @@
 controls the PDE to be solved. """
 
 from loaddump import *
-from userexpression import *
+from userexpr import *
 
 def usage():
     print('')
@@ -35,8 +35,8 @@ def initcond_getufl(dict):
 def main():
     import config
     config.initialize('saves/ver/settings.yml','saves/ver/constants.yml')
-    userexpr = load_yml('saves/ver/userexpr.yml')
-    initcond = userexpr['initcond']
+    userexpr_yml = load_yml('saves/ver/userexpr.yml')
+    initcond = userexpr_yml['initcond']
     uflcache = {'initcond':initcond_getufl(initcond)}
     dump_json(uflcache,f'saves/ver/uflcache.json')
 
