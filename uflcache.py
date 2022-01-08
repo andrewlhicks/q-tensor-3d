@@ -10,7 +10,7 @@ def usage():
   r: file in './saves-remote'"""
     print(usage)
 
-def initcond_getufl(dict):
+def process_initcond(dict):
     if dict is None:
         raise ValueError('Empty dict not accepted for user expression.')
     if len(dict) > 1:
@@ -34,6 +34,21 @@ def initcond_getufl(dict):
     ufl_b = dict['else'].uflfy()
 
     return f'conditional({condition},{ufl_a},{ufl_b})'
+
+def load_userexpr(path_head):
+    try:
+        userexpr_dict = load_yml(f'{path_head}/userexpr.yml')
+    except FileNotFoundError:
+        print(f'File "{path_head}/userexpr.yml" not found, falling back to default.')
+        userexpr_dict = load_yml('default_yml/userexpr.yml')
+    return userexpr_dict
+
+def dump_uflcache(userexpr_dict,path_head):
+    import printoff as pr
+    initcond = userexpr_dict['initcond']
+    uflcache = {'initcond':process_initcond(initcond)}
+    dump_json(uflcache,f'{path_head}/uflcache.json')
+    pr.info(f"Done writing uflcache.json at '{path_head}'.")
 
 def main():
     import getopt
@@ -69,17 +84,8 @@ def main():
 
     config.initialize(f'{path_head}/settings.yml',f'{path_head}/constants.yml') # So userexpr.py has constants.S0
 
-    try:
-        userexpr_yml = load_yml(f'{path_head}/userexpr.yml')
-    except FileNotFoundError:
-        userexpr_yml = load_yml('default_yml/userexpr.yml')
-        print(f'File "{path_head}/userexpr.yml" not found, falling back to default.')
-
-    initcond = userexpr_yml['initcond']
-    uflcache = {'initcond':initcond_getufl(initcond)}
-    dump_json(uflcache,f'{path_head}/uflcache.json')
-
-    print(f"Done writing uflcache.json at '{path_head}'.")
+    userexpr_dict = load_userexpr(path_head)
+    dump_uflcache(userexpr_dict,path_head)
 
 if __name__ == '__main__':
     main()
