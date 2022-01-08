@@ -95,7 +95,7 @@ def build():
     # load settings, constants, and userexpr dicts
     settings_dict = load_yml(settings_path)
     constants_dict = load_yml(constants_path)
-    userexpr_txt = load_txt('default_yml/userexpr.yml') #  <---- this is to be the behavior of settings/constants in the future
+    userexpr_txt = load_txt('defaults/userexpr.yml') #  <---- this is to be the behavior of settings/constants in the future
 
     if radius is not None:
         print(f"Creating non-dimensionalized version of '{constants_name}' with radius {radius}")

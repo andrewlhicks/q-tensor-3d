@@ -40,7 +40,7 @@ def load_userexpr(path_head):
         userexpr_dict = load_yml(f'{path_head}/userexpr.yml')
     except FileNotFoundError:
         print(f'File "{path_head}/userexpr.yml" not found, falling back to default.')
-        userexpr_dict = load_yml('default_yml/userexpr.yml')
+        userexpr_dict = load_yml('defaults/userexpr.yml')
     return userexpr_dict
 
 def dump_uflcache(userexpr_dict,path_head):
