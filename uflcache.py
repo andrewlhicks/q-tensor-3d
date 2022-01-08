@@ -44,11 +44,9 @@ def load_userexpr(path_head):
     return userexpr_dict
 
 def dump_uflcache(userexpr_dict,path_head):
-    import printoff as pr
     initcond = userexpr_dict['initcond']
     uflcache = {'initcond':process_initcond(initcond)}
     dump_json(uflcache,f'{path_head}/uflcache.json')
-    pr.info(f"Done writing uflcache.json at '{path_head}'.")
 
 def main():
     import getopt
@@ -86,6 +84,7 @@ def main():
 
     userexpr_dict = load_userexpr(path_head)
     dump_uflcache(userexpr_dict,path_head)
+    print(f"Done writing uflcache.json at '{path_head}'.")
 
 if __name__ == '__main__':
     main()
