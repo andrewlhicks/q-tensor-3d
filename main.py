@@ -4,7 +4,8 @@ Firedrake to solve the PDE for the Landau-de Gennes model for liquid crystals.
 
 import os
 import sys
-import numpy as np
+from loaddump import load_json
+import uflcache
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -119,6 +120,14 @@ comp = compute.compute()
 
 timer.stop()
 
+try:
+    uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
+except FileNotFoundError:
+    print("UFL cache not found. Rebuilding...")
+    uflcache.build_uflcache(saves.current_directory)
+    print("Build successful.")
+    uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
+
 pr.prelimCompInfo(timer.str_time)
 
 pr.pdeSolveTitle()
@@ -134,7 +143,7 @@ for refinement_level in get_range(settings.mesh.refs):
 
     q_manu = firedrakefy(comp['manufac_q'],mesh)
 
-    set_eqn_globals(comp)
+    set_eqn_globals(comp,uflcache_dict)
 
     manu_energy = compute_energy(q_manu)
 

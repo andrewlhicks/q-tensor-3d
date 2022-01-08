@@ -3,67 +3,71 @@ SaveMode = None
 SaveName = None
 
 def initialize(save_mode,save_name,remote=False):
-	global SaveMode, SaveName, current_directory
+    global SaveMode, SaveName, current_directory
 
-	SaveMode = save_mode
-	SaveName = save_name
-	current_directory = f'saves/{SaveName}'
-	if remote == True:
-		current_directory = f'saves-remote/{SaveName}'
+    SaveMode = save_mode
+    SaveName = save_name
+
+    if SaveMode == None:
+        current_directory = 'defaults'
+    elif remote == False:
+        current_directory = f'saves/{SaveName}'
+    else:
+        current_directory = f'saves-remote/{SaveName}'
 
 def load_checkpoint(vector_space,name='dump'):
-	""" Loads a checkpoint and outputs the function with name specified. """
-	from firedrake import Function, DumbCheckpoint, FILE_READ
+    """ Loads a checkpoint and outputs the function with name specified. """
+    from firedrake import Function, DumbCheckpoint, FILE_READ
 
-	q_dump = Function(vector_space,name=name)
+    q_dump = Function(vector_space,name=name)
 
-	with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_READ) as chk:
-		chk.load(q_dump)
+    with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_READ) as chk:
+        chk.load(q_dump)
 
-	return q_dump
+    return q_dump
 
 def save_checkpoint(q_dump,name='dump'):
-	""" Saves a checkpoint the input being the function with name specified. """
-	from firedrake import Function, DumbCheckpoint, FILE_CREATE
+    """ Saves a checkpoint the input being the function with name specified. """
+    from firedrake import Function, DumbCheckpoint, FILE_CREATE
 
-	if not isinstance(q_dump,Function):
-		raise TypeError('Must be a Firedrake Function.')
+    if not isinstance(q_dump,Function):
+        raise TypeError('Must be a Firedrake Function.')
 
-	q_dump.rename(name)
+    q_dump.rename(name)
 
-	with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_CREATE) as chk:
-	    chk.store(q_dump)
+    with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_CREATE) as chk:
+        chk.store(q_dump)
 
 def load_energies():
-	import yaml
+    import yaml
 
-	with open(f'{current_directory}/energy/energies.yml') as energies_file:
-		yaml_load = yaml.load(energies_file, Loader=yaml.Loader)
+    with open(f'{current_directory}/energy/energies.yml') as energies_file:
+        yaml_load = yaml.load(energies_file, Loader=yaml.Loader)
 
-	times = yaml_load['times']
-	energies = yaml_load['energies']
+    times = yaml_load['times']
+    energies = yaml_load['energies']
 
-	return TimeList(times), EnergyList(energies)
+    return TimeList(times), EnergyList(energies)
 
 def save_energies(times,energies):
-	import yaml
-	if not isinstance(times,TimeList):
-		raise TypeError
-	if not isinstance(energies,EnergyList):
-		raise TypeError
+    import yaml
+    if not isinstance(times,TimeList):
+        raise TypeError
+    if not isinstance(energies,EnergyList):
+        raise TypeError
 
-	yaml_dump = {'times':times, 'energies':energies}
+    yaml_dump = {'times':times, 'energies':energies}
 
-	with open(f'{current_directory}/energy/energies.yml','w') as energies_file:
-		energies_file.write(yaml.dump(yaml_dump))
+    with open(f'{current_directory}/energy/energies.yml','w') as energies_file:
+        energies_file.write(yaml.dump(yaml_dump))
 
 def save_pvd(*args,time=None):
-	from firedrake import File
-	global outfile
-	if outfile is None:
-		mode = 'a' if SaveMode == 'resume' else 'w'
-		outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
-	outfile.write(*args,time=time)
+    from firedrake import File
+    global outfile
+    if outfile is None:
+        mode = 'a' if SaveMode == 'resume' else 'w'
+        outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
+    outfile.write(*args,time=time)
 
 # Classes for custom data types
 
@@ -131,7 +135,7 @@ class TimeList(CustomList):
     def final(self):
         return self[-1]
 
-	# Regular methods
+    # Regular methods
 
     def shift(self,shift_factor):
         if not isinstance(shift_factor,int) and not isinstance(shift_factor,float):

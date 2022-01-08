@@ -24,7 +24,7 @@ def decorator(func):
 
 zero_vec = as_vector([0,0,0,0,0])
 
-def set_eqn_globals(comp):
+def set_eqn_globals(comp,uflcache_dict):
     from config import settings
 
     global EqnGlobals
@@ -34,7 +34,7 @@ def set_eqn_globals(comp):
         linear_form = comp['n_lf_O']
         linear_form_bdy = comp['n_lf_G']
 
-        initial_q = comp['initial_q']
+        initial_q = uflcache_dict['initcond'] # uflcache will be preferred over comp in the future
 
         forcing_f = comp['forcing_f'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
         forcing_g = comp['forcing_g'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])'

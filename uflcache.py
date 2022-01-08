@@ -48,6 +48,10 @@ def dump_uflcache(userexpr_dict,path_head):
     uflcache = {'initcond':process_initcond(initcond)}
     dump_json(uflcache,f'{path_head}/uflcache.json')
 
+def build_uflcache(path_head):
+    userexpr_dict = load_userexpr(path_head)
+    dump_uflcache(userexpr_dict,path_head)
+
 def main():
     import getopt
     import sys
@@ -82,8 +86,7 @@ def main():
 
     config.initialize(f'{path_head}/settings.yml',f'{path_head}/constants.yml') # So userexpr.py has constants.S0
 
-    userexpr_dict = load_userexpr(path_head)
-    dump_uflcache(userexpr_dict,path_head)
+    build_uflcache(path_head)
     print(f"Done writing uflcache.json at '{path_head}'.")
 
 if __name__ == '__main__':
