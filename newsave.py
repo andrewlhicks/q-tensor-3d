@@ -1,25 +1,15 @@
 import getopt
 import os
 import sys
-import yaml
 from loaddump import *
 from userexpr import * # needed to process userexpr.yml
 
-usage_str = """usage: python newsave.py -b [-n <radius>] <savename> <settingsfile>.yml <constantsfile>.yml
-                         -c <old-savename> <new-savename>
-"""
-
 def usage():
-	print(usage_str)
-
-# def getopts(arglist,shorthands,longhands):
-# 	try:
-# 		opts, args = getopt.getopt(arglist,shorthands,longhands)
-# 	except getopt.GetoptError as err:
-# 		# print help information and exit:
-# 		print(err)  # will print something like "option -a not recognized"
-# 		sys.exit()
-# 	return opts
+    usage_str = """usage: python newsave.py (-b | -c) <save_name>
+  b: builds new save <save_name> from yml's in ./defaults
+  c: copies yml's from <save_name> to new save
+"""
+    print(usage_str)
 
 def nondimensionalize(const,R):
 	""" For a constants dictionary const and a length R (for a sphere-like mesh,
@@ -58,9 +48,7 @@ def nondimensionalize(const,R):
 	return nd_const
 
 def build(save_name:str):
-    """ Returns a default build named <save_name>. """
-    # get path
-    save_path = 'saves/' + save_name
+    """ Builds new save <save_name> from yml's in ./defaults. """
 
     # load settings, constants, and userexpr text
     settings_txt = load_txt('defaults/settings.yml')
@@ -68,37 +56,37 @@ def build(save_name:str):
     userexpr_txt = load_txt('defaults/userexpr.yml')
 
     # create save
-    create_save(save_name,save_path,settings_txt,constants_txt,userexpr_txt)
+    create_save(save_name,settings_txt,constants_txt,userexpr_txt)
 
-def copy(old_save_name:str,save_name=None):
-    """ Returns a build <save_name> which is a copy of <old_save_name>."""
-
-    if save_name is None:
-        save_name = old_save_name
-    
-    # get path
-    save_path = 'saves/' + save_name
+def copy(save_name:str):
+    """ Copies yml's from <save_name> to new save. """
 
     # load settings, constants, and userexpr text
     try:
-        settings_txt = load_txt(f'saves/{old_save_name}/settings.yml')
+        settings_txt = load_txt(f'saves/{save_name}/settings.yml')
     except FileNotFoundError:
         print('No settings file found. Reverting to default...')
         settings_txt = load_txt('defaults/settings.yml')
     try:
-        constants_txt = load_txt(f'saves/{old_save_name}/constants.yml')
+        constants_txt = load_txt(f'saves/{save_name}/constants.yml')
     except FileNotFoundError:
         print('No constants file found. Reverting to default...')
         constants_txt = load_txt('defaults/constants.yml')
     try:
-        userexpr_txt = load_txt(f'saves/{old_save_name}/userexpr.yml')
+        userexpr_txt = load_txt(f'saves/{save_name}/userexpr.yml')
     except FileNotFoundError:
         print('No userepxr file found. Reverting to default...')
         userexpr_txt = load_txt('defaults/userexpr.yml')
 
-    create_save(save_name,save_path,settings_txt,constants_txt,userexpr_txt)
+    create_save(save_name,settings_txt,constants_txt,userexpr_txt)
 
-def create_save(save_name,save_path,settings_txt,constants_txt,userexpr_txt):
+def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
+    """ Creates a new save <save_name> (unless there is a naming conflict) with
+    specifed settings, constants, and userexpr text. """
+
+    # get path
+    save_path = 'saves/' + save_name
+
     if os.path.exists(save_path):
         i = 1
         while True:
@@ -137,26 +125,15 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:],'b:c:',['help'])
     except getopt.GetoptError as err:
         # print help information and exit:
-        print(err)  # will print something like "option -a not recognized"
-        print("Must specify -b or -c. Use 'python newsave.py --help' for usage.")
+        print(err)
+        print('use --help for usage')
         sys.exit()
 
     for o, a in opts:
         if o in ('-b'):
             build(a)
         elif o in ('-c'):
-            # get old save name
-            old_save_name = a
-            print(a)
-
-            # there has to be a better way to write the following
-            try:
-                save_name = sys.argv[3]
-            except IndexError:
-                save_name = None
-            
-            # copy file
-            copy(old_save_name,save_name)
+            copy(a)
         elif o in ('--help'):
             usage()
         else:
