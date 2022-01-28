@@ -80,6 +80,45 @@ def copy(save_name:str):
 
     create_save(save_name,settings_txt,constants_txt,userexpr_txt)
 
+def repair(save_name:str):
+    """ Repairs save with missing attributes in settings.yml or constants.yml. """
+
+    def repair_dict(bad_dict,good_dict):
+        global repair_index
+        for key, val in good_dict.items():
+            if key not in bad_dict.keys():
+                bad_dict[key] = val
+                repair_index += 1
+            elif isinstance(val,dict):
+                if not isinstance(bad_dict[key],dict):
+                    raise ValueError(f'Key value mismatch between bad_dict and good_dict: {key}')
+                bad_subdict = bad_dict[key]
+                good_subdict = val
+                repair_dict(bad_subdict,good_subdict)
+    
+    def repair_yml(save_name:str,file_name:str):
+        global repair_index
+        repair_index = 0
+
+        save_path = 'saves/' + save_name
+
+        bad_yml_path = f'{save_path}/{file_name}'
+        good_yml_path = f'defaults/{file_name}'
+
+        bad_yml = load_yml(bad_yml_path)
+        good_yml = load_yml(good_yml_path)
+
+        repair_dict(bad_yml,good_yml)
+        
+        dump_yml(bad_yml,bad_yml_path)
+        
+        print(f'Made {repair_index} repairs to {file_name} in save "{save_name}".')
+
+        del repair_index
+    
+    repair_yml(save_name,'settings.yml')
+    repair_yml(save_name,'constants.yml')
+
 def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
     """ Creates a new save <save_name> (unless there is a naming conflict) with
     specifed settings, constants, and userexpr text. """
@@ -122,7 +161,7 @@ def main():
         os.makedirs('saves')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],'b:c:',['help'])
+        opts, args = getopt.getopt(sys.argv[1:],'b:c:r:',['help'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)
@@ -134,6 +173,8 @@ def main():
             build(a)
         elif o in ('-c'):
             copy(a)
+        elif o in ('-r'):
+            repair(a)
         elif o in ('--help'):
             usage()
         else:
