@@ -21,8 +21,8 @@ def usage():
 
 if len(sys.argv[1:]) == 0:
     print0("Starting default")
-    settings_path = 'settings/settings.yml'
-    constants_path = 'constants/5cb_nd.yml'
+    settings_path = 'defaults/settings.yml'
+    constants_path = 'defaults/constants.yml'
     SaveMode = None
     SaveName = None
 elif len(sys.argv[1:]) == 1:
