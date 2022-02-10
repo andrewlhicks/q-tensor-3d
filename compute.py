@@ -128,15 +128,18 @@ def compute():
     # energyBulkC = GeneralForm((1/c.ep**2)*(((c.L0 - c.A)/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),[Dq,q])
     # energyBulkE = GeneralForm((1/c.ep**2)*(c.L0/2)*trace(Q**2),[Dq,q])
     # Alternative double well
-    energyBulkC = GeneralForm((1/c.ep**2)*(1 + (c.L0 - c.A)/2*trace(Q**2)),[Dq,q])
-    energyBulkE = GeneralForm((1/c.ep**2)*((c.L0/2)*innerp(Q,Q) + (c.B/3)*trace(Q**3) - (c.C/4)*trace(Q**2)**2),[Dq,q])
+    # energyBulkC = GeneralForm((1/c.ep**2)*(1 + (c.L0 - c.A)/2*trace(Q**2)),[Dq,q])
+    # energyBulkE = GeneralForm((1/c.ep**2)*((c.L0/2)*innerp(Q,Q) + (c.B/3)*trace(Q**3) - (c.C/4)*trace(Q**2)**2),[Dq,q])
+    # Fully implicit double well
+    energyBulk = GeneralForm((1/c.ep**2)*(-(c.A/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),[Dq,q])
 
     # Bilinear forms
 
     bfTimeStep = GeneralForm((1/c.dt)*q.dot(p),[Dq,q],[Dp,p],name='bfTimeStep')
     bfElastic = variationalDerivative(energyElastic,[Dq,q],[Dp,p],name='bfElastic')
-    bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
-    bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
+    # bfBulkC = variationalDerivative(energyBulkC,[Dq,q],[Dp,p],name='bfBulkC')
+    # bfBulkE = variationalDerivative(energyBulkE,[Dq,q],[Dp,p],name='bfBulkE')
+    bfBulk = variationalDerivative(energyBulk,[Dq,q],[Dp,p],name='bfBulk')
 
     bfTwist = GeneralForm(c.L1*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
 
@@ -147,7 +150,7 @@ def compute():
     # Linear forms
 
     lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
-    lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
+    # lfBulkE = GeneralForm(bfBulkE([Dqp,qp],[Dp,p]),[Dp,p],name='lfBulkE')
 
     lfNAnchor = GeneralForm(c.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
     lfPDAnchor1 = GeneralForm(c.W1*innerp(-c.S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
@@ -159,10 +162,10 @@ def compute():
 
     # Assemble LHS, RHS
 
-    bilinearDomain = lhsForm([Dq,q],[Dp,p],name='Bilinear Domain',forms=[bfTimeStep,bfElastic,bfBulkC,bfTwist])
+    bilinearDomain = lhsForm([Dq,q],[Dp,p],name='Bilinear Domain',forms=[bfTimeStep,bfElastic,bfBulk,bfTwist])
     bilinearBoundary = lhsForm([Dq,q],[Dp,p],name='Bilinear Boundary',forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
 
-    linearDomain = rhsForm([Dp,p],name='Linear Domain',forms=[lfTimeStep,lfBulkE,lf_ForcingF])
+    linearDomain = rhsForm([Dp,p],name='Linear Domain',forms=[lfTimeStep,lf_ForcingF])
     linearBoundary = rhsForm([Dp,p],name='Linear Boundary',forms=[lfNAnchor,lfPDAnchor1,lf_ForcingG])
 
     # If gradient descent is modified to the Heavy Ball method
