@@ -102,12 +102,12 @@ def main():
 		elif o in ('-l'):
 			remote = ''
 			save_name = a
-			saves.initialize(None,save_name)
+			saves.initialize('',save_name)
 			config.initialize(f'saves/{save_name}/settings.yml') # So plot.py has mesh name
 		elif o in ('-r'):
 			remote = 'remote '
 			save_name = a
-			saves.initialize(None,save_name,remote=True)
+			saves.initialize('',save_name,remote=True)
 			config.initialize(f'saves-remote/{save_name}/settings.yml') # So plot.py has mesh name
 		elif o in ('-o'):
 			open_file = True
