@@ -8,6 +8,8 @@ def usage():
     usage_str = """usage: python newsave.py (-b | -c) <save_name>
   b: builds new save <save_name> from yml's in ./defaults
   c: copies yml's from <save_name> to new save
+python newsave.py --list
+  lists the current saves
 """
     print(usage_str)
 
@@ -46,6 +48,8 @@ def nondimensionalize(const,R):
 	# Return the non-dimensionalized constants
 
 	return nd_const
+
+# MAIN FUNCTIONS
 
 def build(save_name:str):
     """ Builds new save <save_name> from yml's in ./defaults. """
@@ -119,6 +123,11 @@ def repair(save_name:str):
     repair_yml(save_name,'settings.yml')
     repair_yml(save_name,'constants.yml')
 
+def show_list():
+    [print(save) for save in os.listdir('saves') if not os.path.isfile('saves'+save)]
+
+# SUPPLEMENTARY FUNCTIONS
+
 def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
     """ Creates a new save <save_name> (unless there is a naming conflict) with
     specifed settings, constants, and userexpr text. """
@@ -156,12 +165,14 @@ def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
 
     print(f"New save '{save_name}' successfully created.")
 
+# MAIN
+
 def main():
     if not os.path.exists('saves'):
         os.makedirs('saves')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],'b:c:r:',['help'])
+        opts, args = getopt.getopt(sys.argv[1:],'b:c:r:',['help','list'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)
@@ -177,6 +188,8 @@ def main():
             repair(a)
         elif o in ('--help'):
             usage()
+        elif o in ('--list'):
+            show_list()
         else:
             sys.exit()
 
