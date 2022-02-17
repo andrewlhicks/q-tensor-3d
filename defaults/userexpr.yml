@@ -3,5 +3,5 @@ initcond:
   simple: !FromTensor [cos(x0),sin(x1),cos(x2),sin(x1),sin(x2),cos(x0),cos(x2),cos(x0),-cos(x0)-sin(x2)]
   # piecewise:
   #   if: eq(abs(x2-0.25),0.25)
-  #   then: !FromDirector [1,0,0]
+  #   then: !FromDirector [0,0,1]
   #   else: !FromDirector [x0-0.21,x1-0.27,x2-0.26]
