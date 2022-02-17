@@ -120,12 +120,17 @@ comp = compute.compute()
 
 timer.stop()
 
+if SaveMode == 'overwrite':
+    pr.info("Rebuilding UFL cache...",spaced=False)
+    uflcache.build_uflcache(saves.current_directory)
+    pr.info("Build successful.",spaced=False)
+
 try:
     uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
 except FileNotFoundError:
-    print("UFL cache not found. Rebuilding...")
+    pr.info("UFL cache not found. Rebuilding...",spaced=False)
     uflcache.build_uflcache(saves.current_directory)
-    print("Build successful.")
+    pr.info("Build successful.",spaced=False)
     uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
 
 pr.prelimCompInfo(timer.str_time)
