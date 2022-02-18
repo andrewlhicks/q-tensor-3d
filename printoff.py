@@ -1,8 +1,12 @@
 """ Here, most of the printing is controlled. Most of it is done through
 'plogging', i.e. print-logging, where the information is printed to the
-console and then put into a log file. """
+console and then put into a log file.
+
+My intent is to deprecate this in favor of using the built-in logging
+module, but this will take time to migrate. """
 
 from time import sleep
+from turtle import color
 import saves
 from config import settings
 from config import constants as c
@@ -95,26 +99,21 @@ def print_lines(*args):
 
 @plogger
 def constants_info():
-    """ Plogs information for the constants """
-
     plog()
     plog('CONSTANTS:',color='uline')
-
     plog()
-    plog(f'     L1 = {c.L1},')
-    plog(f'     L2 = {c.L2},')
-    plog(f'     L3 = {c.L3},')
-    plog(f'     q0 = {c.q0}')
-    plog(f'      A = {c.A},')
-    plog(f'      B = {c.B},')
-    plog(f'      C = {c.C},')
-    plog(f'     S0 = {c.S0},')
-    plog(f'     W0 = {c.W0},')
-    plog(f'     W1 = {c.W1},')
-    plog(f'     W2 = {c.W2},')
-    plog(f'   beta = {c.beta},')
-    plog(f'epsilon = {c.ep},')
-    plog(f'     L0 = {c.L0}')
+    for key, val in c.as_dict().items():
+        plog(f'{key} = {val}')
+    plog()
+
+@plogger
+def settings_info():
+    plog('SETTINGS:',color='uline')
+    plog()
+    for key, val in settings.as_dict().items():
+        plog(f'{key}:')
+        for key, val in val.items():
+            plog(f'  {key} : {val}')
     plog()
 
 @plogger

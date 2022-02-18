@@ -97,15 +97,10 @@ from misc import Timer, get_range, check
 pr.info(f"Starting {SaveMode} of '{SaveName}'...",spaced=False)
 
 pr.constants_info()
+pr.settings_info()
 
 check.elastic_constants()
 
-pr.mesh_info()
-pr.options_info()
-# pr.saves_info()
-pr.solver_info()
-pr.time_info()
-pr.vis_info()
 pr.prelimCompTitle()
 
 # Preliminary computations

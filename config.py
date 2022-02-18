@@ -7,6 +7,16 @@ class FromDict:
             setattr(self,key,value)
     def __repr__(self) -> str:
         return repr(self.__dict__)
+    def as_dict(self):
+        return FromFromDict(self)
+class FromFromDict(dict):
+    def __init__(self,from_dict: FromDict) -> None:
+        stuff = [(attr,getattr(from_dict,attr)) for attr in dir(from_dict) if not attr.startswith('__') and attr != 'as_dict']
+        for key, value in stuff:
+            if isinstance(value,FromDict):
+                self.update({key:FromFromDict(value)})
+                continue
+            self.update({key:value})
 
 def process_settings(s: FromDict) -> None:
     """ Takes the settings FromDict (s) and provided missing data for outdated formats. """
