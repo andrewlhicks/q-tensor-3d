@@ -78,6 +78,7 @@ else:
 import config
 config.initialize(settings_path,constants_path)
 from config import settings
+from time import sleep
 
 import saves
 saves.initialize(SaveMode,SaveName)
@@ -101,7 +102,8 @@ pr.settings_info()
 
 check.elastic_constants()
 
-pr.prelimCompTitle()
+sleep(1)
+pr.info(f'PRELIMINARY COMPUTATIONS:',color='uline')
 
 # Preliminary computations
 
@@ -128,9 +130,9 @@ except FileNotFoundError:
     pr.info("Build successful.",spaced=False)
     uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
 
-pr.prelimCompInfo(timer.str_time)
-
-pr.pdeSolveTitle()
+pr.info(f'Finished preliminary computations in {timer.str_time}.')
+sleep(1)
+pr.info(f'PDE SOLVE:',color='uline')
 
 for refinement_level in get_range(settings.mesh.refs):
     if settings.mesh.builtin:
@@ -155,13 +157,13 @@ for refinement_level in get_range(settings.mesh.refs):
     l2_error = errorL2(q_soln,q_manu,mesh)
 
     if settings.options.manufactured:
-        pr.pdeSolveInfo(refinement_level=refinement_level,
+        pr.pde_solve_info(refinement_level=refinement_level,
             h1_error=h1_error,
             l2_error=l2_error,
             energy=energies[-1],
             custom={'title':'Manu. Sol. Energy','text':manu_energy},
             time_elapsed=time_elapsed)
     else:
-        pr.pdeSolveInfo(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
+        pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
 
 # END OF CODE
