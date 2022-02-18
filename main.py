@@ -56,7 +56,6 @@ elif len(sys.argv[1:]) == 2:
             answer = comm.bcast(answer,root=0)
             if answer in ('y','Y'):
                 SaveMode = 'overwrite'
-                print0(f"Overwriting '{SaveName}'")
                 break
             if answer in ('n','N'):
                 print0("Exiting")
@@ -66,7 +65,6 @@ elif len(sys.argv[1:]) == 2:
             print0("Cannot resume since no checkpoint found. Try overwriting instead.")
             sys.exit()
         SaveMode = 'resume'
-        print0(f"Resuming '{SaveName}'")
 
     settings_path = f'saves/{SaveName}/settings.yml'
     constants_path = f'saves/{SaveName}/constants.yml'
@@ -95,6 +93,8 @@ import plot
 from misc import Timer, get_range, check
 
 # Print info
+
+pr.info(f"Starting {SaveMode} of '{SaveName}'...",spaced=False)
 
 pr.constants_info()
 
