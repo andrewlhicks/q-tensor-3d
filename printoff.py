@@ -5,11 +5,7 @@ console and then put into a log file.
 My intent is to deprecate this in favor of using the built-in logging
 module, but this will take time to migrate. """
 
-from time import sleep
-from turtle import color
 import saves
-from config import settings
-from config import constants as c
 import functools
 
 if saves.SaveMode:
@@ -23,7 +19,7 @@ if saves.SaveMode:
 
 # Decorators
 
-def Print(string,color=None):
+def Print(string, color=None, *args, **kwargs):
     from firedrake.petsc import PETSc
 
     colors = {'header' : '\033[95m',
@@ -38,7 +34,7 @@ def Print(string,color=None):
     if color is not None:
         string = colors[color] + string + colors['end']
 
-    PETSc.Sys.Print(string)
+    PETSc.Sys.Print(string, *args, **kwargs)
 
 def plogger(func):
     """ A decorator that defines a plog function every time it is called. The
@@ -53,15 +49,15 @@ def plogger(func):
             return
 
         if not saves.SaveMode:
-            def plog(string='',color=None):
-                Print(string,color)
+            def plog(string='', color=None, *args, **kwargs):
+                Print(string, color, *args, **kwargs)
             value = func(*args, **kwargs)
             return value
 
         with open(f'{saves.current_directory}/log.txt','a') as file:
-            def plog(string='',color=None):
+            def plog(string='', color=None, *args, **kwargs):
                 file.write(string+'\n')
-                Print(string,color)
+                Print(string, color, *args, **kwargs)
             value = func(*args, **kwargs)
         return value
 
@@ -99,6 +95,7 @@ def print_lines(*args):
 
 @plogger
 def constants_info():
+    from config import constants as c
     plog()
     plog('CONSTANTS:',color='uline')
     plog()
@@ -108,6 +105,8 @@ def constants_info():
 
 @plogger
 def settings_info():
+    from config import settings
+
     plog('SETTINGS:',color='uline')
     plog()
     for key, val in settings.as_dict().items():
@@ -143,25 +142,25 @@ def pde_solve_info(**kwargs):
     print_lines(*dicts)
 
 @plogger
-def info(text,spaced=True,color=None):
+def info(text, spaced=True, color=None, *args, **kwargs):
     if not isinstance(text,str):
         raise TypeError('Text must be composed of a string.')
-    plog(text,color=color)
+    plog(text, color=color, *args, **kwargs)
     if spaced: plog('')
 
-def green(text,spaced=True):
-    info(text,spaced=spaced,color='green')
+def green(text, spaced=True, *args, **kwargs):
+    info(text, spaced=spaced, color='green', *args, **kwargs)
 
-def blue(text,spaced=True):
-    info(text,spaced=spaced,color='blue')
+def blue(text, spaced=True, *args, **kwargs):
+    info(text, spaced=spaced, color='blue', *args, **kwargs)
 
 @plogger
-def warning(text,spaced=True):
+def warning(text, spaced=True, *args, **kwargs):
     """ Plogs a warning. """
 
     if not isinstance(text,str):
         raise TypeError('Warnings must be composed of a string.')
-    plog(f'Warning: {text}',color='warning')
+    plog(f'Warning: {text}',color='warning', *args, **kwargs)
     if spaced: plog('')
 
 # END OF CODE
