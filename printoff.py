@@ -22,17 +22,16 @@ if saves.SaveMode:
 def Print(string, color=None, *args, **kwargs):
     from firedrake.petsc import PETSc
 
-    colors = {'header' : '\033[95m',
-        'blue' : '\033[94m',
-        'green' : '\033[92m',
-        'warning' : '\033[93m',
-        'fail' : '\033[91m',
-        'end' : '\033[0m',
-        'bold' : '\033[1m',
-        'uline' : '\033[4m'}
+    colors = {'header' : '\033[95m%s\033[0m',
+        'blue' : '\033[94m%s\033[0m',
+        'green' : '\033[92m%s\033[0m',
+        'warning' : '\033[93m%s\033[0m',
+        'fail' : '\033[91m%s\033[0m',
+        'bold' : '\033[1m%s\033[0m',
+        'uline' : '\033[4m%s\033[0m'}
 
     if color is not None:
-        string = colors[color] + string + colors['end']
+        string = colors[color] % string
 
     PETSc.Sys.Print(string, *args, **kwargs)
 
