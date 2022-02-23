@@ -13,7 +13,7 @@ class check:
         for i in range(len(energies)-1):
             change_in_energy = energies[i+1]-energies[i]
             if change_in_energy > 0:
-                pr.warning(f'Energy decrease failed at time t = {times[i+1]} by {change_in_energy}',spaced=False)
+                pr.warning(f'Energy decrease failed at time t = {times[i+1]} by {change_in_energy}')
 
 # Functions
 

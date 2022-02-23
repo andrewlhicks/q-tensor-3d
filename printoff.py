@@ -141,25 +141,31 @@ def pde_solve_info(**kwargs):
     print_lines(*dicts)
 
 @plogger
-def info(text, spaced=True, color=None, *args, **kwargs):
+def info(text, spaced=False, color=None, *args, **kwargs):
     if not isinstance(text,str):
         raise TypeError('Text must be composed of a string.')
     plog(text, color=color, *args, **kwargs)
     if spaced: plog('')
 
-def green(text, spaced=True, *args, **kwargs):
+def green(text, spaced=False, *args, **kwargs):
     info(text, spaced=spaced, color='green', *args, **kwargs)
 
-def blue(text, spaced=True, *args, **kwargs):
+def blue(text, spaced=False, *args, **kwargs):
     info(text, spaced=spaced, color='blue', *args, **kwargs)
 
-@plogger
-def warning(text, spaced=True, *args, **kwargs):
-    """ Plogs a warning. """
+def warning(text, spaced=False, *args, **kwargs):
+    info(f'Warning: {text}', spaced=spaced, color='warning', *args, **kwargs)
 
-    if not isinstance(text,str):
-        raise TypeError('Warnings must be composed of a string.')
-    plog(f'Warning: {text}',color='warning', *args, **kwargs)
-    if spaced: plog('')
+def sinfo(text, color=None, *args, **kwargs):
+    info(text, spaced=True, color=color, *args, **kwargs)
+
+def sgreen(text, *args, **kwargs):
+    green(text, spaced=True, *args, **kwargs)
+
+def sblue(text, *args, **kwargs):
+    blue(text, spaced=True, *args, **kwargs)
+
+def swarning(text, *args, **kwargs):
+    warning(text, spaced=True, *args, **kwargs)
 
 # END OF CODE

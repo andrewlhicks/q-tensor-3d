@@ -95,7 +95,7 @@ from misc import Timer, get_range, check
 
 # Print info
 
-pr.info(f"Starting {SaveMode} of '{SaveName}'...",spaced=False)
+pr.info(f"Starting {SaveMode} of '{SaveName}'...")
 
 pr.constants_info()
 pr.settings_info()
@@ -103,7 +103,7 @@ pr.settings_info()
 check.elastic_constants()
 
 sleep(1)
-pr.info(f'PRELIMINARY COMPUTATIONS:',color='uline')
+pr.sinfo(f'PRELIMINARY COMPUTATIONS:',color='uline')
 
 # Preliminary computations
 
@@ -118,21 +118,21 @@ comp = compute.compute()
 timer.stop()
 
 if SaveMode == 'overwrite':
-    pr.info("Rebuilding UFL cache...",spaced=False)
+    pr.info("Rebuilding UFL cache...",end=' ')
     uflcache.build_uflcache(saves.current_directory)
-    pr.info("Build successful.",spaced=False)
+    pr.info("build successful.")
 
 try:
     uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
 except FileNotFoundError:
-    pr.info("UFL cache not found. Rebuilding...",spaced=False)
+    pr.info("UFL cache not found. Rebuilding...",end=' ')
     uflcache.build_uflcache(saves.current_directory)
-    pr.info("Build successful.",spaced=False)
+    pr.info("build successful.")
     uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
 
-pr.info(f'Finished preliminary computations in {timer.str_time}.')
+pr.sinfo(f'Finished preliminary computations in {timer.str_time}.')
 sleep(1)
-pr.info(f'PDE SOLVE:',color='uline')
+pr.sinfo(f'PDE SOLVE:',color='uline')
 
 for refinement_level in get_range(settings.mesh.refs):
     if settings.mesh.builtin:

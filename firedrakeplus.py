@@ -192,7 +192,7 @@ class linesearch:
         q_next = interpolate(q_prev+float(xi_min)*time_der,H1_vec)
 
         if compute_energy(q_next) > np.amin(y):
-            pr.warning('exact2 ls polynomial error',spaced=False)
+            pr.warning('exact2 ls polynomial error')
             return float(x_min)
 
         return float(xi_min)
@@ -399,7 +399,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
-            pr.blue(f'Checkpoint saved at time {current_time:.2f}',spaced=False)
+            pr.blue(f'Checkpoint saved at time {current_time:.2f}')
             counter = 0
 
     timer.stop()
