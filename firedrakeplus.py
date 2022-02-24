@@ -300,18 +300,18 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         # On resume mode, q_soln and q_prev are loaded from a previous state
         q_soln = saves.load_checkpoint(H1_vec,'q_soln')
         q_prev = saves.load_checkpoint(H1_vec,'q_prev')
-        pr.info(f'E={compute_energy(q_soln):.5f} @INITIAL')
         times, energies = saves.load_energies()
         if len(times) != len(energies):
             raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
         t_init = times.final
+        pr.info(f'E={compute_energy(q_soln):.5f} @t={t_init:.2f} @k={len(energies)} (INITIAL)')
     else:
         # On overwrite mode or when save is turned off, q_soln and q_prev are taken to be the initial guess
         q_soln = interpolate(eval(initial_q),H1_vec)
-        pr.info(f'E={compute_energy(q_soln):.5f} @INITIAL')
         q_prev.assign(q_soln)
         times, energies = saves.TimeList([]), saves.EnergyList([])
         t_init = 0
+        pr.info(f'E={compute_energy(q_soln):.5f} @t=0.00 @k={len(energies)} (INITIAL)')
 
     # Initilize the list of times and energies
 
@@ -388,7 +388,8 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
         energies.append(compute_energy(q_soln))
 
-        pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f}')
+        pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)}')
+        check_energy_decrease(energies,current_time)
 
         if saves.SaveMode and (counter == settings.time.save_every):
             truncated_times = times.truncate(len(energies))
@@ -399,7 +400,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
-            pr.blue(f'Checkpoint saved at time {current_time:.2f}')
+            pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)}')
             counter = 0
 
     timer.stop()
@@ -482,5 +483,14 @@ def BuiltinMesh(mesh_str: str,ref_level: int):
     # apply refinement level
     int_args = int_args*2**ref_level
     return BoxMesh(*int_args,*float_args)
+
+def check_energy_decrease(energies,current_time):
+    """ Checks for energy decreasee in latest energy iteration. """
+    if len(energies) < 2: return # Temporary escape clause until I can fix the EnergyList class
+    change_in_energy = energies[-1]-energies[-2]
+    energy_index = len(energies) # Will need to be fixed once I fix the EnergyList class
+    threshold = 1.0e-12
+    if change_in_energy > threshold:
+        pr.warning(f'ΔE=+{change_in_energy:.05e} @t={current_time:.2f} @k={energy_index}')
 
 # END OF CODE
