@@ -8,18 +8,22 @@ module, but this will take time to migrate. """
 import saves
 import functools
 
-if saves.SaveMode:
-    from datetime import datetime
-    from firedrake import COMM_WORLD
-    if COMM_WORLD.rank == 0:
-        mode = 'a' if saves.SaveMode == 'resume' else 'w'
-        with open(f'{saves.current_directory}/log.txt',mode) as file:
-            now = datetime.now()
-            file.write(now.strftime('%c') + '\n')
+def main():
+    if saves.SaveMode:
+        from datetime import datetime
+        from firedrake import COMM_WORLD
+        if COMM_WORLD.rank == 0:
+            mode = 'a' if saves.SaveMode == 'resume' else 'w'
+            with open(f'{saves.current_directory}/log.txt',mode) as file:
+                now = datetime.now()
+                file.write(now.strftime('%c') + '\n')
+                file.write('\n')
+                Print(now.strftime('%c'))
+                Print()
 
 # Decorators
 
-def Print(string, color=None, *args, **kwargs):
+def Print(string='', color=None, *args, **kwargs):
     from firedrake.petsc import PETSc
 
     colors = {'header' : '\033[95m%s\033[0m',
@@ -167,5 +171,9 @@ def sblue(text, *args, **kwargs):
 
 def swarning(text, *args, **kwargs):
     warning(text, spaced=True, *args, **kwargs)
+
+# MAIN
+
+main()
 
 # END OF CODE
