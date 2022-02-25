@@ -257,6 +257,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     import plot
     import saves
     from config import settings
+    from datetime import datetime
 
     # Initilize
 
@@ -400,7 +401,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
-            pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)}')
+            pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)} ({datetime.now().strftime("%c")})')
             counter = 0
 
     timer.stop()
