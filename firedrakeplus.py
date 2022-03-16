@@ -195,10 +195,10 @@ class linesearch:
 
         if diff > 0:
             pr.warning(f'exact2 ls polynomial error {diff}')
-            pr.info(x_min)
+            pr.info(f'{x_min}')
             return float(x_min)
 
-        pr.info(xi_min)
+        pr.info(f'{xi_min}')
         return float(xi_min)
 
 def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
