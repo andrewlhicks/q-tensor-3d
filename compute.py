@@ -42,8 +42,6 @@ QNP = qnp.tens
 f = QVector('f')
 g = QVector('g')
 
-c.S0 = 0.700005530940965
-
 Q0 = c.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
 Pi = eye(3) - outerp(nu,nu)
 
