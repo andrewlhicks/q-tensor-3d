@@ -15,10 +15,12 @@ nu = AbstractVector('nu')
 
 q = QVector('q')
 Dq = q.grad
+Dqq = Param([Dq,q])
 Q = q.tens
 
 p = QVector('p')
 Dp = p.grad
+Dpp = Param([Dp,p])
 P = p.tens
 
 r = QVector('r')
@@ -35,6 +37,7 @@ QPP = qpp.tens
 
 qnp = QVector('q_newt_prev')
 Dqnp = qnp.grad
+Dqnpqnp = Param([Dqnp,qnp])
 QNP = qnp.tens
 
 f = QVector('f')
@@ -99,42 +102,36 @@ def compute():
     energies.add_boundary(GeneralForm(c.W1/2*innerp(Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu))+c.W2/4*(innerp(Q,Q)-2*c.S0**2/3)**2,[Dq,q],name='Planar-degenerate Anchoring'))
     energies.add_boundary(GeneralForm(-g.dot(q),[Dq,q],name='Boundary Forcing Energy'))
 
-    # Bilinear forms
+    # Construct PDE
 
-    bfTimeStep = GeneralForm((1/c.dt)*q.dot(p),[Dq,q],[Dp,p],name='bfTimeStep')
-    bfElastic = GeneralForm(c.L1*termL1(Dq,Dp)+c.L2*termL2(Dq,Dp)+c.L3*termL3(Dq,Dp),[Dq,q],[Dp,p],name='bfElastic')
-    bfBulk = GeneralForm((1/c.ep**2)*(-c.A*innerp(Q,P) - c.B*innerp(Q**2,P) + c.C*innerp(Q,Q)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfBulk')
-    bfTwist = GeneralForm(c.L1*term_twist_var(q,p),[Dq,q],[Dp,p],name='bfTwist')
-    bfNAnchor = GeneralForm(c.W0*q.dot(p),[Dq,q],[Dp,p],name='bfNAnchor')
-    bfPDAnchor1 = GeneralForm(c.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='bfPDAnchor1') # This was WRONG and nonlinear. Why didn't the code catch this?
-    bfPDAnchor2 = GeneralForm(c.W2*((innerp(Q,Q) - 2*c.S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='bfPDAnchor2')
+    lhs_d = [ # lhs domain
+        GeneralForm((1/c.dt)*q.dot(p),[Dq,q],[Dp,p],name='Q:P/dt'),
+        GeneralForm(c.L1*termL1(Dq,Dp)+c.L2*termL2(Dq,Dp)+c.L3*termL3(Dq,Dp),[Dq,q],[Dp,p],name='a_E(Q,P)'),
+        GeneralForm(c.L1*term_twist_var(q,p),[Dq,q],[Dp,p],name='a_T(Q,P)'),
+        GeneralForm((1/c.ep**2)*(-c.A*innerp(Q,P) - c.B*innerp(Q**2,P) + c.C*innerp(Q,Q)*innerp(Q,P)),[Dq,q],[Dp,p],name='Dψ(Q):P')
+        ]
+    rhs_d = [ # rhs domain
+        GeneralForm((1/c.dt)*qp.dot(p),[Dp,p],name='Q_p:P/dt'),
+        GeneralForm(f.dot(p),[Dp,p],name='f(P)')
+    ]
+    lhs_b = [ # lhs boundary
+        GeneralForm(c.W0*q.dot(p),[Dq,q],[Dp,p],name='W0(Q:P)'),
+        GeneralForm(c.W1*innerp(Q-Pi*Q*Pi,P),[Dq,q],[Dp,p],name='W1(Q-ΠQΠ):P'),
+        GeneralForm(c.W2*((innerp(Q,Q) - 2*c.S0**2/3)*innerp(Q,P)),[Dq,q],[Dp,p],name='(|Q|^2-2S0^2/3)(Q:P)')
+    ]
+    rhs_b = [ # rhs boundary
+        GeneralForm(c.W0*innerp(Q0,P),[Dp,p],name='W0(Q0:P)'),
+        GeneralForm(c.W1*innerp(-c.S0/3*outerp(nu,nu),P),[Dp,p],name='(-S0/3(nu⊗nu):P)'),
+        GeneralForm(g.dot(p),[Dp,p],name='g(P)')
+    ]
 
-    # Linear forms
+    # assemble two PDEs
+    pde_d = PDE(lhs_d,rhs_d,Dqq,Dpp,over='domain')
+    pde_b = PDE(lhs_b,rhs_b,Dqq,Dpp,over='boundary')
 
-    lfTimeStep = GeneralForm(bfTimeStep([Dqp,qp],[Dp,p]),[Dp,p],name='lfTimeStep')
-    lfNAnchor = GeneralForm(c.W0*innerp(Q0,P),[Dp,p],name='lfNAnchor')
-    lfPDAnchor1 = GeneralForm(c.W1*innerp(-c.S0/3*outerp(nu,nu),P),[Dp,p],name='lfPDAnchor1')
-    lf_ForcingF = GeneralForm(f.dot(p),[Dp,p],name='lf_ForcingF')
-    lf_ForcingG = GeneralForm(g.dot(p),[Dp,p],name='lf_ForcingG')
-    lf_TimeStep2 = GeneralForm( (c.beta)*(1/c.dt) * (qp.dot(p) - qpp.dot(p)) , [Dp,p], name='lf_TimeStep2')
-
-    # Assemble LHS, RHS
-
-    bilinearDomain = lhsForm([Dq,q],[Dp,p],name='Bilinear Domain',forms=[bfTimeStep,bfElastic,bfBulk,bfTwist])
-    bilinearBoundary = lhsForm([Dq,q],[Dp,p],name='Bilinear Boundary',forms=[bfNAnchor,bfPDAnchor1,bfPDAnchor2])
-
-    linearDomain = rhsForm([Dp,p],name='Linear Domain',forms=[lfTimeStep,lf_ForcingF])
-    linearBoundary = rhsForm([Dp,p],name='Linear Boundary',forms=[lfNAnchor,lfPDAnchor1,lf_ForcingG])
-
-    # If gradient descent is modified to the Heavy Ball method
-
-    if settings.solver.grad_desc == 'heavyball':
-        linearDomain.add_form(lf_TimeStep2)
-
-    # Newton's method
-
-    newt_bilinearDomain, newt_linearDomain = newtonsMethod(bilinearDomain,linearDomain,[Dqnp,qnp],[Dq,q],[Dp,p])
-    newt_bilinearBoundary, newt_linearBoundary = newtonsMethod(bilinearBoundary,linearBoundary,[Dqnp,qnp],[Dq,q],[Dp,p])
+    # apply newton's method
+    pde_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
+    pde_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
 
     # Create relevant UFL strings
 
@@ -144,10 +141,10 @@ def compute():
         'forcing_f' : forcing_f.out,
         'forcing_g' : forcing_g.out,
         'bdycond_s' : bdycond_s.out,
-        'n_bf_O' : newt_bilinearDomain(),
-        'n_bf_G' : newt_bilinearBoundary(),
-        'n_lf_O' : newt_linearDomain(),
-        'n_lf_G' : newt_linearBoundary(),
+        'n_bf_O' : pde_d.uflfy()['lhs'],
+        'n_bf_G' : pde_b.uflfy()['lhs'],
+        'n_lf_O' : pde_d.uflfy()['rhs'],
+        'n_lf_G' : pde_b.uflfy()['rhs'],
         'energies' : energies.ufl_dict
     }
 
