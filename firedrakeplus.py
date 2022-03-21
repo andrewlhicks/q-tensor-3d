@@ -131,6 +131,18 @@ def firedrakefy(func,mesh):
     return interpolate(eval(func),H1_vec)
 
 class linesearch:
+    def ls(name,*args,**kwargs):
+        names = ('backtrack','exact1','exact2','none')
+        if name not in names:
+            raise ValueError(f'Must choose from {", ".join(names)}')
+        if name == 'backtrack':
+            return linesearch.backtrack(*args,**kwargs)
+        elif name == 'exact1':
+            return linesearch.exact1(*args,**kwargs)
+        elif name == 'exact2':
+            return linesearch.exact2(*args,**kwargs)
+        else:
+            return linesearch.none(*args,**kwargs)
     def backtrack(q_prev,time_der,alpha):
         """ Given the previous guess, the time derivative, and the time step
         alpha, returns xi computed by backtracking. """
@@ -201,6 +213,9 @@ class linesearch:
         pr.info(f'{xi_min}')
         return float(xi_min)
 
+    def none(q_prev,time_der,alpha):
+        return alpha
+
 def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
     function_space = q_soln._function_space
 
@@ -257,7 +272,6 @@ def RandomFunction(function_space):
 
 def solve_PDE(mesh,refinement_level='Not specified'):
     from misc import Timer
-    import numpy as np
     import plot
     import saves
     from config import settings
@@ -302,21 +316,19 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     # Load data for resumption of computation, if needed
 
     if saves.SaveMode == 'resume':
-        # On resume mode, q_soln and q_prev are loaded from a previous state
-        q_soln = saves.load_checkpoint(H1_vec,'q_soln')
-        q_prev = saves.load_checkpoint(H1_vec,'q_prev')
-        times, energies = saves.load_energies()
-        if len(times) != len(energies):
-            raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
-        t_init = times.final
-        pr.info(f'E={compute_energy(q_soln):.5f} @t={t_init:.2f} @k={len(energies)} (INITIAL)')
+        # RESUME MODE : load from previous state
+        q_soln = saves.load_checkpoint(H1_vec,'q_soln') # load q_soln
+        q_prev = saves.load_checkpoint(H1_vec,'q_prev') # load q_prev
+        times, energies = saves.load_energies() # load times, energies
+        t_init = times.final # initial time set to final time of previous iteration
     else:
-        # On overwrite mode or when save is turned off, q_soln and q_prev are taken to be the initial guess
-        q_soln = interpolate(eval(initial_q),H1_vec)
-        q_prev.assign(q_soln)
-        times, energies = saves.TimeList([]), saves.EnergyList([])
-        t_init = 0
-        pr.info(f'E={compute_energy(q_soln):.5f} @t=0.00 @k={len(energies)} (INITIAL)')
+        # OVERWRITE/NONE MODE
+        q_soln = interpolate(eval(initial_q),H1_vec) # q_soln is q_init
+        q_prev.assign(q_soln) # q_prev is q_init
+        times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
+        t_init = 0 # initial time set to 0
+
+    pr.info(f'E={compute_energy(q_soln):.5f} @t={t_init:.2f} @k={len(energies)} (INITIAL)')
 
     # Initilize the list of times and energies
 
@@ -355,57 +367,57 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     timer = Timer()
     timer.start()
 
-    # Had to temporarily remove the progress bar due to constraints in parallel
+    counter = 0 # keeps track of when to save a checkpoint
 
-    counter = 0
-
-    # for time in progressbar(times,redirect_stdout=True):
     for current_time in new_times:
+        # increase the counter
         counter += 1
-        # Assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
+
+        # assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
+        # perform the solve
         newton_solve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
             solver_parameters={'snes_type' : 'ksponly',                         # Turn off auto Newton's method
                                'ksp_type' : settings.solver.ksp_type,           # Krylov subspace type
                                'pc_type'  : settings.solver.pc_type,            # preconditioner type
                                'mat_type' : 'aij' })
 
-        # Line search for optimal timestep
-
+        # perform line search for optimal timestep
         time_der = 1/settings.time.step * (q_soln - q_prev)
+        xi = linesearch.ls(settings.solver.ls_type,q_prev,time_der,settings.time.step)
 
-        if settings.solver.ls_type == 'backtrack':
-            xi = linesearch.backtrack(q_prev,time_der,settings.time.step)
-        elif settings.solver.ls_type == 'exact1':
-            xi = linesearch.exact1(q_prev,time_der,settings.time.step)
-        elif settings.solver.ls_type == 'exact2':
-            xi = linesearch.exact2(q_prev,time_der,settings.time.step)
-        else:
-            xi = settings.time.step
-
+        # assign the new q_soln
         q_soln.assign(q_prev + xi * time_der)
 
-        # Write eigenvectors and eigenvalues to Paraview
-
+        # write eigen-info to Paraview
         if saves.SaveMode and (counter == settings.time.save_every): visualize(q_soln,mesh,time=current_time)
 
+        # add the energy of q_soln to the energies
         energies.append(compute_energy(q_soln))
 
+        # print info and check for energy decrease
         pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)}')
         check_energy_decrease(energies,current_time)
 
+        # if counter lines up with 'save every' then save checkpoint
         if saves.SaveMode and (counter == settings.time.save_every):
+            # truncate times to match the energies
             truncated_times = times.truncate(len(energies))
-            if len(truncated_times) != len(energies):
-                raise ValueError('You wrote the code wrong, dummy.')
-            saves.save_checkpoint(q_soln,name='q_soln') # Save checkpoint first. If you resume on a different number of cores, an error will be raised
+
+             # save checkpoint first. If you resume on a different number of cores, an error will be raised
+            saves.save_checkpoint(q_soln,name='q_soln')
             saves.save_checkpoint(q_prev,name='q_prev')
-            saves.save_energies(truncated_times,energies) # This is to ensure that the length of the energies is equal to the length of the times
+            saves.save_energies(truncated_times,energies)
+            
+            # plot time vs energy
             plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
+            # print checkpoint info
             pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)} ({datetime.now().strftime("%c")})')
+
+            # reset counter back to 0
             counter = 0
 
     timer.stop()

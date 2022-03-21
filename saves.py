@@ -47,6 +47,9 @@ def load_energies():
     times = yaml_load['times']
     energies = yaml_load['energies']
 
+    if len(times) != len(energies):
+        raise ValueError(f'Number of times {len(times)} and number of energies {len(energies)} not equal.')
+
     return TimeList(times), EnergyList(energies)
 
 def save_energies(times,energies):
