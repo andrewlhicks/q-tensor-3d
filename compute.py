@@ -126,10 +126,10 @@ def compute():
         'forcing_f' : forcing_f.out,
         'forcing_g' : forcing_g.out,
         'bdycond_s' : bdycond_s.out,
-        'n_bf_O' : pde_d.uflfy()['lhs'],
-        'n_bf_G' : pde_b.uflfy()['lhs'],
-        'n_lf_O' : pde_d.uflfy()['rhs'],
-        'n_lf_G' : pde_b.uflfy()['rhs'],
+        'n_bf_O' : pde_d.ufl['lhs'],
+        'n_bf_G' : pde_b.ufl['lhs'],
+        'n_lf_O' : pde_d.ufl['rhs'],
+        'n_lf_G' : pde_b.ufl['rhs'],
         'energies' : energies.ufl_dict
     }
 
