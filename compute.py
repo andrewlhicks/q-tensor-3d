@@ -6,6 +6,7 @@ import user_expressions.forcing_g as forcing_g
 import user_expressions.bdycond_s as bdycond_s
 
 from config import constants as c
+from config import settings
 
 # Set up Qvector objects
 
@@ -91,13 +92,11 @@ def compute():
     # Construct PDE
 
     lhs_d = [ # lhs domain
-        GeneralForm((1/c.dt)*q.dot(p),Dqq,Dpp,name='Q:P/dt'),
         GeneralForm(c.L1*termL1(Dq,Dp)+c.L2*termL2(Dq,Dp)+c.L3*termL3(Dq,Dp),Dqq,Dpp,name='a_E(Q,P)'),
         GeneralForm(c.L1*term_twist_var(q,p),Dqq,Dpp,name='a_T(Q,P)'),
         GeneralForm((1/c.ep**2)*(-c.A*innerp(Q,P) - c.B*innerp(Q**2,P) + c.C*innerp(Q,Q)*innerp(Q,P)),Dqq,Dpp,name='Dψ(Q):P')
         ]
     rhs_d = [ # rhs domain
-        GeneralForm((1/c.dt)*qp.dot(p),Dpp,name='Q_p:P/dt'),
         GeneralForm(f.dot(p),Dpp,name='f(P)')
     ]
     lhs_b = [ # lhs boundary
@@ -111,13 +110,18 @@ def compute():
         GeneralForm(g.dot(p),Dpp,name='g(P)')
     ]
 
+    if settings.pde.grad_desc:
+        lhs_d.append(GeneralForm((1/c.dt)*q.dot(p),Dqq,Dpp,name='Q:P/dt'))
+        rhs_d.append(GeneralForm((1/c.dt)*qp.dot(p),Dpp,name='Q_p:P/dt'))
+
     # assemble two PDEs
     pde_d = PDE(lhs_d,rhs_d,Dqq,Dpp,over='domain')
     pde_b = PDE(lhs_b,rhs_b,Dqq,Dpp,over='boundary')
 
     # apply newton's method
-    pde_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
-    pde_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
+    if settings.pde.newtons_method:
+        pde_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
+        pde_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
 
     # Create relevant UFL strings
 

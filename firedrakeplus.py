@@ -3,10 +3,7 @@ firedrake. The functions here are intended to be used on firedrake objects
 only. """
 
 from firedrake import *
-from misc import time_this
-import functools
 import printoff as pr
-import sys
 
 """
 Example of a decorator:
@@ -216,43 +213,22 @@ class linesearch:
     def none(q_prev,time_der,alpha):
         return alpha
 
-def newton_solve(newt_eqn,q_soln,q_newt_prev,intial_guess,no_newt_steps=10,strong_boundary=None,solver_parameters={}):
-    function_space = q_soln._function_space
+def newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+    function_space = q_soln.function_space()
 
-    # make the following a separate function
-
-    bdy_cond = interpolate(eval(strong_boundary[0]),function_space)
-
-    # The following needs to be rewritten
-    if strong_boundary == None:
-        bcs = None
-    elif strong_boundary[1] == 'none':
-        bcs = None
-    elif strong_boundary[1] == 'all':
-        bc = DirichletBC(function_space, bdy_cond, "on_boundary")
-        bcs = [bc]
-    elif isinstance(strong_boundary[1],int):
-        if strong_boundary[1] > -1:
-            bc = DirichletBC(function_space, bdy_cond, [strong_boundary[1]])
-            bcs = [bc]
-        else:
-            raise ValueError('Boundary interger specified must be positive.')
-    elif isinstance(strong_boundary[1],list):
-        bc = DirichletBC(function_space, bdy_cond, strong_boundary[1])
-        bcs = [bc]
-    else:
-        raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
-
+    initial_guess = newton_parameters['initial_guess']
+    no_newt_steps = newton_parameters['num_steps']
+    
     q_newt_delt = Function(function_space)
     q_newt_soln = Function(function_space)
 
-    q_newt_soln.assign(intial_guess)
+    q_newt_soln.assign(initial_guess)
 
     for ii in range(no_newt_steps):
         q_newt_prev.assign(q_newt_soln)
 
         # Solve
-
+        
         solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
 
         q_newt_soln.assign(q_newt_delt + q_newt_prev)
@@ -311,6 +287,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     q_prev = Function(H1_vec)
     q_prev_prev = Function(H1_vec)
+    global q_newt_prev # global needed because need to access inside a function
     q_newt_prev = Function(H1_vec)
 
     # Load data for resumption of computation, if needed
@@ -377,12 +354,43 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
+        # make the following a separate function
+
+        bdy_cond = interpolate(eval(strong_boundary[0]),H1_vec)
+
+        # The following needs to be rewritten
+        if strong_boundary == None:
+            bcs = None
+        elif strong_boundary[1] == 'none':
+            bcs = None
+        elif strong_boundary[1] == 'all':
+            bc = DirichletBC(H1_vec, bdy_cond, "on_boundary")
+            bcs = [bc]
+        elif isinstance(strong_boundary[1],int):
+            if strong_boundary[1] > -1:
+                bc = DirichletBC(H1_vec, bdy_cond, [strong_boundary[1]])
+                bcs = [bc]
+            else:
+                raise ValueError('Boundary interger specified must be positive.')
+        elif isinstance(strong_boundary[1],list):
+            bc = DirichletBC(H1_vec, bdy_cond, strong_boundary[1])
+            bcs = [bc]
+        else:
+            raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+
+        solver_parameters = {'snes_type' : 'ksponly',   # Turn off auto Newton's method
+            'ksp_type' : settings.solver.ksp_type,      # Krylov subspace type
+            'pc_type'  : settings.solver.pc_type,       # preconditioner type
+            'mat_type' : 'aij' }
+
         # perform the solve
-        newton_solve(a == L, q_soln, q_newt_prev, q_prev, strong_boundary=strong_boundary,
-            solver_parameters={'snes_type' : 'ksponly',                         # Turn off auto Newton's method
-                               'ksp_type' : settings.solver.ksp_type,           # Krylov subspace type
-                               'pc_type'  : settings.solver.pc_type,            # preconditioner type
-                               'mat_type' : 'aij' })
+        if settings.pde.newtons_method:
+            newton_solve(a == L, q_soln, bcs=bcs,
+                solver_parameters=solver_parameters,
+                newton_parameters={'initial_guess' : q_prev, 'num_steps' : 10})
+        else:
+            solve(a == L, q_soln, bcs=bcs,
+                solver_parameters=solver_parameters)
 
         # perform line search for optimal timestep
         time_der = 1/settings.time.step * (q_soln - q_prev)
