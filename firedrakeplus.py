@@ -26,10 +26,15 @@ def set_eqn_globals(comp,uflcache_dict):
 
     global EqnGlobals
     class EqnGlobals:
-        bilinear_form = comp['n_bf_O']
-        bilinear_form_bdy = comp['n_bf_G']
-        linear_form = comp['n_lf_O']
-        linear_form_bdy = comp['n_lf_G']
+        # remove these next commit
+        bilinear_form = comp['pde_d']['lhs']
+        bilinear_form_bdy = comp['pde_b']['lhs']
+        linear_form = comp['pde_d']['rhs']
+        linear_form_bdy = comp['pde_b']['rhs']
+
+        # make these standard next commit
+        pde_d = comp['pde_d']
+        pde_b = comp['pde_b']
 
         initial_q = uflcache_dict['initcond'] # uflcache will be preferred over comp in the future
 

@@ -130,10 +130,8 @@ def compute():
         'forcing_f' : forcing_f.out,
         'forcing_g' : forcing_g.out,
         'bdycond_s' : bdycond_s.out,
-        'n_bf_O' : pde_d.ufl['lhs'],
-        'n_bf_G' : pde_b.ufl['lhs'],
-        'n_lf_O' : pde_d.ufl['rhs'],
-        'n_lf_G' : pde_b.ufl['rhs'],
+        'pde_d' : pde_d.ufl,
+        'pde_b' : pde_b.ufl,
         'energies' : energies.ufl_dict
     }
 
