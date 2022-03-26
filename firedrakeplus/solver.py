@@ -44,10 +44,10 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     # Initilize
 
-    bilinear_form = EqnGlobals.bilinear_form
-    bilinear_form_bdy = EqnGlobals.bilinear_form_bdy
-    linear_form = EqnGlobals.linear_form
-    linear_form_bdy = EqnGlobals.linear_form_bdy
+    pde_d_lhs = EqnGlobals.pde_d['lhs']
+    pde_d_rhs = EqnGlobals.pde_d['rhs']
+    pde_b_lhs = EqnGlobals.pde_b['lhs']
+    pde_b_rhs = EqnGlobals.pde_b['rhs']
 
     initial_q = EqnGlobals.initial_q
 
@@ -105,23 +105,23 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     # define bilinear form a(q,p), and linear form L(p)
 
-    a = eval(bilinear_form) * dx
-    L = eval(linear_form) * dx
+    a = eval(pde_d_lhs) * dx
+    L = eval(pde_d_rhs) * dx
     if weak_boundary is None:
         pass
     elif weak_boundary[1] == "none":
         pass
     elif weak_boundary[1] == 'all':
-        if eval(bilinear_form_bdy) != 0:
-            a += eval(bilinear_form_bdy) * ds
-        if eval(linear_form_bdy) != 0:
-            L += eval(linear_form_bdy) * ds
+        if eval(pde_b_lhs) != 0:
+            a += eval(pde_b_lhs) * ds
+        if eval(pde_b_rhs) != 0:
+            L += eval(pde_b_rhs) * ds
     elif isinstance(weak_boundary[1],int):
         if weak_boundary[1] > -1:
-            if eval(bilinear_form_bdy) != 0:
-                a += eval(bilinear_form_bdy) * ds(weak_boundary[1])
-            if eval(linear_form_bdy) != 0:
-                L += eval(linear_form_bdy) * ds(weak_boundary[1])
+            if eval(pde_b_lhs) != 0:
+                a += eval(pde_b_lhs) * ds(weak_boundary[1])
+            if eval(pde_b_rhs) != 0:
+                L += eval(pde_b_rhs) * ds(weak_boundary[1])
         else:
             raise ValueError('Boundary integer specified must be positive.')
     else:

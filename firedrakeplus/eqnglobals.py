@@ -3,13 +3,6 @@ from config import settings
 def set_eqn_globals(comp,uflcache_dict):
     global EqnGlobals
     class EqnGlobals:
-        # remove these next commit
-        bilinear_form = comp['pde_d']['lhs']
-        bilinear_form_bdy = comp['pde_b']['lhs']
-        linear_form = comp['pde_d']['rhs']
-        linear_form_bdy = comp['pde_b']['rhs']
-
-        # make these standard next commit
         pde_d = comp['pde_d']
         pde_b = comp['pde_b']
 
