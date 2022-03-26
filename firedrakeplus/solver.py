@@ -44,11 +44,6 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     # Initilize
 
-    pde_d_lhs = EqnGlobals.pde_d['lhs']
-    pde_d_rhs = EqnGlobals.pde_d['rhs']
-    pde_b_lhs = EqnGlobals.pde_b['lhs']
-    pde_b_rhs = EqnGlobals.pde_b['rhs']
-
     initial_q = EqnGlobals.initial_q
 
     strong_boundary = EqnGlobals.strong_boundary
@@ -103,30 +98,38 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
+
+    # make the following into a separate function, dependent only on the one PDE_System
+    # (
+    pde_d_lhs = eval(EqnGlobals.pde_d['lhs'])
+    pde_d_rhs = eval(EqnGlobals.pde_d['rhs'])
+    pde_b_lhs = eval(EqnGlobals.pde_b['lhs'])
+    pde_b_rhs = eval(EqnGlobals.pde_b['rhs'])
+
     # define bilinear form a(q,p), and linear form L(p)
 
-    a = eval(pde_d_lhs) * dx
-    L = eval(pde_d_rhs) * dx
+    a = pde_d_lhs * dx
+    L = pde_d_rhs * dx
     if weak_boundary is None:
         pass
     elif weak_boundary[1] == "none":
         pass
     elif weak_boundary[1] == 'all':
-        if eval(pde_b_lhs) != 0:
-            a += eval(pde_b_lhs) * ds
-        if eval(pde_b_rhs) != 0:
-            L += eval(pde_b_rhs) * ds
+        if pde_b_lhs != 0:
+            a += pde_b_lhs * ds
+        if pde_b_rhs != 0:
+            L += pde_b_rhs * ds
     elif isinstance(weak_boundary[1],int):
         if weak_boundary[1] > -1:
-            if eval(pde_b_lhs) != 0:
-                a += eval(pde_b_lhs) * ds(weak_boundary[1])
-            if eval(pde_b_rhs) != 0:
-                L += eval(pde_b_rhs) * ds(weak_boundary[1])
+            if pde_b_lhs != 0:
+                a += pde_b_lhs * ds(weak_boundary[1])
+            if pde_b_rhs != 0:
+                L += pde_b_rhs * ds(weak_boundary[1])
         else:
             raise ValueError('Boundary integer specified must be positive.')
     else:
         raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
-
+    # )
 
     # Time loop
 
