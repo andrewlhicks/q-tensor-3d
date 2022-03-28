@@ -129,7 +129,7 @@ def compute():
         'manufac_q' : manufac_q.out,
         'forcing_f' : forcing_f.out,
         'forcing_g' : forcing_g.out,
-        'bdycond_s' : bdycond_s.out,
+        'bdy_cond' : bdycond_s.out,
         'pde_d' : pde_d.ufl,
         'pde_b' : pde_b.ufl,
         'energies' : energies.ufl_dict

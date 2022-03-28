@@ -49,6 +49,7 @@ def _define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs):
 
     if weak_boundary is None or weak_boundary == 'none':
         return (a, L)
+
     if weak_boundary == 'all':
         measure = ds
     elif isinstance(weak_boundary,int):
@@ -61,14 +62,30 @@ def _define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs):
 
     return (a, L)
 
+def _define_bcs(bdy_cond,function_space):
+    from config import settings
+
+    strong_boundary = settings.options.strong_boundary
+
+    bdy_cond = interpolate(bdy_cond,function_space)
+
+    if strong_boundary is None or strong_boundary == 'none':
+        bcs = None
+    if strong_boundary == 'all':
+        bcs = [DirichletBC(function_space, bdy_cond, "on_boundary")]
+    elif isinstance(strong_boundary,int):
+        bcs = [DirichletBC(function_space, bdy_cond, [strong_boundary])]
+    elif isinstance(strong_boundary,list):
+        bcs = [DirichletBC(function_space, bdy_cond, strong_boundary)]
+    
+    return bcs
+
 def solve_PDE(mesh,refinement_level='Not specified'):
     from firedrakeplus.eqnglobals import EqnGlobals
 
     # Initilize
 
     initial_q = EqnGlobals.initial_q
-
-    strong_boundary = EqnGlobals.strong_boundary
 
     # Define function space, coordinates, and q_soln
 
@@ -120,12 +137,12 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define bilinear form a(q,p), and linear form L(p)
-    pde_d_lhs = eval(EqnGlobals.pde_d['lhs'])
-    pde_d_rhs = eval(EqnGlobals.pde_d['rhs'])
-    pde_b_lhs = eval(EqnGlobals.pde_b['lhs'])
-    pde_b_rhs = eval(EqnGlobals.pde_b['rhs'])
-
-    a, L =_define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs)
+    a, L =_define_a_L(
+        eval(EqnGlobals.pde_d['lhs']),
+        eval(EqnGlobals.pde_d['rhs']),
+        eval(EqnGlobals.pde_b['lhs']),
+        eval(EqnGlobals.pde_b['rhs'])
+    )
 
     # Time loop
 
@@ -142,29 +159,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
-        # make the following a separate function
-
-        bdy_cond = interpolate(eval(strong_boundary[0]),H1_vec)
-
-        # The following needs to be rewritten
-        if strong_boundary == None:
-            bcs = None
-        elif strong_boundary[1] == 'none':
-            bcs = None
-        elif strong_boundary[1] == 'all':
-            bc = DirichletBC(H1_vec, bdy_cond, "on_boundary")
-            bcs = [bc]
-        elif isinstance(strong_boundary[1],int):
-            if strong_boundary[1] > -1:
-                bc = DirichletBC(H1_vec, bdy_cond, [strong_boundary[1]])
-                bcs = [bc]
-            else:
-                raise ValueError('Boundary interger specified must be positive.')
-        elif isinstance(strong_boundary[1],list):
-            bc = DirichletBC(H1_vec, bdy_cond, strong_boundary[1])
-            bcs = [bc]
-        else:
-            raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+        bcs = _define_bcs(eval(EqnGlobals.bdy_cond),H1_vec)
 
         solver_parameters = {'snes_type' : 'ksponly',   # Turn off auto Newton's method
             'ksp_type' : settings.solver.ksp_type,      # Krylov subspace type
