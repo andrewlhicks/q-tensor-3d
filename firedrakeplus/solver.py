@@ -39,6 +39,28 @@ def newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters
 
     q_soln.assign(q_newt_soln)
 
+def _define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs):
+    from config import settings
+
+    a = pde_d_lhs * dx
+    L = pde_d_rhs * dx
+
+    weak_boundary = settings.options.weak_boundary
+
+    if weak_boundary is None or weak_boundary == 'none':
+        return (a, L)
+    if weak_boundary == 'all':
+        measure = ds
+    elif isinstance(weak_boundary,int):
+        measure = ds(weak_boundary)
+    
+    if pde_b_lhs != 0:
+        a += pde_b_lhs * measure
+    if pde_b_rhs != 0:
+        L += pde_b_rhs * measure
+
+    return (a, L)
+
 def solve_PDE(mesh,refinement_level='Not specified'):
     from firedrakeplus.eqnglobals import EqnGlobals
 
@@ -47,7 +69,6 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     initial_q = EqnGlobals.initial_q
 
     strong_boundary = EqnGlobals.strong_boundary
-    weak_boundary = EqnGlobals.weak_boundary
 
     # Define function space, coordinates, and q_soln
 
@@ -98,38 +119,13 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
-
-    # make the following into a separate function, dependent only on the one PDE_System
-    # (
+    # define bilinear form a(q,p), and linear form L(p)
     pde_d_lhs = eval(EqnGlobals.pde_d['lhs'])
     pde_d_rhs = eval(EqnGlobals.pde_d['rhs'])
     pde_b_lhs = eval(EqnGlobals.pde_b['lhs'])
     pde_b_rhs = eval(EqnGlobals.pde_b['rhs'])
 
-    # define bilinear form a(q,p), and linear form L(p)
-
-    a = pde_d_lhs * dx
-    L = pde_d_rhs * dx
-    if weak_boundary is None:
-        pass
-    elif weak_boundary[1] == "none":
-        pass
-    elif weak_boundary[1] == 'all':
-        if pde_b_lhs != 0:
-            a += pde_b_lhs * ds
-        if pde_b_rhs != 0:
-            L += pde_b_rhs * ds
-    elif isinstance(weak_boundary[1],int):
-        if weak_boundary[1] > -1:
-            if pde_b_lhs != 0:
-                a += pde_b_lhs * ds(weak_boundary[1])
-            if pde_b_rhs != 0:
-                L += pde_b_rhs * ds(weak_boundary[1])
-        else:
-            raise ValueError('Boundary integer specified must be positive.')
-    else:
-        raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
-    # )
+    a, L =_define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs)
 
     # Time loop
 

@@ -11,6 +11,5 @@ def set_eqn_globals(comp,uflcache_dict):
         forcing_f = comp['forcing_f'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
         forcing_g = comp['forcing_g'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
         strong_boundary = [comp['bdycond_s'],settings.options.strong_boundary]
-        weak_boundary = [None,settings.options.weak_boundary]
 
         energies = comp['energies']

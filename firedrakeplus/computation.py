@@ -94,6 +94,7 @@ class linesearch:
 
 def compute_energy(*function,der=0):
     from firedrakeplus.eqnglobals import EqnGlobals
+    from config import settings
 
     # Check for correct values
 
@@ -102,7 +103,7 @@ def compute_energy(*function,der=0):
     if der not in [0,1,2]:
         raise ValueError('Must choose der=0, 1, or 2.')
 
-    weak_boundary = EqnGlobals.weak_boundary
+    weak_boundary = settings.options.weak_boundary
     energies = EqnGlobals.energies[2] if der==2 else EqnGlobals.energies[1] if der==1 else EqnGlobals.energies[0]
 
     q = function[0]
@@ -130,7 +131,7 @@ def compute_energy(*function,der=0):
 
     # Assemble boundary integral
 
-    measure = determine_measure(weak_boundary[1])
+    measure = determine_measure(weak_boundary)
     if measure is not None:
         boundary_assembly = 0
         for energy in energies['boundary']:
