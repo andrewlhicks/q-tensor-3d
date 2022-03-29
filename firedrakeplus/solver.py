@@ -39,11 +39,14 @@ def newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters
 
     q_soln.assign(q_newt_soln)
 
-def _define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs):
+def _define_a_L(pde_d : dict, pde_b : dict):
     from config import settings
 
-    a = pde_d_lhs * dx
-    L = pde_d_rhs * dx
+    pde_d = {k:eval(v) for k,v in pde_d.items()}
+    pde_b = {k:eval(v) for k,v in pde_b.items()}
+
+    a = pde_d['lhs'] * dx
+    L = pde_d['rhs'] * dx
 
     weak_boundary = settings.options.weak_boundary
 
@@ -55,62 +58,48 @@ def _define_a_L(pde_d_lhs,pde_d_rhs,pde_b_lhs,pde_b_rhs):
     elif isinstance(weak_boundary,int):
         measure = ds(weak_boundary)
     
-    if pde_b_lhs != 0:
-        a += pde_b_lhs * measure
-    if pde_b_rhs != 0:
-        L += pde_b_rhs * measure
+    if pde_b['lhs'] != 0:
+        a += pde_b['lhs'] * measure
+    if pde_b['rhs'] != 0:
+        L += pde_b['rhs'] * measure
 
     return (a, L)
 
-def _define_bcs(bdy_cond,function_space):
+def _define_bcs(bdy_cond : str):
     from config import settings
 
     strong_boundary = settings.options.strong_boundary
 
-    bdy_cond = interpolate(bdy_cond,function_space)
+    bdy_cond = interpolate(eval(bdy_cond),H1_vec)
 
     if strong_boundary is None or strong_boundary == 'none':
         bcs = None
     if strong_boundary == 'all':
-        bcs = [DirichletBC(function_space, bdy_cond, "on_boundary")]
+        bcs = [DirichletBC(H1_vec, bdy_cond, "on_boundary")]
     elif isinstance(strong_boundary,int):
-        bcs = [DirichletBC(function_space, bdy_cond, [strong_boundary])]
+        bcs = [DirichletBC(H1_vec, bdy_cond, [strong_boundary])]
     elif isinstance(strong_boundary,list):
-        bcs = [DirichletBC(function_space, bdy_cond, strong_boundary)]
+        bcs = [DirichletBC(H1_vec, bdy_cond, strong_boundary)]
     
     return bcs
 
 def solve_PDE(mesh,refinement_level='Not specified'):
     from firedrakeplus.eqnglobals import EqnGlobals
 
-    # Initilize
+    # globalize stuff that needs to be accessed inside other functions, delete later
+    global H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
 
-    initial_q = EqnGlobals.initial_q
-
-    # Define function space, coordinates, and q_soln
-
+    # define function space, coordinates, and q_soln
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
     x0, x1, x2 = SpatialCoordinate(mesh)
-    q_soln = Function(H1_vec)
-
-    # Facet normal
-
     nu = FacetNormal(mesh)
-
-    # Test and Trial functions
-
     q = TrialFunction(H1_vec)
     p = TestFunction(H1_vec)
-
-    f = eval(EqnGlobals.forcing_f)
-    g = eval(EqnGlobals.forcing_g)
-
-    # Updated constant functions
-
     q_prev = Function(H1_vec)
     q_prev_prev = Function(H1_vec)
-    global q_newt_prev # global needed because need to access inside a function
     q_newt_prev = Function(H1_vec)
+    f = eval(EqnGlobals.forcing_f)
+    g = eval(EqnGlobals.forcing_g)
 
     # Load data for resumption of computation, if needed
 
@@ -122,7 +111,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         t_init = times.final # initial time set to final time of previous iteration
     else:
         # OVERWRITE/NONE MODE
-        q_soln = interpolate(eval(initial_q),H1_vec) # q_soln is q_init
+        q_soln = interpolate(eval(EqnGlobals.initial_q),H1_vec) # q_soln is q_init
         q_prev.assign(q_soln) # q_prev is q_init
         times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
         t_init = 0 # initial time set to 0
@@ -137,12 +126,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define bilinear form a(q,p), and linear form L(p)
-    a, L =_define_a_L(
-        eval(EqnGlobals.pde_d['lhs']),
-        eval(EqnGlobals.pde_d['rhs']),
-        eval(EqnGlobals.pde_b['lhs']),
-        eval(EqnGlobals.pde_b['rhs'])
-    )
+    a, L =_define_a_L(EqnGlobals.pde_d,EqnGlobals.pde_b)
 
     # Time loop
 
@@ -159,7 +143,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
-        bcs = _define_bcs(eval(EqnGlobals.bdy_cond),H1_vec)
+        bcs = _define_bcs(EqnGlobals.bdy_cond)
 
         solver_parameters = {'snes_type' : 'ksponly',   # Turn off auto Newton's method
             'ksp_type' : settings.solver.ksp_type,      # Krylov subspace type
@@ -212,5 +196,7 @@ def solve_PDE(mesh,refinement_level='Not specified'):
             counter = 0
 
     timer.stop()
+
+    del H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
 
     return (q_soln, timer.str_time, times, energies)
