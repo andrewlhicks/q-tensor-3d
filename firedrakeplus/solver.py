@@ -83,13 +83,15 @@ def _define_bcs(bdy_cond : str):
     
     return bcs
 
-def solve_PDE(mesh,refinement_level='Not specified'):
+def solve_PDE(msh,ref_lvl='Not specified'):
     from firedrakeplus.eqnglobals import EqnGlobals
 
     # globalize stuff that needs to be accessed inside other functions, delete later
-    global H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
+    global mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
 
     # define function space, coordinates, and q_soln
+    mesh = msh
+    refinement_level = ref_lvl
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
     x0, x1, x2 = SpatialCoordinate(mesh)
     nu = FacetNormal(mesh)
@@ -102,6 +104,8 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     g = eval(EqnGlobals.forcing_g)
 
     # Load data for resumption of computation, if needed
+
+    global times, energies
 
     if saves.SaveMode == 'resume':
         # RESUME MODE : load from previous state
@@ -128,14 +132,38 @@ def solve_PDE(mesh,refinement_level='Not specified'):
     # define bilinear form a(q,p), and linear form L(p)
     a, L =_define_a_L(EqnGlobals.pde_d,EqnGlobals.pde_b)
 
-    # Time loop
+    # define boundary conditions
+    bcs = _define_bcs(EqnGlobals.bdy_cond)
+    
+    # solver parameters
+    solver_parameters = {
+        'snes_type' : 'ksponly',                    # Turn off auto Newton's method
+        'ksp_type' : settings.solver.ksp_type,      # Krylov subspace type
+        'pc_type'  : settings.solver.pc_type,       # preconditioner type
+        'mat_type' : 'aij'
+    }
+    
+    # newton parameters
+    newton_parameters = {
+        'initial_guess' : q_prev,
+        'num_steps' : 10
+    }
 
     timer = Timer()
-    timer.start()
 
+    # gradient descent solve
+    timer.start()
+    _graddesc_solve(new_times, a == L, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
+    timer.stop()
+
+    del mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
+
+    return (q_soln, timer.str_time, times, energies)
+
+def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
     counter = 0 # keeps track of when to save a checkpoint
 
-    for current_time in new_times:
+    for current_time in times_list:
         # increase the counter
         counter += 1
 
@@ -143,20 +171,13 @@ def solve_PDE(mesh,refinement_level='Not specified'):
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
 
-        bcs = _define_bcs(EqnGlobals.bdy_cond)
-
-        solver_parameters = {'snes_type' : 'ksponly',   # Turn off auto Newton's method
-            'ksp_type' : settings.solver.ksp_type,      # Krylov subspace type
-            'pc_type'  : settings.solver.pc_type,       # preconditioner type
-            'mat_type' : 'aij' }
-
         # perform the solve
         if settings.pde.newtons_method:
-            newton_solve(a == L, q_soln, bcs=bcs,
+            newton_solve(eqn, q_soln, bcs=bcs,
                 solver_parameters=solver_parameters,
-                newton_parameters={'initial_guess' : q_prev, 'num_steps' : 10})
+                newton_parameters=newton_parameters)
         else:
-            solve(a == L, q_soln, bcs=bcs,
+            solve(eqn, q_soln, bcs=bcs,
                 solver_parameters=solver_parameters)
 
         # perform line search for optimal timestep
@@ -194,9 +215,3 @@ def solve_PDE(mesh,refinement_level='Not specified'):
 
             # reset counter back to 0
             counter = 0
-
-    timer.stop()
-
-    del H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
-
-    return (q_soln, timer.str_time, times, energies)

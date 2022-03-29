@@ -149,7 +149,7 @@ for refinement_level in get_range(settings.mesh.refs):
 
     manu_energy = compute_energy(q_manu)
 
-    q_soln, time_elapsed, times, energies = solve_PDE(mesh,refinement_level=refinement_level)
+    q_soln, time_elapsed, times, energies = solve_PDE(mesh,ref_lvl=refinement_level)
 
     h1_error = errorH1(q_soln,q_manu,mesh)
     l2_error = errorL2(q_soln,q_manu,mesh)
