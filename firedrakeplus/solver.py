@@ -191,23 +191,27 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
         pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)}')
         check_energy_decrease(energies,current_time)
 
+        # check if checkpoint, if so then make checkpoint
         if counter.is_checkpoint():
-            # write eigen-info to Paraview
-            visualize(q_soln,mesh,time=current_time)
+            _checkpoint(q_soln,current_time)
 
-            # truncate times to match the energies
-            truncated_times = times.truncate(len(energies))
+def _checkpoint(q_soln,current_time):
+        # write eigen-info to Paraview
+        visualize(q_soln,mesh,time=current_time)
 
-             # save checkpoint first. If you resume on a different number of cores, an error will be raised
-            saves.save_checkpoint(q_soln,name='q_soln')
-            saves.save_checkpoint(q_prev,name='q_prev')
-            saves.save_energies(truncated_times,energies)
-            
-            # plot time vs energy
-            plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
+        # truncate times to match the energies
+        truncated_times = times.truncate(len(energies))
 
-            # print checkpoint info
-            pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)} ({datetime.now().strftime("%c")})')
+        # save checkpoint first. If you resume on a different number of cores, an error will be raised
+        saves.save_checkpoint(q_soln,name='q_soln')
+        saves.save_checkpoint(q_prev,name='q_prev')
+        saves.save_energies(truncated_times,energies)
+        
+        # plot time vs energy
+        plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
+
+        # print checkpoint info
+        pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)} ({datetime.now().strftime("%c")})')
 
 class _CheckpointCounter:
     def __init__(self):
