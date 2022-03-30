@@ -15,7 +15,7 @@ import plot
 import saves
 from ufl.operators import *
 
-def newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     function_space = q_soln.function_space()
 
     initial_guess = newton_parameters['initial_guess']
@@ -153,29 +153,27 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 
     # gradient descent solve
     timer.start()
-    _graddesc_solve(new_times, a == L, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
+    _g_solve(new_times, a == L, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
     timer.stop()
 
     del mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
 
     return (q_soln, timer.str_time, times, energies)
 
+def _g_solve(*args,**kwargs):
+    if settings.pde.grad_desc:
+        _graddesc_solve(*args,**kwargs)
+    else:
+        _non_graddesc_solve(*args,**kwargs)
+
 def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
     counter = _CheckpointCounter()
 
     for current_time in times_list:
-        # assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
-        q_prev_prev.assign(q_prev)
-        q_prev.assign(q_soln)
-
         # perform the solve
-        if settings.pde.newtons_method:
-            newton_solve(eqn, q_soln, bcs=bcs,
-                solver_parameters=solver_parameters,
-                newton_parameters=newton_parameters)
-        else:
-            solve(eqn, q_soln, bcs=bcs,
-                solver_parameters=solver_parameters)
+        _n_solve(eqn, q_soln, bcs=bcs,
+            solver_parameters=solver_parameters,
+            newton_parameters=newton_parameters)
 
         # perform line search for optimal timestep
         time_der = 1/settings.time.step * (q_soln - q_prev)
@@ -194,6 +192,39 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
         # check if checkpoint, if so then make checkpoint
         if counter.is_checkpoint():
             _checkpoint(q_soln,current_time)
+
+def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
+        # pull first time value as a dummy current time
+        current_time = times_list[0]
+
+        # perform the solve
+        _n_solve(eqn, q_soln, bcs=bcs,
+            solver_parameters=solver_parameters,
+            newton_parameters=newton_parameters)
+        
+        # add the energy of q_soln to the energies
+        energies.append(compute_energy(q_soln))
+
+        # print energy
+        pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)} (non-grad desc)')
+
+        # checkpoint
+        _checkpoint(q_soln,current_time)
+
+def _n_solve(*args,**kwargs):
+    # fetch q_soln
+    q_soln = args[1]
+
+    # assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
+    q_prev_prev.assign(q_prev)
+    q_prev.assign(q_soln)
+
+    if settings.pde.newtons_method:
+        _newton_solve(*args,**kwargs)
+    else:
+        # first, remove newton_parameters or Firedrake will raise an error
+        kwargs.pop('newton_parameters',None)
+        solve(*args,**kwargs)
 
 def _checkpoint(q_soln,current_time):
         # write eigen-info to Paraview
