@@ -8,7 +8,6 @@ from firedrakeplus.computation import compute_energy, linesearch
 from firedrakeplus.vis import visualize
 
 from datetime import datetime
-from config import settings
 from misc import Timer
 import printoff as pr
 import plot
@@ -17,6 +16,7 @@ from ufl.operators import *
 
 def solve_PDE(msh,ref_lvl='Not specified'):
     from firedrakeplus.eqnglobals import EqnGlobals
+    from config import settings
 
     # globalize stuff that needs to be accessed inside other functions, delete later
     global mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
@@ -137,12 +137,17 @@ def _define_bcs(bdy_cond : str):
     return bcs
 
 def _g_solve(*args,**kwargs):
+    from config import settings
+
     if settings.pde.grad_desc:
         _graddesc_solve(*args,**kwargs)
     else:
         _non_graddesc_solve(*args,**kwargs)
 
 def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
+    from config import settings
+
+    # create counter object
     counter = _CheckpointCounter()
 
     for current_time in times_list:
@@ -188,6 +193,8 @@ def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_
         _checkpoint(q_soln,current_time)
 
 def _n_solve(*args,**kwargs):
+    from config import settings
+    
     # fetch q_soln
     q_soln = args[1]
 
