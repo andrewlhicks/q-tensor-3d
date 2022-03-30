@@ -15,74 +15,6 @@ import plot
 import saves
 from ufl.operators import *
 
-def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
-    function_space = q_soln.function_space()
-
-    initial_guess = newton_parameters['initial_guess']
-    no_newt_steps = newton_parameters['num_steps']
-    
-    q_newt_delt = Function(function_space)
-    q_newt_soln = Function(function_space)
-
-    q_newt_soln.assign(initial_guess)
-
-    for ii in range(no_newt_steps):
-        q_newt_prev.assign(q_newt_soln)
-
-        # Solve
-        
-        solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
-
-        q_newt_soln.assign(q_newt_delt + q_newt_prev)
-        # print(nrm.inf(q_newt_delt))
-        if nrm.inf(q_newt_delt) < 1e-12: break
-
-    q_soln.assign(q_newt_soln)
-
-def _define_a_L(pde_d : dict, pde_b : dict):
-    from config import settings
-
-    pde_d = {k:eval(v) for k,v in pde_d.items()}
-    pde_b = {k:eval(v) for k,v in pde_b.items()}
-
-    a = pde_d['lhs'] * dx
-    L = pde_d['rhs'] * dx
-
-    weak_boundary = settings.options.weak_boundary
-
-    if weak_boundary is None or weak_boundary == 'none':
-        return (a, L)
-
-    if weak_boundary == 'all':
-        measure = ds
-    elif isinstance(weak_boundary,int):
-        measure = ds(weak_boundary)
-    
-    if pde_b['lhs'] != 0:
-        a += pde_b['lhs'] * measure
-    if pde_b['rhs'] != 0:
-        L += pde_b['rhs'] * measure
-
-    return (a, L)
-
-def _define_bcs(bdy_cond : str):
-    from config import settings
-
-    strong_boundary = settings.options.strong_boundary
-
-    bdy_cond = interpolate(eval(bdy_cond),H1_vec)
-
-    if strong_boundary is None or strong_boundary == 'none':
-        bcs = None
-    if strong_boundary == 'all':
-        bcs = [DirichletBC(H1_vec, bdy_cond, "on_boundary")]
-    elif isinstance(strong_boundary,int):
-        bcs = [DirichletBC(H1_vec, bdy_cond, [strong_boundary])]
-    elif isinstance(strong_boundary,list):
-        bcs = [DirichletBC(H1_vec, bdy_cond, strong_boundary)]
-    
-    return bcs
-
 def solve_PDE(msh,ref_lvl='Not specified'):
     from firedrakeplus.eqnglobals import EqnGlobals
 
@@ -160,6 +92,50 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 
     return (q_soln, timer.str_time, times, energies)
 
+def _define_a_L(pde_d : dict, pde_b : dict):
+    from config import settings
+
+    pde_d = {k:eval(v) for k,v in pde_d.items()}
+    pde_b = {k:eval(v) for k,v in pde_b.items()}
+
+    a = pde_d['lhs'] * dx
+    L = pde_d['rhs'] * dx
+
+    weak_boundary = settings.options.weak_boundary
+
+    if weak_boundary is None or weak_boundary == 'none':
+        return (a, L)
+
+    if weak_boundary == 'all':
+        measure = ds
+    elif isinstance(weak_boundary,int):
+        measure = ds(weak_boundary)
+    
+    if pde_b['lhs'] != 0:
+        a += pde_b['lhs'] * measure
+    if pde_b['rhs'] != 0:
+        L += pde_b['rhs'] * measure
+
+    return (a, L)
+
+def _define_bcs(bdy_cond : str):
+    from config import settings
+
+    strong_boundary = settings.options.strong_boundary
+
+    bdy_cond = interpolate(eval(bdy_cond),H1_vec)
+
+    if strong_boundary is None or strong_boundary == 'none':
+        bcs = None
+    if strong_boundary == 'all':
+        bcs = [DirichletBC(H1_vec, bdy_cond, "on_boundary")]
+    elif isinstance(strong_boundary,int):
+        bcs = [DirichletBC(H1_vec, bdy_cond, [strong_boundary])]
+    elif isinstance(strong_boundary,list):
+        bcs = [DirichletBC(H1_vec, bdy_cond, strong_boundary)]
+    
+    return bcs
+
 def _g_solve(*args,**kwargs):
     if settings.pde.grad_desc:
         _graddesc_solve(*args,**kwargs)
@@ -225,6 +201,30 @@ def _n_solve(*args,**kwargs):
         # first, remove newton_parameters or Firedrake will raise an error
         kwargs.pop('newton_parameters',None)
         solve(*args,**kwargs)
+
+def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+    function_space = q_soln.function_space()
+
+    initial_guess = newton_parameters['initial_guess']
+    no_newt_steps = newton_parameters['num_steps']
+    
+    q_newt_delt = Function(function_space)
+    q_newt_soln = Function(function_space)
+
+    q_newt_soln.assign(initial_guess)
+
+    for ii in range(no_newt_steps):
+        q_newt_prev.assign(q_newt_soln)
+
+        # Solve
+        
+        solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+
+        q_newt_soln.assign(q_newt_delt + q_newt_prev)
+        # print(nrm.inf(q_newt_delt))
+        if nrm.inf(q_newt_delt) < 1e-12: break
+
+    q_soln.assign(q_newt_soln)
 
 def _checkpoint(q_soln,current_time):
         # write eigen-info to Paraview
