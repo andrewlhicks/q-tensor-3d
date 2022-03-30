@@ -4,9 +4,10 @@ from firedrake import interpolate, as_vector, sqrt, dot
 from firedrakeplus.fy import tensorfy
 import eigen
 import saves
-from config import settings
 
 def visualize(q_vis,mesh,time=None,new_outfile=False):
+    from config import settings
+    
     # Create functions to store eigenvectors and eigenvalues
 
     H1_ten = TensorFunctionSpace(mesh, "CG", 1)

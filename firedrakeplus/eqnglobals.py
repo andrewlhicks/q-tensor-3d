@@ -1,6 +1,6 @@
-from config import settings
-
 def set_eqn_globals(comp,uflcache_dict):
+    from config import settings
+
     global EqnGlobals
     class EqnGlobals:
         pde_d = comp['pde_d']
