@@ -161,12 +161,9 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     return (q_soln, timer.str_time, times, energies)
 
 def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
-    counter = 0 # keeps track of when to save a checkpoint
+    counter = _CheckpointCounter()
 
     for current_time in times_list:
-        # increase the counter
-        counter += 1
-
         # assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
         q_prev_prev.assign(q_prev)
         q_prev.assign(q_soln)
@@ -187,9 +184,6 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
         # assign the new q_soln
         q_soln.assign(q_prev + xi * time_der)
 
-        # write eigen-info to Paraview
-        if saves.SaveMode and (counter == settings.time.save_every): visualize(q_soln,mesh,time=current_time)
-
         # add the energy of q_soln to the energies
         energies.append(compute_energy(q_soln))
 
@@ -197,8 +191,10 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
         pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)}')
         check_energy_decrease(energies,current_time)
 
-        # if counter lines up with 'save every' then save checkpoint
-        if saves.SaveMode and (counter == settings.time.save_every):
+        if counter.is_checkpoint():
+            # write eigen-info to Paraview
+            visualize(q_soln,mesh,time=current_time)
+
             # truncate times to match the energies
             truncated_times = times.truncate(len(energies))
 
@@ -213,5 +209,16 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
             # print checkpoint info
             pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)} ({datetime.now().strftime("%c")})')
 
-            # reset counter back to 0
-            counter = 0
+class _CheckpointCounter:
+    def __init__(self):
+        from saves import SaveMode
+        from config import settings
+        self.__save_mode = SaveMode
+        self.__save_every = settings.time.save_every
+        self.__counter = 0
+    def is_checkpoint(self):
+        self.__counter += 1
+        if self.__save_mode and self.__counter == self.__save_every:
+            self.__counter = 0
+            return True
+        return False
