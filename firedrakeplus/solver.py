@@ -1,4 +1,4 @@
-from firedrake import Function, SpatialCoordinate, DirichletBC
+from firedrake import Function, SpatialCoordinate, DirichletBC, ConvergenceError
 from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunction
 from firedrake import solve, interpolate
 from firedrake import dx, ds
@@ -152,10 +152,14 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
 
     for current_time in times_list:
         # perform the solve
-        _n_solve(eqn, q_soln, bcs=bcs,
-            solver_parameters=solver_parameters,
-            newton_parameters=newton_parameters)
-
+        try:
+            _n_solve(eqn, q_soln, bcs=bcs,
+                solver_parameters=solver_parameters,
+                newton_parameters=newton_parameters)
+        except ConvergenceError:
+            pr.fail('CONVERGENCE ERROR!')
+            return
+        
         # perform line search for optimal timestep
         time_der = 1/settings.time.step * (q_soln - q_prev)
         xi = linesearch.ls(settings.solver.ls_type,q_prev,time_der,settings.time.step)

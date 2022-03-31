@@ -160,6 +160,9 @@ def blue(text, spaced=False, *args, **kwargs):
 def warning(text, spaced=False, *args, **kwargs):
     info(f'Warning: {text}', spaced=spaced, color='warning', *args, **kwargs)
 
+def fail(text, spaced=False, *args, **kwargs):
+    info(text, spaced=spaced, color='fail', *args, **kwargs)
+
 def sinfo(text, color=None, *args, **kwargs):
     info(text, spaced=True, color=color, *args, **kwargs)
 
@@ -171,6 +174,9 @@ def sblue(text, *args, **kwargs):
 
 def swarning(text, *args, **kwargs):
     warning(text, spaced=True, *args, **kwargs)
+
+def sfail(text, *args, **kwargs):
+    fail(text, spaced=True, *args, **kwargs)
 
 # MAIN
 
