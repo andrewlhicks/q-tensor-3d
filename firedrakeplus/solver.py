@@ -183,9 +183,13 @@ def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_
         current_time = times_list[0]
 
         # perform the solve
-        _n_solve(eqn, q_soln, bcs=bcs,
-            solver_parameters=solver_parameters,
-            newton_parameters=newton_parameters)
+        try:
+            _n_solve(eqn, q_soln, bcs=bcs,
+                solver_parameters=solver_parameters,
+                newton_parameters=newton_parameters)
+        except ConvergenceError:
+            pr.fail('CONVERGENCE ERROR!')
+            return
         
         # add the energy of q_soln to the energies
         energies.append(compute_energy(q_soln))
