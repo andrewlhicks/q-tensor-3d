@@ -157,7 +157,7 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
                 solver_parameters=solver_parameters,
                 newton_parameters=newton_parameters)
         except ConvergenceError:
-            pr.fail('CONVERGENCE ERROR!')
+            pr.fail('Convergence error')
             return
         
         # perform line search for optimal timestep
@@ -188,7 +188,7 @@ def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_
                 solver_parameters=solver_parameters,
                 newton_parameters=newton_parameters)
         except ConvergenceError:
-            pr.fail('CONVERGENCE ERROR!')
+            pr.fail('Convergence error')
             return
         
         # add the energy of q_soln to the energies
@@ -202,7 +202,7 @@ def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_
 
 def _n_solve(*args,**kwargs):
     from config import settings
-    
+
     # fetch q_soln
     q_soln = args[1]
 
@@ -228,16 +228,20 @@ def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameter
 
     q_newt_soln.assign(initial_guess)
 
-    for ii in range(no_newt_steps):
-        q_newt_prev.assign(q_newt_soln)
+    try:
+        for ii in range(no_newt_steps):      
+            q_newt_prev.assign(q_newt_soln)
 
-        # Solve
-        
-        solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+            # Solve
+            
+            solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
 
-        q_newt_soln.assign(q_newt_delt + q_newt_prev)
-        # print(nrm.inf(q_newt_delt))
-        if nrm.inf(q_newt_delt) < 1e-12: break
+            q_newt_soln.assign(q_newt_delt + q_newt_prev)
+            # print(nrm.inf(q_newt_delt))
+            if nrm.inf(q_newt_delt) < 1e-12: break
+    except ConvergenceError:
+        pr.Print(f'n. solve failed to converge at n. iteration {ii}')
+        raise ConvergenceError
 
     q_soln.assign(q_newt_soln)
 

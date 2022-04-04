@@ -161,7 +161,7 @@ def warning(text, spaced=False, *args, **kwargs):
     info(f'Warning: {text}', spaced=spaced, color='warning', *args, **kwargs)
 
 def fail(text, spaced=False, *args, **kwargs):
-    info(text, spaced=spaced, color='fail', *args, **kwargs)
+    info(f'Fatal: {text}', spaced=spaced, color='fail', *args, **kwargs)
 
 def sinfo(text, color=None, *args, **kwargs):
     info(text, spaced=True, color=color, *args, **kwargs)
