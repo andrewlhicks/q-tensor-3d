@@ -1,5 +1,6 @@
 import getopt
 import os
+import shutil
 import sys
 from loaddump import *
 from userexpr import * # needed to process userexpr.yml
@@ -82,7 +83,24 @@ def copy(save_name:str):
         print('No userepxr file found. Reverting to default...')
         userexpr_txt = load_txt('defaults/userexpr.yml')
 
-    create_save(save_name,settings_txt,constants_txt,userexpr_txt)
+    new_save_name = create_save(save_name,settings_txt,constants_txt,userexpr_txt)
+
+    return new_save_name
+
+def hard_copy(save_name:str):
+    """ Does everything copy() does, but also copies checkpoints. """
+
+    # It goes without saying that mixing a custom copy function with the built-in 
+    # shutil copy is poor form. I will have to change this.
+
+    if not os.path.exists(f'saves/{save_name}/chk/q_soln.h5') or not os.path.exists(f'saves/{save_name}/chk/q_prev.h5') or not os.path.exists(f'saves/{save_name}/energy/energies.yml'):
+        raise FileNotFoundError('One or more checkpoint file missing')
+    
+    new_save_name = copy(save_name)
+
+    shutil.copy(f'saves/{save_name}/chk/q_soln.h5',f'saves/{new_save_name}/chk')
+    shutil.copy(f'saves/{save_name}/chk/q_prev.h5',f'saves/{new_save_name}/chk')
+    shutil.copy(f'saves/{save_name}/energy/energies.yml',f'saves/{new_save_name}/energy')
 
 def repair(save_name:str):
     """ Repairs save with missing attributes in settings.yml or constants.yml. """
@@ -139,7 +157,7 @@ def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
         i = 1
         while True:
             if not os.path.exists(f'{save_path}{i}'):
-                new_save_name = f'{save_path}{i}'
+                new_save_name = f'{save_name}{i}'
                 new_save_path = f'{save_path}{i}'
                 break
             i += 1
@@ -165,6 +183,8 @@ def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
 
     print(f"New save '{save_name}' successfully created.")
 
+    return save_name
+
 # MAIN
 
 def main():
@@ -172,7 +192,7 @@ def main():
         os.makedirs('saves')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],'b:c:r:',['help','list'])
+        opts, args = getopt.getopt(sys.argv[1:],'b:c:h:r:',['help','list'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)
@@ -184,6 +204,8 @@ def main():
             build(a)
         elif o in ('-c'):
             copy(a)
+        elif o in ('-h'):
+            hard_copy(a)
         elif o in ('-r'):
             repair(a)
         elif o in ('--help'):
