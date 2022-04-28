@@ -39,7 +39,7 @@ elif len(sys.argv[1:]) == 1:
     SaveMode = None
     SaveName = None
 elif len(sys.argv[1:]) == 2:
-    if sys.argv[1] not in ('resume','overwrite'):
+    if sys.argv[1] not in ('resume','overwrite','OVERWRITE'):
         print0(f"Argument '{sys.argv[1]}' not accepted.")
         usage()
         sys.exit()
@@ -60,6 +60,8 @@ elif len(sys.argv[1:]) == 2:
             if answer in ('n','N'):
                 print0("Exiting")
                 sys.exit()
+    if sys.argv[1] == 'OVERWRITE':
+        SaveMode = 'overwrite'
     if sys.argv[1] == 'resume':
         if not os.path.exists(f'saves/{SaveName}/chk/q_soln.h5') or not os.path.exists(f'saves/{SaveName}/chk/q_prev.h5'):
             print0("Cannot resume since no checkpoint found. Try overwriting instead.")
