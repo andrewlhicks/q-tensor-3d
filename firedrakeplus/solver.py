@@ -1,3 +1,4 @@
+from cProfile import label
 from firedrake import Function, SpatialCoordinate, DirichletBC, ConvergenceError
 from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunction
 from firedrake import solve, interpolate
@@ -78,7 +79,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     # newton parameters
     newton_parameters = {
         'initial_guess' : q_prev,
-        'num_steps' : 10
+        'num_steps' : 1000
     }
 
     timer = Timer()
@@ -210,7 +211,9 @@ def _n_solve(*args,**kwargs):
     q_prev_prev.assign(q_prev)
     q_prev.assign(q_soln)
 
-    if settings.pde.newtons_method:
+    if settings.pde.newtons_method == 'modified':
+        _modified_newton_solve(*args,**kwargs)
+    elif settings.pde.newtons_method:
         _newton_solve(*args,**kwargs)
     else:
         # first, remove newton_parameters or Firedrake will raise an error
@@ -237,11 +240,71 @@ def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameter
             solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
 
             q_newt_soln.assign(q_newt_delt + q_newt_prev)
-            # print(nrm.inf(q_newt_delt))
+            pr.green(f'δQ={nrm.inf(q_newt_delt)}')
             if nrm.inf(q_newt_delt) < 1e-12: break
     except ConvergenceError:
         pr.Print(f'n. solve failed to converge at n. iteration {ii}')
         raise ConvergenceError
+
+    q_soln.assign(q_newt_soln)
+
+def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+    function_space = q_soln.function_space()
+
+    initial_guess = newton_parameters['initial_guess']
+    no_newt_steps = newton_parameters['num_steps']
+    
+    q_newt_delt = Function(function_space)
+    q_newt_soln = Function(function_space)
+
+    q_newt_soln.assign(initial_guess)
+
+    try:
+        slope_vals = []
+        enrgy_vals = []
+        for ii in range(no_newt_steps):      
+            q_newt_prev.assign(q_newt_soln)
+
+            # Solve
+            
+            solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+
+            # perform line search for optimal timestep
+            xi = linesearch.exact2(q_newt_prev,q_newt_delt)
+
+            # assign the new q_soln
+            q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
+
+            slope_val = compute_energy(q_newt_prev,q_newt_delt,der=1)
+            slope_vals.append(slope_val)
+            enrgy_val = compute_energy(q_newt_soln)
+            enrgy_vals.append(enrgy_val)
+
+            pr.Print(f'> δE ={slope_val}',color='green')
+            pr.Print(f'>  E = {enrgy_val}')
+            if abs(slope_val) < 1e-12: break
+    except ConvergenceError:
+        pr.Print(f'n. solve failed to converge at n. iteration {ii}')
+        raise ConvergenceError
+    
+    # import matplotlib.pyplot as plt
+    # import sys
+    # from config import settings
+    # if len(slope_vals) > len(enrgy_vals):
+    #     enrgy_vals.pop()
+    # x_vals = range(len(slope_vals))
+    # fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
+    # fig.suptitle(f'Gradient descent, timestep = {settings.time.step}',fontsize=16)
+    # ax1.plot(x_vals,enrgy_vals)
+    # ax1.set_xlabel('Iteration')
+    # ax1.set_ylabel('Energy')
+    # ax1.grid()
+    # ax2.plot(x_vals,slope_vals)
+    # ax2.set_xlabel('Iteration')
+    # ax2.set_ylabel('Slope')
+    # ax2.grid()
+    # plt.savefig('temp.png')
+    # sys.exit()
 
     q_soln.assign(q_newt_soln)
 

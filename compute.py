@@ -123,6 +123,11 @@ def compute():
         pde_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
         pde_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
 
+    # If we use modified newton's method, remove
+    # the double well from the Hessian
+    if settings.pde.newtons_method == 'modified':
+        pde_d.rmv_lhs_form('∂(Dψ(Q):P)')
+
     # Create relevant UFL strings
 
     out = {
