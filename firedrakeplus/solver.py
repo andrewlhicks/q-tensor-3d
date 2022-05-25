@@ -310,11 +310,11 @@ def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_
             # LOOP CONTROL
 
             # once slope_val becomes sufficiently small, switch to full hessian
-            if abs(slope_val) < 0.2 and not full_hessian:
+            if abs(slope_val) < 1.0 and not full_hessian:
                 pr.Print('+ switched to full hessian')
                 full_hessian = True
             # however, if slope_val returns to high level, switch back to pos def matrix
-            if abs(slope_val) > 2.0 and full_hessian:
+            if abs(slope_val) > 10.0 and full_hessian:
                 pr.Print('+ switched to pos def')
                 full_hessian = False
             # finally, if slope_val becomes very small, break the loop

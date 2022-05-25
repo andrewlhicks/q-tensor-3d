@@ -122,10 +122,10 @@ def compute():
     pde_nm_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
     pde_nm_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
 
-    # If we use modified newton's method, remove
-    # the double well from the Hessian
+    # to make PDE system with positive definite lhs, remove non positive definite parts
     pde_pd_d = pde_nm_d.copy()
     pde_pd_d.rmv_lhs_form('∂(Dψ(Q):P)')
+    pde_pd_d.rmv_lhs_form('∂(a_T(Q,P))')
 
     # Create relevant UFL strings
 
