@@ -3,8 +3,10 @@ def set_eqn_globals(comp,uflcache_dict):
 
     global EqnGlobals
     class EqnGlobals:
-        pde_d = comp['pde_d']
-        pde_b = comp['pde_b']
+        # first, create three separate PDE systems
+        pde = comp['pde']
+        pde_nm = comp['pde_nm']
+        pde_pd = comp['pde_pd']
 
         initial_q = uflcache_dict['initcond'] # uflcache will be preferred over comp in the future
 

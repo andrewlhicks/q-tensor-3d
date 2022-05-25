@@ -63,7 +63,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define bilinear form a(q,p), and linear form L(p)
-    a, L =_define_a_L(EqnGlobals.pde_d,EqnGlobals.pde_b)
+    a, L =_define_a_L(*EqnGlobals.pde_pd)
 
     # define boundary conditions
     bcs = _define_bcs(EqnGlobals.bdy_cond)
@@ -288,7 +288,7 @@ def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_
         raise ConvergenceError
     
     # import matplotlib.pyplot as plt
-    # import sys
+    import sys
     # from config import settings
     # if len(slope_vals) > len(enrgy_vals):
     #     enrgy_vals.pop()
@@ -304,7 +304,7 @@ def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_
     # ax2.set_ylabel('Slope')
     # ax2.grid()
     # plt.savefig('temp.png')
-    # sys.exit()
+    sys.exit()
 
     q_soln.assign(q_newt_soln)
 

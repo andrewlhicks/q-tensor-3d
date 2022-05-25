@@ -119,14 +119,13 @@ def compute():
     pde_b = PDE(lhs_b,rhs_b,Dqq,Dpp,over='boundary')
 
     # apply newton's method
-    if settings.pde.newtons_method:
-        pde_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
-        pde_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
+    pde_nm_d = pde_d.newtons_method(Dqnpqnp,Dpp,Dqq)
+    pde_nm_b = pde_b.newtons_method(Dqnpqnp,Dpp,Dqq)
 
     # If we use modified newton's method, remove
     # the double well from the Hessian
-    if settings.pde.newtons_method == 'modified':
-        pde_d.rmv_lhs_form('∂(Dψ(Q):P)')
+    pde_pd_d = pde_nm_d.copy()
+    pde_pd_d.rmv_lhs_form('∂(Dψ(Q):P)')
 
     # Create relevant UFL strings
 
@@ -135,9 +134,12 @@ def compute():
         'forcing_f' : forcing_f.out,
         'forcing_g' : forcing_g.out,
         'bdy_cond' : bdycond_s.out,
-        'pde_d' : pde_d.ufl,
-        'pde_b' : pde_b.ufl,
-        'energies' : energies.ufl_dict
+        'pde_nm_d' : pde_nm_d.ufl,
+        'pde_nm_b' : pde_nm_b.ufl,
+        'energies' : energies.ufl_dict,
+        'pde' : [pde_d.ufl, pde_b.ufl],
+        'pde_nm' : [pde_nm_d.ufl, pde_nm_b.ufl],
+        'pde_pd' : [pde_pd_d.ufl, pde_nm_b.ufl],
     }
 
     return out
