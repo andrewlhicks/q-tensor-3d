@@ -63,7 +63,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define bilinear form a(q,p), and linear form L(p)
-    a, L =_define_a_L(*EqnGlobals.pde_pd)
+    a, L =_define_a_L(*EqnGlobals.pde_nm)
 
     # define boundary conditions
     bcs = _define_bcs(EqnGlobals.bdy_cond)
@@ -118,6 +118,10 @@ def _define_a_L(pde_d : dict, pde_b : dict):
         L += pde_b['rhs'] * measure
 
     return (a, L)
+
+def _define_a_L_eqn(pde_d: dict, pde_b: dict):
+    a, L = _define_a_L(pde_d, pde_b)
+    return a == L
 
 def _define_bcs(bdy_cond : str):
     from config import settings
@@ -249,6 +253,8 @@ def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameter
     q_soln.assign(q_newt_soln)
 
 def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+    from firedrakeplus.eqnglobals import EqnGlobals
+
     function_space = q_soln.function_space()
 
     initial_guess = newton_parameters['initial_guess']
@@ -259,36 +265,68 @@ def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_
 
     q_newt_soln.assign(initial_guess)
 
+    # two PDE systems
+    eqn_hessian = _define_a_L_eqn(*EqnGlobals.pde_nm)
+    eqn_posdef = _define_a_L_eqn(*EqnGlobals.pde_pd)
+
     try:
+        #==============
         slope_vals = []
         enrgy_vals = []
+        #==============
+
+        # full Hessian off initially
+        full_hessian = False
+
         for ii in range(no_newt_steps):      
             q_newt_prev.assign(q_newt_soln)
 
-            # Solve
-            
-            solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+            # set eqn to be with full hessian or else just the positive definite matrix
+            eqn = eqn_hessian if full_hessian else eqn_posdef
 
-            # perform line search for optimal timestep
-            xi = linesearch.exact2(q_newt_prev,q_newt_delt)
+            # solve equation
+            solve(eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+
+            if not full_hessian:
+                # if not full hessian, perform line search for optimal timestep
+                xi = linesearch.exact2(q_newt_prev,q_newt_delt)
+            else:
+                # if full hessian, skip line search
+                xi = 1
 
             # assign the new q_soln
             q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
 
+            #========================================================
             slope_val = compute_energy(q_newt_prev,q_newt_delt,der=1)
             slope_vals.append(slope_val)
             enrgy_val = compute_energy(q_newt_soln)
             enrgy_vals.append(enrgy_val)
+            #========================================================
 
-            pr.Print(f'> δE ={slope_val}',color='green')
+            pr.Print(f'> δE = {slope_val}')
             pr.Print(f'>  E = {enrgy_val}')
-            if abs(slope_val) < 1e-12: break
+
+            # LOOP CONTROL
+
+            # once slope_val becomes sufficiently small, switch to full hessian
+            if abs(slope_val) < 0.2 and not full_hessian:
+                pr.Print('+ switched to full hessian')
+                full_hessian = True
+            # however, if slope_val returns to high level, switch back to pos def matrix
+            if abs(slope_val) > 2.0 and full_hessian:
+                pr.Print('+ switched to pos def')
+                full_hessian = False
+            # finally, if slope_val becomes very small, break the loop
+            if abs(slope_val) < 1e-12:
+                pr.Print(f'+ finished in {ii} iterations')
+                break
     except ConvergenceError:
         pr.Print(f'n. solve failed to converge at n. iteration {ii}')
         raise ConvergenceError
     
     # import matplotlib.pyplot as plt
-    import sys
+    # import sys
     # from config import settings
     # if len(slope_vals) > len(enrgy_vals):
     #     enrgy_vals.pop()
@@ -304,7 +342,7 @@ def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_
     # ax2.set_ylabel('Slope')
     # ax2.grid()
     # plt.savefig('temp.png')
-    sys.exit()
+    # sys.exit()
 
     q_soln.assign(q_newt_soln)
 
