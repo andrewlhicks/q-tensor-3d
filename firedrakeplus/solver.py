@@ -86,7 +86,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 
     # gradient descent solve
     timer.start()
-    _g_solve(new_times, a == L, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
+    _g_solve(new_times, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
     timer.stop()
 
     del mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
@@ -149,7 +149,7 @@ def _g_solve(*args,**kwargs):
     else:
         _non_graddesc_solve(*args,**kwargs)
 
-def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
+def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
     from config import settings
 
     # create counter object
@@ -158,7 +158,7 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
     for current_time in times_list:
         # perform the solve
         try:
-            _n_solve(eqn, q_soln, bcs=bcs,
+            _n_solve(q_soln, bcs=bcs,
                 solver_parameters=solver_parameters,
                 newton_parameters=newton_parameters)
         except ConvergenceError:
@@ -183,13 +183,13 @@ def _graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_para
         if counter.is_checkpoint():
             _checkpoint(q_soln,current_time)
 
-def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_parameters):
+def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
         # pull first time value as a dummy current time
         current_time = times_list[0]
 
         # perform the solve
         try:
-            _n_solve(eqn, q_soln, bcs=bcs,
+            _n_solve(q_soln, bcs=bcs,
                 solver_parameters=solver_parameters,
                 newton_parameters=newton_parameters)
         except ConvergenceError:
@@ -207,24 +207,28 @@ def _non_graddesc_solve(times_list, eqn, q_soln, bcs, solver_parameters, newton_
 
 def _n_solve(*args,**kwargs):
     from config import settings
+    from firedrakeplus.eqnglobals import EqnGlobals
 
     # fetch q_soln
-    q_soln = args[1]
+    q_soln = args[0]
 
     # assign the solution from the previous loop to q_prev, and q_prev from this loop to q_prev_prev
     q_prev_prev.assign(q_prev)
     q_prev.assign(q_soln)
 
     if settings.pde.newtons_method == 'modified':
-        _modified_newton_solve(*args,**kwargs)
+        _dynamic_solve(*args,**kwargs)
     elif settings.pde.newtons_method:
         _newton_solve(*args,**kwargs)
-    else:
+    else: # make into separate function
         # first, remove newton_parameters or Firedrake will raise an error
         kwargs.pop('newton_parameters',None)
-        solve(*args,**kwargs)
+        eqn = _define_a_L_eqn(*EqnGlobals.pde)
+        solve(eqn,*args,**kwargs)
 
-def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+    from firedrakeplus.eqnglobals import EqnGlobals
+
     function_space = q_soln.function_space()
 
     initial_guess = newton_parameters['initial_guess']
@@ -234,6 +238,9 @@ def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameter
     q_newt_soln = Function(function_space)
 
     q_newt_soln.assign(initial_guess)
+
+    # Newton PDE system
+    newt_eqn = _define_a_L_eqn(*EqnGlobals.pde_nm)
 
     try:
         for ii in range(no_newt_steps):      
@@ -252,7 +259,7 @@ def _newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameter
 
     q_soln.assign(q_newt_soln)
 
-def _modified_newton_solve(newt_eqn,q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     from firedrakeplus.eqnglobals import EqnGlobals
 
     function_space = q_soln.function_space()
