@@ -94,6 +94,15 @@ def print_lines(*args):
         print_line(arg['title'],arg['text'])
     plog()
 
+def iter_info(*strings: str, i: int, p: str='>'):
+    for string in strings:
+        if not isinstance(string,str):
+            raise TypeError('Must be str')
+    s = ''.join([' ' for _ in range(len(str(i)))])
+    Print(f'{p} ({i}) ' + strings[0])
+    for string in strings[1:]:
+        Print(f'{p}  {s}  ' + string)
+
 # Plogger functions
 
 @plogger

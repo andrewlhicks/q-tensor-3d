@@ -53,7 +53,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
         times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
         t_init = 0 # initial time set to 0
 
-    pr.info(f'E={compute_energy(q_soln):.5f} @t={t_init:.2f} @k={len(energies)} (INITIAL)')
+    pr.iter_info(f'INITIAL CONDITIONS', f't = {t_init}', f'E = {compute_energy(q_soln)}', i=0, p='+')
 
     # Initilize the list of times and energies
 
@@ -61,9 +61,6 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     times = times + new_times
 
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
-
-    # define bilinear form a(q,p), and linear form L(p)
-    a, L =_define_a_L(*EqnGlobals.pde_nm)
 
     # define boundary conditions
     bcs = _define_bcs(EqnGlobals.bdy_cond)
@@ -176,7 +173,7 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
         energies.append(compute_energy(q_soln))
 
         # print info and check for energy decrease
-        pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)}')
+        pr.iter_info(f'TIME STEP COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=len(energies), p='+')
         check_energy_decrease(energies,current_time)
 
         # check if checkpoint, if so then make checkpoint
@@ -200,7 +197,7 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
         energies.append(compute_energy(q_soln))
 
         # print energy
-        pr.Print(f'E={energies[-1]:.5f} @t={current_time:.2f} @k={len(energies)} (non-grad desc)')
+        pr.iter_info(f'NON GD SOLVE COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=0, p='+')
 
         # checkpoint
         _checkpoint(q_soln,current_time)
@@ -251,8 +248,13 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
 
             q_newt_soln.assign(q_newt_delt + q_newt_prev)
-            pr.green(f'δQ={nrm.inf(q_newt_delt)}')
-            if nrm.inf(q_newt_delt) < 1e-12: break
+
+            slope_val = sqrt(abs(compute_energy(q_newt_prev,q_newt_delt,der=1)))
+            enrgy_val = compute_energy(q_newt_soln)
+
+            pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii, p='-')
+
+            if slope_val < 1e-8: break
     except ConvergenceError:
         pr.Print(f'n. solve failed to converge at n. iteration {ii}')
         raise ConvergenceError
@@ -304,29 +306,28 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             # assign the new q_soln
             q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
 
-            #========================================================
-            slope_val = compute_energy(q_newt_prev,q_newt_delt,der=1)
-            slope_vals.append(slope_val)
+            slope_val = sqrt(abs(compute_energy(q_newt_prev,q_newt_delt,der=1)))
             enrgy_val = compute_energy(q_newt_soln)
+            
+            #===========================
+            slope_vals.append(slope_val)
             enrgy_vals.append(enrgy_val)
-            #========================================================
+            #===========================
 
-            pr.Print(f'> δE = {slope_val}')
-            pr.Print(f'>  E = {enrgy_val}')
+            pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii, p='-')
 
             # LOOP CONTROL
 
             # once slope_val becomes sufficiently small, switch to full hessian
-            if abs(slope_val) < 1.0 and not full_hessian:
-                pr.Print('+ switched to full hessian')
+            if slope_val < 0.2 and not full_hessian:
+                pr.Print('- switched to full hessian')
                 full_hessian = True
             # however, if slope_val returns to high level, switch back to pos def matrix
-            if abs(slope_val) > 10.0 and full_hessian:
-                pr.Print('+ switched to pos def')
+            if slope_val > 2.0 and full_hessian:
+                pr.Print('- switched to pos def')
                 full_hessian = False
             # finally, if slope_val becomes very small, break the loop
-            if abs(slope_val) < 1e-12:
-                pr.Print(f'+ finished in {ii} iterations')
+            if slope_val < 1e-8:
                 break
     except ConvergenceError:
         pr.Print(f'n. solve failed to converge at n. iteration {ii}')
