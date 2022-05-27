@@ -164,7 +164,7 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
         
         # perform line search for optimal timestep
         time_der = 1/settings.time.step * (q_soln - q_prev)
-        xi = linesearch.ls(settings.solver.ls_type,q_prev,time_der,settings.time.step)
+        xi = linesearch.ls(settings.pde.gd_ls,q_prev,time_der,settings.time.step)
 
         # assign the new q_soln
         q_soln.assign(q_prev + xi * time_der)
@@ -213,15 +213,17 @@ def _n_solve(*args,**kwargs):
     q_prev_prev.assign(q_prev)
     q_prev.assign(q_soln)
 
-    if settings.pde.newtons_method == 'modified':
+    if settings.pde.solver == 'dynamic':
         _dynamic_solve(*args,**kwargs)
-    elif settings.pde.newtons_method:
+    elif settings.pde.solver == 'newton':
         _newton_solve(*args,**kwargs)
-    else: # make into separate function
+    elif settings.pde.solver == 'none': # make into separate function
         # first, remove newton_parameters or Firedrake will raise an error
         kwargs.pop('newton_parameters',None)
         eqn = _define_a_L_eqn(*EqnGlobals.pde)
         solve(eqn,*args,**kwargs)
+    else:
+        raise ValueError
 
 def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     from firedrakeplus.eqnglobals import EqnGlobals

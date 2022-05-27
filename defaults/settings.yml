@@ -10,10 +10,10 @@ options:
   weak_boundary: none
 pde:
   grad_desc: true
-  newtons_method: true
+  gd_ls: none
+  solver: dynamic
 solver:
   ksp_type: gmres
-  ls_type: none
   pc_type: gamg
 time:
   num: 1
