@@ -53,7 +53,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
         times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
         t_init = 0 # initial time set to 0
 
-    pr.iter_info(f'INITIAL CONDITIONS', f't = {t_init}', f'E = {compute_energy(q_soln)}', i=0, p='+')
+    pr.iter_info(f'INITIAL CONDITIONS', f't = {t_init}', f'E = {compute_energy(q_soln)}', i=0, p='+', b='[]')
 
     # Initilize the list of times and energies
 
@@ -173,7 +173,7 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
         energies.append(compute_energy(q_soln))
 
         # print info and check for energy decrease
-        pr.iter_info(f'TIME STEP COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=len(energies), p='+')
+        pr.iter_info(f'TIME STEP COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=len(energies), p='+', b='[]')
         check_energy_decrease(energies,current_time)
 
         # check if checkpoint, if so then make checkpoint
@@ -197,7 +197,7 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
         energies.append(compute_energy(q_soln))
 
         # print energy
-        pr.iter_info(f'NON GD SOLVE COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=0, p='+')
+        pr.iter_info(f'NON GD SOLVE COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=0, p='+', b='[]')
 
         # checkpoint
         _checkpoint(q_soln,current_time)
@@ -316,7 +316,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             enrgy_vals.append(enrgy_val)
             #===========================
 
-            pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii, p='-')
+            pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii)
 
             # LOOP CONTROL
 

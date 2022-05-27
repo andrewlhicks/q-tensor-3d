@@ -5,6 +5,7 @@ console and then put into a log file.
 My intent is to deprecate this in favor of using the built-in logging
 module, but this will take time to migrate. """
 
+from multiprocessing.sharedctypes import Value
 import saves
 import functools
 
@@ -94,12 +95,14 @@ def print_lines(*args):
         print_line(arg['title'],arg['text'])
     plog()
 
-def iter_info(*strings: str, i: int, p: str='>'):
+def iter_info(*strings: str, i: int, p: str='-', b: str='()'):
     for string in strings:
         if not isinstance(string,str):
             raise TypeError('Must be str')
+    if len(b) != 2:
+        raise ValueError('Must be str of len 2')
     s = ''.join([' ' for _ in range(len(str(i)))])
-    Print(f'{p} ({i}) ' + strings[0])
+    Print(f'{p} {b[0]}{i}{b[1]} ' + strings[0])
     for string in strings[1:]:
         Print(f'{p}  {s}  ' + string)
 
