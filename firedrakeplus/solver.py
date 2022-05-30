@@ -13,6 +13,7 @@ from misc import Timer
 import printoff as pr
 import plot
 import saves
+from ufl import H1
 from ufl.operators import *
 
 def solve_PDE(msh,ref_lvl='Not specified'):
@@ -302,8 +303,12 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
                 # if not full hessian, perform line search for optimal timestep
                 xi = linesearch.exact2(q_newt_prev,q_newt_delt)
             else:
-                # if full hessian, skip line search
-                xi = 1
+                # if full hessian, skip line search unless energy increase
+                diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec)) - compute_energy(q_newt_prev)
+                # print(f'diff = {diff}')
+                xi = 1 if diff < 1e-12 else linesearch.exact2(q_newt_prev,q_newt_delt)
+                xi = 1 if xi < 1e-10 else xi
+                # print(f'xi = {xi}')
 
             # assign the new q_soln
             q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
