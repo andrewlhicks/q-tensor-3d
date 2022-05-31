@@ -164,6 +164,9 @@ for refinement_level in get_range(settings.mesh.refs):
             custom={'title':'Manu. Sol. Energy','text':manu_energy},
             time_elapsed=time_elapsed)
     else:
-        pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
+        try:
+            pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
+        except IndexError:
+            pr.fail('Index error')
 
 # END OF CODE
