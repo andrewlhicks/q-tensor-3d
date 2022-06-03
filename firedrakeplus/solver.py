@@ -266,6 +266,7 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
 def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     from firedrakeplus.eqnglobals import EqnGlobals
+    from config import settings
 
     function_space = q_soln.function_space()
 
@@ -330,15 +331,15 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             # LOOP CONTROL
 
             # once slope_val becomes sufficiently small, switch to full hessian
-            if slope_val < 0.2 and not full_hessian:
+            if slope_val < settings.pde.tol_l and not full_hessian:
                 pr.Print('- switched to full hessian')
                 full_hessian = True
             # however, if slope_val returns to high level, switch back to pos def matrix
-            if slope_val > 2.0 and full_hessian:
+            if slope_val > settings.pde.tol_u and full_hessian:
                 pr.Print('- switched to pos def')
                 full_hessian = False
             # finally, if slope_val becomes very small, break the loop
-            if slope_val < 1e-8:
+            if slope_val < settings.pde.tol:
                 break
     except ConvergenceError:
         pr.Print(f'n. solve failed to converge at n. iteration {ii}')

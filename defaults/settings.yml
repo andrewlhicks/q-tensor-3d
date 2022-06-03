@@ -12,6 +12,9 @@ pde:
   grad_desc: true
   gd_ls: none
   solver: dynamic
+  tol_u: 2.0
+  tol_l: 0.2
+  tol: 1.0e-8
 solver:
   ksp_type: gmres
   pc_type: gamg
