@@ -301,14 +301,18 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
             if not full_hessian:
                 # if not full hessian, perform line search for optimal timestep
-                xi = linesearch.exact2(q_newt_prev,q_newt_delt)
+                xi = linesearch.exact2(q_newt_prev,q_newt_delt,i=ii)
             else:
-                # if full hessian, skip line search unless energy increase
+                # if full hessian, skip line search by default
+                xi = 1
+                # however, if energy increases, fall back to line search
                 diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec)) - compute_energy(q_newt_prev)
-                # print(f'diff = {diff}')
-                xi = 1 if diff < 1e-12 else linesearch.exact2(q_newt_prev,q_newt_delt)
-                xi = 1 if xi < 1e-10 else xi
-                # print(f'xi = {xi}')
+                if diff > 1e-12:
+                    xi = linesearch.exact2(q_newt_prev,q_newt_delt,i=ii)
+                # even still, if this new xi is small or negative, skip line search despite the increas in energy
+                if xi < 1e-10:
+                    pr.warning(f'energy increased by {diff}')
+                    xi = 1
 
             # assign the new q_soln
             q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
@@ -321,7 +325,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             enrgy_vals.append(enrgy_val)
             #===========================
 
-            pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii)
+            pr.iter_info(f' ξ = {xi}', f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii)
 
             # LOOP CONTROL
 

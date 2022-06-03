@@ -56,64 +56,49 @@ class linesearch:
         
         # pr.green(f'> ξ1 = {xi}')
         return xi
-    def exact2(q_prev,time_der):
-        """ Given the previous time, the time derivative, and the time step
-        alpha, returns xi compute by exact line search using the fact that xi is
-        the root of a polynomial. """
+    def exact2(q_prev, search_dir, *, i=0):
+        """ Given the previous step, the search direction, returns ideal time step
+        alpha computed using the fact that the double well is the minimum of a
+        polynomial of degree four. """
 
         import numpy as np
-        from numpy.polynomial import Polynomial
-        import plot
 
         H1_vec = q_prev.function_space()
 
-        # I need to come back and rewrite this code and then the commentary because code's messy
+        # take five evenly spaced sample points between 0 and 1 and calculate energies at these points
+        alphas_lin = np.linspace(0,1,5)
+        energies_lin = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec) for alpha in alphas_lin]
+        alpha_lin_min = alphas_lin[np.argmin(energies_lin)]
+        energy_lin_min = np.amin(energies_lin)
 
-        # first, take five evenly spaced sample points x between 0 and 1
-        x = np.linspace(0,1,5)
+        # take the critical points of a polynomial of degree 4 fitted to the previous alphas/energies and calculate energy at these points
+        alphas_poly = critical_pts_of_poly(alphas_lin, energies_lin, 4)
+        energies_poly = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
+        alpha_poly_min = alphas_poly[np.argmin(energies_poly)]
+        energy_poly_min = np.amin(energies_poly)
 
-        # next, calculate the energies of q_prev + x*time_der for each x
-        q_next = [interpolate(q_prev+float(x[ii])*time_der,H1_vec) for ii in range(5)]
-        y = np.array([compute_energy(q_next[ii]) for ii in range(5)])
-
-        # next, find min x for the energies y
-        x_min = x[np.argmin(y)]
-
-        # make a polynomial of degree 4 (one less than the number of sample points)
-        poly = Polynomial.fit(x,y,4)
-        # find its critical points by finding the roots of the derivative and discarding any imaginary roots
-        xi = poly.deriv().roots()
-        xi = xi[np.isclose(xi.imag, 0)]
-        # produce a list of energies E at the critical points
-        E = poly(xi)
-        # then choose the min of E, which will be the global min of energies
-        xi_min = xi[np.argmin(E)].real
-
-        # compute the q_next, and test whether it decreases the energy
-        q_next = interpolate(q_prev+float(xi_min)*time_der,H1_vec)
-
-        diff = compute_energy(q_next) - np.amin(y)
-
-        # if polynomial is 'flat', give a warning and return the argmin of the sample energies
-        if diff > 1e-12:
+        # if polynomial minimum energy is greater than the linspace minimum energy, give warning and return linspace minimum energy
+        if energy_poly_min - energy_lin_min > 1e-12:
             pr.warning(f'exact2 ls polynomial error {diff}')
-            pr.info(f'{x_min}')
-            return float(x_min)
+            pr.iter_info(f'αl = {alpha_lin_min}', i=i, p='$', show_numbering=False)
+            alpha_min = alpha_lin_min
+        else:
+            # return the argmin of the polynomial energy critical points
+            pr.iter_info(f'αp = {alpha_poly_min}', i=i, p='$', show_numbering=False)
+            alpha_min = alpha_poly_min
 
-        # return the argmin of the polynomial energy critical points
-        # pr.green(f'> ξ2 = {xi_min}')
-        return float(xi_min)
+        return float(alpha_min)
 
     def none(q_prev,time_der,alpha):
         return alpha
 
-def compute_energy(*function,der=0):
+def compute_energy(*functions, der=0):
     from firedrakeplus.eqnglobals import EqnGlobals
     from config import settings
 
     # Check for correct values
 
-    if len(function) not in [1,2,3]:
+    if len(functions) not in [1,2,3]:
         raise ValueError('Must choose 1, 2, or 3 functions.')
     if der not in [0,1,2]:
         raise ValueError('Must choose der=0, 1, or 2.')
@@ -121,14 +106,14 @@ def compute_energy(*function,der=0):
     weak_boundary = settings.options.weak_boundary
     energies = EqnGlobals.energies[2] if der==2 else EqnGlobals.energies[1] if der==1 else EqnGlobals.energies[0]
 
-    q = function[0]
+    q = functions[0]
 
-    if len(function) == 2:
-        p = function[1]
-    if len(function) == 3:
+    if len(functions) == 2:
+        p = functions[1]
+    if len(functions) == 3:
         # See documentation for secondVariationalDerivative for explanation
-        r = function[1] # Should allow for customization in the future
-        p = function[2]
+        r = functions[1] # Should allow for customization in the future
+        p = functions[2]
 
     mesh = q.function_space().mesh()
     x0, x1, x2 = SpatialCoordinate(mesh)
@@ -158,6 +143,15 @@ def compute_energy(*function,der=0):
     # print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
 
+def compute_interpolate_energy(*args, **kwargs):
+    """ Computes the energy, but also adds interpolation over
+    a function space given by the last arg. """
+
+    H1_vec = args[-1]
+    functions = args[:-1]
+    functions = [interpolate(function, H1_vec) for function in functions]
+    return compute_energy(*functions, **kwargs)
+
 def determine_measure(boundary_indicator):
     if boundary_indicator == 'none':
         return None
@@ -168,3 +162,16 @@ def determine_measure(boundary_indicator):
             return ds(boundary_indicator)
         raise ValueError('Boundary integer specified must be positive.')
     raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
+
+def critical_pts_of_poly(x_values, y_values, degree):
+    """ Returns the critical points of a polynomial fitted to the x and y values
+    given, and of degree specified """
+
+    from numpy.polynomial import Polynomial
+
+    # create polynomial using the x values, y values, and degree
+    poly = Polynomial.fit(x_values, y_values, degree)
+    # find its critical points by finding the roots of the derivative
+    critical_pts = poly.deriv().roots().real
+
+    return critical_pts
