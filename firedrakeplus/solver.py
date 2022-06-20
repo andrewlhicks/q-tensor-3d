@@ -310,8 +310,8 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
                 diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec)) - compute_energy(q_newt_prev)
                 if diff > 1e-12:
                     xi = linesearch.exact2(q_newt_prev,q_newt_delt,i=ii)
-                # even still, if this new xi is small or negative, skip line search despite the increas in energy
-                if xi < 1e-10:
+                # even still, if this new xi is small, skip line search despite the increase in energy
+                if abs(xi) < 1e-10:
                     pr.warning(f'energy increased by {diff}')
                     xi = 1
 
