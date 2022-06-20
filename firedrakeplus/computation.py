@@ -79,7 +79,7 @@ class linesearch:
 
         # if polynomial minimum energy is greater than the linspace minimum energy, give warning and return linspace minimum energy
         if energy_poly_min - energy_lin_min > 1e-12:
-            pr.warning(f'exact2 ls polynomial error {diff}')
+            pr.warning(f'exact2 ls polynomial error, increase of {energy_poly_min - energy_lin_min}')
             pr.iter_info(f'αl = {alpha_lin_min}', i=i, p='$', show_numbering=False)
             alpha_min = alpha_lin_min
         else:
