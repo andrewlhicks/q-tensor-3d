@@ -95,19 +95,25 @@ def print_lines(*args):
         print_line(arg['title'],arg['text'])
     plog()
 
+@plogger
 def iter_info(*strings: str, i: int, p: str='-', b: str='()', show_numbering: bool=True):
     for string in strings:
         if not isinstance(string,str):
             raise TypeError('Must be str')
     if len(b) != 2:
         raise ValueError('Must be str of len 2')
+    
+    plog(''.join([p for _ in range(15)]))
+
     s = ''.join([' ' for _ in range(len(str(i)))])
     if show_numbering:
-        Print(f'{p} {b[0]}{i}{b[1]} ' + strings[0])
+        plog(f'{p} {b[0]}{i}{b[1]} ' + strings[0])
     else:
-        Print(f'{p}  {s}  ' + strings[0])
+        plog(f'{p}  {s}  ' + strings[0])
     for string in strings[1:]:
-        Print(f'{p}  {s}  ' + string)
+        plog(f'{p}  {s}  ' + string)
+    
+    plog(''.join([p for _ in range(15)]))
 
 # Plogger functions
 

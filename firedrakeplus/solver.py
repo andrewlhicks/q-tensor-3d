@@ -28,7 +28,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     refinement_level = ref_lvl
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
     x0, x1, x2 = SpatialCoordinate(mesh)
-    nu = FacetNormal(mesh)
+    nu = as_vector([x0-0.5,x1-0.5,x2-0.5])/sqrt((x0-0.5)**2+(x1-0.5)**2+(x2-0.5)**2) # TEMPORARY MEASURE
     q = TrialFunction(H1_vec)
     p = TestFunction(H1_vec)
     q_prev = Function(H1_vec)
@@ -241,6 +241,7 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
     # Newton PDE system
     newt_eqn = _define_a_L_eqn(*EqnGlobals.pde_nm)
+    preconditioner, _ = _define_a_L(*EqnGlobals.pde_pd)
 
     try:
         for ii in range(no_newt_steps):      
@@ -248,7 +249,7 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
             # Solve
             
-            solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+            solve(newt_eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters, Jp=preconditioner)
 
             q_newt_soln.assign(q_newt_delt + q_newt_prev)
 
@@ -281,6 +282,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     # two PDE systems
     eqn_hessian = _define_a_L_eqn(*EqnGlobals.pde_nm)
     eqn_posdef = _define_a_L_eqn(*EqnGlobals.pde_pd)
+    preconditioner, _ = _define_a_L(*EqnGlobals.pde_pd)
 
     try:
         #==============
@@ -298,7 +300,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             eqn = eqn_hessian if full_hessian else eqn_posdef
 
             # solve equation
-            solve(eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters)
+            solve(eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters, Jp=preconditioner)
 
             if not full_hessian:
                 # if not full hessian, perform line search for optimal timestep
@@ -326,23 +328,23 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             enrgy_vals.append(enrgy_val)
             #===========================
 
-            pr.iter_info(f' ξ = {xi}', f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii)
+            pr.iter_info(f'step size = {xi}', f'slope value = {slope_val}', f'Energy = {enrgy_val}', i=ii)
 
             # LOOP CONTROL
 
             # once slope_val becomes sufficiently small, switch to full hessian
             if slope_val < settings.pde.tol_l and not full_hessian:
-                pr.Print('- switched to full hessian')
+                pr.info('- switched to full hessian')
                 full_hessian = True
             # however, if slope_val returns to high level, switch back to pos def matrix
             if slope_val > settings.pde.tol_u and full_hessian:
-                pr.Print('- switched to pos def')
+                pr.info('- switched to pos def')
                 full_hessian = False
             # finally, if slope_val becomes very small, break the loop
             if slope_val < settings.pde.tol:
                 break
     except ConvergenceError:
-        pr.Print(f'n. solve failed to converge at n. iteration {ii}')
+        pr.info(f'n. solve failed to converge at n. iteration {ii}')
         raise ConvergenceError
     
     # import matplotlib.pyplot as plt
