@@ -28,7 +28,8 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     refinement_level = ref_lvl
     H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
     x0, x1, x2 = SpatialCoordinate(mesh)
-    nu = as_vector([x0-0.5,x1-0.5,x2-0.5])/sqrt((x0-0.5)**2+(x1-0.5)**2+(x2-0.5)**2) # TEMPORARY MEASURE
+    # nu = as_vector([x0-0.5,x1-0.5,x2-0.5])/sqrt((x0-0.5)**2+(x1-0.5)**2+(x2-0.5)**2) # TEMPORARY MEASURE
+    nu = as_vector([x0,x1,x2]) # TEMPORARY MEASURE
     q = TrialFunction(H1_vec)
     p = TestFunction(H1_vec)
     q_prev = Function(H1_vec)
@@ -295,43 +296,15 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
         for ii in range(no_newt_steps):      
             q_newt_prev.assign(q_newt_soln)
-
+            
             # set eqn to be with full hessian or else just the positive definite matrix
             eqn = eqn_hessian if full_hessian else eqn_posdef
 
             # solve equation
             solve(eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters, Jp=preconditioner)
 
-            if not full_hessian:
-                # if not full hessian, perform line search for optimal timestep
-                xi = linesearch.exact2(q_newt_prev,q_newt_delt,i=ii)
-            else:
-                # if full hessian, skip line search by default
-                xi = 1
-                # however, if energy increases, fall back to line search
-                diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec)) - compute_energy(q_newt_prev)
-                if diff > 1e-12:
-                    xi = linesearch.exact2(q_newt_prev,q_newt_delt,i=ii)
-                # even still, if this new xi is small, skip line search despite the increase in energy
-                if abs(xi) < 1e-10:
-                    pr.warning(f'energy increased by {diff}')
-                    xi = 1
-
-            # assign the new q_soln
-            q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
-
-            slope_val = sqrt(abs(compute_energy(q_newt_prev,q_newt_delt,der=1)))
-            enrgy_val = compute_energy(q_newt_soln)
-            
-            #===========================
-            slope_vals.append(slope_val)
-            enrgy_vals.append(enrgy_val)
-            #===========================
-
-            pr.iter_info(f'step size = {xi}', f'slope value = {slope_val}', f'Energy = {enrgy_val}', i=ii)
-
             # LOOP CONTROL
-
+            slope_val = sqrt(abs(compute_energy(q_newt_prev,q_newt_delt,der=1)))
             # once slope_val becomes sufficiently small, switch to full hessian
             if slope_val < settings.pde.tol_l and not full_hessian:
                 pr.info('- switched to full hessian')
@@ -343,28 +316,34 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             # finally, if slope_val becomes very small, break the loop
             if slope_val < settings.pde.tol:
                 break
+            
+            damp_newton = False
+
+            if full_hessian:
+                xi = 1
+                diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec)) - compute_energy(q_newt_prev)
+                if diff > 2 * settings.pde.tol:
+                    pr.info(f'energy increased by {diff}, will use damp newton')
+                    damp_newton = True
+            if not full_hessian or damp_newton:
+                xi = linesearch.exact2(q_newt_prev,q_newt_delt,i=ii)
+            
+            if xi == 0:
+                pr.warning('step size is 0, probably linspace min from exact2 ls')
+                if damp_newton:
+                    pr.info('reverting from damp newton --> newton')
+                    xi = 1
+
+            # assign the new q_soln
+            q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
+
+            enrgy_val = compute_energy(q_newt_soln)
+            
+            pr.iter_info(f'step size = {xi}', f'slope value = {slope_val}', f'energy = {enrgy_val}', i=ii)
+
     except ConvergenceError:
         pr.info(f'n. solve failed to converge at n. iteration {ii}')
         raise ConvergenceError
-    
-    # import matplotlib.pyplot as plt
-    # import sys
-    # from config import settings
-    # if len(slope_vals) > len(enrgy_vals):
-    #     enrgy_vals.pop()
-    # x_vals = range(len(slope_vals))
-    # fig, (ax1, ax2) = plt.subplots(2,1,figsize=(10,10))
-    # fig.suptitle(f'Gradient descent, timestep = {settings.time.step}',fontsize=16)
-    # ax1.plot(x_vals,enrgy_vals)
-    # ax1.set_xlabel('Iteration')
-    # ax1.set_ylabel('Energy')
-    # ax1.grid()
-    # ax2.plot(x_vals,slope_vals)
-    # ax2.set_xlabel('Iteration')
-    # ax2.set_ylabel('Slope')
-    # ax2.grid()
-    # plt.savefig('temp.png')
-    # sys.exit()
 
     q_soln.assign(q_newt_soln)
 
