@@ -3,6 +3,8 @@ def set_eqn_globals(comp,uflcache_dict):
 
     global EqnGlobals
     class EqnGlobals:
+        """ It is evident that I shouldn't need to add to this class every time a variable is added to EqnGlobals.
+        Something should be done about that. """
         # first, create three separate PDE systems
         pde = comp['pde']
         pde_nm = comp['pde_nm']
@@ -15,3 +17,4 @@ def set_eqn_globals(comp,uflcache_dict):
         bdy_cond = comp['bdy_cond']
 
         energies = comp['energies']
+        energies_minmom = comp['energies_minmom']

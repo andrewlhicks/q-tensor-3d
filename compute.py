@@ -89,6 +89,9 @@ def compute():
     energies.add_boundary(GeneralForm(c.W1/2*innerp(Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu),Q-Pi*Q*Pi+c.S0/3*outerp(nu,nu))+c.W2/4*(innerp(Q,Q)-2*c.S0**2/3)**2,Dqq,name='Planar-degenerate Anchoring'))
     energies.add_boundary(GeneralForm(-g.dot(q),Dqq,name='Boundary Forcing Energy'))
 
+    energies_minmom = energies.copy()
+    energies_minmom.add_domain(GeneralForm(1/(2*c.dt) * innerp(Q-QP,Q-QP),Dqq,name='Min Moments Energy'))
+
     # Construct PDE
 
     lhs_d = [ # lhs domain
@@ -137,6 +140,7 @@ def compute():
         'pde_nm_d' : pde_nm_d.ufl,
         'pde_nm_b' : pde_nm_b.ufl,
         'energies' : energies.ufl_dict,
+        'energies_minmom' : energies_minmom.ufl_dict,
         'pde' : [pde_d.ufl, pde_b.ufl],
         'pde_nm' : [pde_nm_d.ufl, pde_nm_b.ufl],
         'pde_pd' : [pde_pd_d.ufl, pde_nm_b.ufl],

@@ -56,7 +56,7 @@ class linesearch:
         
         # pr.green(f'> ξ1 = {xi}')
         return xi
-    def exact2(q_prev, search_dir, *, i=0):
+    def exact2(q_prev, search_dir, *, i=0, min_moment=None):
         """ Given the previous step, the search direction, returns ideal time step
         alpha computed using the fact that the double well is the minimum of a
         polynomial of degree four. """
@@ -69,18 +69,18 @@ class linesearch:
 
         # take five evenly spaced sample points between 0 and 1 and calculate energies at these points
         alphas_lin = np.linspace(0,1,5)
-        energies_lin = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec) for alpha in alphas_lin]
+        energies_lin = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec, min_moment=min_moment) for alpha in alphas_lin]
         alpha_lin_min = alphas_lin[np.argmin(energies_lin)]
         energy_lin_min = np.amin(energies_lin)
 
         # take the critical points of a polynomial of degree 4 fitted to the previous alphas/energies and calculate energy at these points
         alphas_poly = critical_pts_of_poly(alphas_lin, energies_lin, 4)
-        energies_poly = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
+        energies_poly = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec, min_moment=min_moment) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
         alpha_poly_min = alphas_poly[np.argmin(energies_poly)]
         energy_poly_min = np.amin(energies_poly)
 
         # if polynomial minimum energy is greater than the linspace minimum energy, give warning and return linspace minimum energy
-        if energy_poly_min - energy_lin_min > 1e-12:
+        if energy_poly_min - energy_lin_min > 0:
             pr.warning(f'exact2 ls polynomial error, energy increase of {energy_poly_min - energy_lin_min}')
             pr.info('falling back to alpha from linear space')
             pr.info(f'alpha = {alpha_lin_min}')
@@ -95,7 +95,7 @@ class linesearch:
     def none(q_prev,time_der,alpha):
         return alpha
 
-def compute_energy(*functions, der=0):
+def compute_energy(*functions, der=0, min_moment=None):
     from firedrakeplus.eqnglobals import EqnGlobals
     from config import settings
 
@@ -106,10 +106,14 @@ def compute_energy(*functions, der=0):
     if der not in [0,1,2]:
         raise ValueError('Must choose der=0, 1, or 2.')
 
+    current_energies = EqnGlobals.energies if min_moment is None else EqnGlobals.energies_minmom
+
     weak_boundary = settings.options.weak_boundary
-    energies = EqnGlobals.energies[2] if der==2 else EqnGlobals.energies[1] if der==1 else EqnGlobals.energies[0]
+    energies = current_energies[2] if der==2 else current_energies[1] if der==1 else current_energies[0]
 
     q = functions[0]
+    if min_moment is not None:
+        q_prev = min_moment
 
     if len(functions) == 2:
         p = functions[1]
@@ -120,7 +124,8 @@ def compute_energy(*functions, der=0):
 
     mesh = q.function_space().mesh()
     x0, x1, x2 = SpatialCoordinate(mesh)
-    nu = FacetNormal(mesh)
+    # nu = FacetNormal(mesh)
+    nu = as_vector([x0-0.5,x1-0.5,x2-0.5])/sqrt((x0-0.5)**2+(x1-0.5)**2+(x2-0.5)**2)
 
     f = eval(EqnGlobals.forcing_f)
     g = eval(EqnGlobals.forcing_g)

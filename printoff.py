@@ -8,6 +8,7 @@ module, but this will take time to migrate. """
 from multiprocessing.sharedctypes import Value
 import saves
 import functools
+from datetime import datetime
 
 def main():
     if saves.SaveMode:
@@ -21,6 +22,11 @@ def main():
                 file.write('\n')
                 Print(now.strftime('%c'))
                 Print()
+
+# utility functions
+
+def rstr(string,number):
+    return ''.join([string for _ in range(number)])
 
 # Decorators
 
@@ -115,6 +121,27 @@ def iter_info(*strings: str, i: int, p: str='-', b: str='()', show_numbering: bo
     
     plog(''.join([p for _ in range(15)]))
 
+@plogger
+def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()'):
+    now = datetime.now().strftime('%c')
+    for string in strings:
+        if not isinstance(string,str):
+            raise TypeError('Must be str')
+    if len(b) != 2:
+        raise ValueError('Must be str of len 2')
+    if j is None:
+        j = ''
+    else:
+        j = f'-{j}'
+    
+    now_str = f'[{now}]'
+    it_str = f'{b[0]}{i}{j}{b[1]}'
+    spacing = rstr(' ',len(now_str + it_str) + 2)
+    plog(f'{now_str} {it_str} {strings[0]}')
+    for string in strings[1:]:
+        plog(spacing + string)
+
+
 # Plogger functions
 
 @plogger
@@ -166,38 +193,49 @@ def pde_solve_info(**kwargs):
     print_lines(*dicts)
 
 @plogger
-def info(text, spaced=False, color=None, *args, **kwargs):
-    if not isinstance(text,str):
+def text(string, spaced=False, color=None, *args, **kwargs):
+    if not isinstance(string,str):
         raise TypeError('Text must be composed of a string.')
-    plog(text, color=color, *args, **kwargs)
+    plog(string, color=color, *args, **kwargs)
     if spaced: plog('')
 
-def green(text, spaced=False, *args, **kwargs):
-    info(text, spaced=spaced, color='green', *args, **kwargs)
+def stext(string, color=None, *args, **kwargs):
+    text(string, spaced=True, color=color, *args, **kwargs)
 
-def blue(text, spaced=False, *args, **kwargs):
-    info(text, spaced=spaced, color='blue', *args, **kwargs)
+@plogger
+def info(string, spaced=False, color=None, *args, **kwargs):
+    now = datetime.now().strftime('%c')
+    if not isinstance(string,str):
+        raise TypeError('Text must be composed of a string.')
+    plog(f'[{now}] {string}', color=color, *args, **kwargs)
+    if spaced: plog('')
 
-def warning(text, spaced=False, *args, **kwargs):
-    info(f'warning: {text}', spaced=spaced, color='warning', *args, **kwargs)
+def green(string, spaced=False, *args, **kwargs):
+    info(string, spaced=spaced, color='green', *args, **kwargs)
 
-def fail(text, spaced=False, *args, **kwargs):
-    info(f'fatal: {text}', spaced=spaced, color='fail', *args, **kwargs)
+def blue(string, spaced=False, *args, **kwargs):
+    info(string, spaced=spaced, color='blue', *args, **kwargs)
 
-def sinfo(text, color=None, *args, **kwargs):
-    info(text, spaced=True, color=color, *args, **kwargs)
+def warning(string, spaced=False, *args, **kwargs):
+    info(f'warning: {string}', spaced=spaced, color='warning', *args, **kwargs)
 
-def sgreen(text, *args, **kwargs):
-    green(text, spaced=True, *args, **kwargs)
+def fail(string, spaced=False, *args, **kwargs):
+    info(f'fatal: {string}', spaced=spaced, color='fail', *args, **kwargs)
 
-def sblue(text, *args, **kwargs):
-    blue(text, spaced=True, *args, **kwargs)
+def sinfo(string, color=None, *args, **kwargs):
+    info(string, spaced=True, color=color, *args, **kwargs)
 
-def swarning(text, *args, **kwargs):
-    warning(text, spaced=True, *args, **kwargs)
+def sgreen(string, *args, **kwargs):
+    green(string, spaced=True, *args, **kwargs)
 
-def sfail(text, *args, **kwargs):
-    fail(text, spaced=True, *args, **kwargs)
+def sblue(string, *args, **kwargs):
+    blue(string, spaced=True, *args, **kwargs)
+
+def swarning(string, *args, **kwargs):
+    warning(string, spaced=True, *args, **kwargs)
+
+def sfail(string, *args, **kwargs):
+    fail(string, spaced=True, *args, **kwargs)
 
 # MAIN
 
