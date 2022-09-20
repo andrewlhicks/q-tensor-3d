@@ -5,7 +5,7 @@ from firedrake import solve, interpolate
 from firedrake import dx, ds
 from firedrakeplus.math import nrm
 from firedrakeplus.check import check_energy_decrease
-from firedrakeplus.computation import compute_energy, linesearch
+from firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, linesearch
 from firedrakeplus.vis import visualize
 
 from datetime import datetime
@@ -175,7 +175,7 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
         energies.append(compute_energy(q_soln))
 
         # print info and check for energy decrease
-        pr.iter_info_verbose(f'TIME STEP COMPLETED', f'E = {energies[-1]}', i=len(energies))
+        pr.iter_info_verbose(f'TIME STEP COMPLETED', f'energy = {energies[-1]}', i=len(energies))
         check_energy_decrease(energies,current_time)
 
         # check if checkpoint, if so then make checkpoint
@@ -269,6 +269,7 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     from firedrakeplus.eqnglobals import EqnGlobals
     from config import settings
+    from firedrake import assemble
 
     # obtain current gradient descent time step number
     ii = len(energies)
@@ -286,7 +287,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     # two PDE systems
     eqn_hessian = _define_a_L_eqn(*EqnGlobals.pde_nm)
     eqn_posdef = _define_a_L_eqn(*EqnGlobals.pde_pd)
-    preconditioner, _ = _define_a_L(*EqnGlobals.pde_pd)
+    preconditioner, res = _define_a_L(*EqnGlobals.pde_pd)
 
     try:
         # full Hessian off initially
@@ -294,6 +295,9 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
         for jj in range(no_newt_steps):      
             q_newt_prev.assign(q_newt_soln)
+
+            # now that q_newt_prev has been set, compute residual value
+            res_val = compute_res_val(res)
             
             # set eqn to be with full hessian or else just the positive definite matrix
             eqn = eqn_hessian if full_hessian else eqn_posdef
@@ -302,10 +306,10 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             solve(eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters, Jp=preconditioner)
 
             # LOOP CONTROL
-            slope_val = sqrt(abs(compute_energy(q_newt_prev, q_newt_delt, der=1, min_moment=initial_guess)))
+            slope_val = compute_slope_val(res,q_newt_delt) # I would guess this method is faster than using compute_energy()
 
-            pr.iter_info_verbose(f'slope value = {slope_val}', i=ii, j=jj)
-
+            pr.iter_info_verbose('INITIAL RESULTS', f'slope value = {slope_val}', f'res value = {res_val}', i=ii, j=jj)
+            
             # once slope_val becomes sufficiently small, switch to full hessian
             if slope_val < settings.pde.tol_l and not full_hessian:
                 pr.iter_info_verbose('switched to full hessian', i=ii, j=jj)
@@ -324,8 +328,8 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
                 xi = 1
                 diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec),min_moment=initial_guess) - compute_energy(q_newt_prev,min_moment=initial_guess)
                 if diff > 2 * settings.pde.tol:
-                    pr.info(f'would be energy increase of {diff}, will use damp newton')
-                    pr.info('switching from full newton to damp newton')
+                    pr.iter_info_verbose(f'would be energy increase of {diff}, will use damp newton', i=ii, j=jj)
+                    pr.iter_info_verbose('switching from full newton to damp newton', i=ii, j=jj)
                     damp_newton = True
             if not full_hessian or damp_newton:
                 xi = linesearch.exact2(q_newt_prev,q_newt_delt,min_moment=initial_guess)
@@ -333,7 +337,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             if xi == 0:
                 pr.warning('step size is 0, probably linspace min from exact2 ls')
                 if damp_newton:
-                    pr.info('switching from damp newton to full newton')
+                    pr.iter_info_verbose('switching from damp newton to full newton', i=ii, j=jj)
                     pr.warning(f'allowing for energy increase of {diff}')
                     xi = 1
 
@@ -342,7 +346,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
             enrgy_val = compute_energy(q_newt_soln, min_moment=initial_guess)
             
-            pr.iter_info_verbose('ITERATION SUMMARY', f'step size = {xi}', f'slope value = {slope_val}', f'energy = {enrgy_val}', i=ii, j=jj)
+            pr.iter_info_verbose('ITERATION SUMMARY', f'step size = {xi}', f'energy = {enrgy_val}', i=ii, j=jj)
 
     except ConvergenceError:
         pr.info(f'n. solve failed to converge at n. iteration {jj}')
@@ -366,7 +370,7 @@ def _checkpoint(q_soln,current_time):
         plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
         # print checkpoint info
-        pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)} ({datetime.now().strftime("%c")})')
+        pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)}')
 
 class _CheckpointCounter:
     def __init__(self):

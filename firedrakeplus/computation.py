@@ -160,6 +160,22 @@ def compute_interpolate_energy(*args, **kwargs):
     functions = [interpolate(function, H1_vec) for function in functions]
     return compute_energy(*functions, **kwargs)
 
+def compute_slope_val(pde_lhs, search_direction):
+    from math import sqrt
+
+    res_vec = extract_vector(pde_lhs)
+    sd_vec = extract_vector(search_direction)
+    return sqrt(abs(res_vec.T.dot(sd_vec)))
+
+def compute_res_val(pde_lhs):
+    from math import sqrt
+
+    res_vec = extract_vector(pde_lhs)
+    return sqrt(abs(res_vec.T.dot(res_vec)))
+
+def extract_vector(fd_function):
+    return assemble(fd_function).dat.data.reshape(-1,1)
+
 def determine_measure(boundary_indicator):
     if boundary_indicator == 'none':
         return None
