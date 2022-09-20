@@ -3,7 +3,6 @@ from sympyplus import *
 import user_expressions.manufac_q as manufac_q
 import user_expressions.forcing_f as forcing_f
 import user_expressions.forcing_g as forcing_g
-import user_expressions.bdycond_s as bdycond_s
 
 from config import constants as c
 from config import settings
@@ -136,7 +135,6 @@ def compute():
         'manufac_q' : manufac_q.out,
         'forcing_f' : forcing_f.out,
         'forcing_g' : forcing_g.out,
-        'bdy_cond' : bdycond_s.out,
         'pde_nm_d' : pde_nm_d.ufl,
         'pde_nm_b' : pde_nm_b.ufl,
         'energies' : energies.ufl_dict,

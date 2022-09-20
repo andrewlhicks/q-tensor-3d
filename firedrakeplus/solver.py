@@ -65,7 +65,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define boundary conditions
-    bcs = _define_bcs(EqnGlobals.bdy_cond)
+    bcs = _define_bcs(EqnGlobals.s_bdy)
     
     # solver parameters
     solver_parameters = {

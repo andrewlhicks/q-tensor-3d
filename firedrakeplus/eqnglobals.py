@@ -14,7 +14,7 @@ def set_eqn_globals(comp,uflcache_dict):
 
         forcing_f = comp['forcing_f'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])' # NOTE: while it works to calculate f here as an interpolation with Firedrake, it's actually more precise to do it in sympy beforehand.
         forcing_g = comp['forcing_g'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
-        bdy_cond = comp['bdy_cond']
+        s_bdy = uflcache_dict['s_bdy'] if 's_bdy' in uflcache_dict.keys() else 'as_vector([0,0,0,0,0])' # warning: may want to consider this carefully
 
         energies = comp['energies']
         energies_minmom = comp['energies_minmom']
