@@ -4,53 +4,60 @@ controls the PDE to be solved. """
 from loaddump import *
 from userexpr import *
 
+userexpr_types = ('initcond','weakbdy','strongbdy')
+
 def usage():
     usage = """usage: python uflcache.py (-l | -r) <save-name>
   l: file in './saves'
   r: file in './saves-remote'"""
     print(usage)
 
-def process_initcond(dict):
-    if dict is None:
+def process_condition(dictionary):
+    if not isinstance(dictionary,dict):
+        raise TypeError('Must be dictionary')
+    if dictionary is None:
         raise ValueError('Empty dict not accepted for user expression.')
-    if len(dict) > 1:
+    if len(dictionary) > 1:
         raise KeyError('Only one dict key accepted for user expression.')
-    for key in dict.keys():
+    for key in dictionary.keys():
         if key not in ('simple','piecewise'):
             raise KeyError(f'Dict keys for user expression may only be "simple" or "piecewise", not "{key}".')
 
-    if 'simple' in dict.keys():
-        return dict['simple'].uflfy()
+    if 'simple' in dictionary.keys():
+        return dictionary['simple'].uflfy()
 
-    # If nothing is returned, assume ic_piecewise
+    # If nothing is returned, assume piecewise
 
-    dict = dict['piecewise']
+    dictionary = dictionary['piecewise']
 
-    if set(dict.keys()) != {'if','then','else'}:
-        raise KeyError('Keys for a piecewise ic must be "if", "then", and "else".')
+    if set(dictionary.keys()) != {'if','then','else'}:
+        raise KeyError('Keys for a piecewise condition must be "if", "then", and "else".')
 
-    condition = dict['if']
-    ufl_a = dict['then'].uflfy()
-    ufl_b = dict['else'].uflfy()
+    condition = dictionary['if']
+    ufl_a = dictionary['then'].uflfy()
+    ufl_b = dictionary['else'].uflfy()
 
     return f'conditional({condition},{ufl_a},{ufl_b})'
 
-def load_userexpr(path_head):
+def load_userexpr_yml(path_head):
     try:
         userexpr_dict = load_yml(f'{path_head}/userexpr.yml')
     except FileNotFoundError:
         print(f'File "{path_head}/userexpr.yml" not found, falling back to default.')
         userexpr_dict = load_yml('defaults/userexpr.yml')
+    for key in userexpr_dict.keys():
+        if key not in userexpr_types:
+            types = '("' + '","'.join(userexpr_types) + '")'
+            raise KeyError(f'Dict keys for user expression may only be {types}, not "{key}".')
     return userexpr_dict
 
-def dump_uflcache(userexpr_dict,path_head):
-    initcond = userexpr_dict['initcond']
-    uflcache = {'initcond':process_initcond(initcond)}
+def dump_uflcache_json(userexpr_dict,path_head):
+    uflcache = {key:process_condition(val) for key, val in userexpr_dict.items()}
     dump_json(uflcache,f'{path_head}/uflcache.json')
 
 def build_uflcache(path_head):
-    userexpr_dict = load_userexpr(path_head)
-    dump_uflcache(userexpr_dict,path_head)
+    userexpr_dict = load_userexpr_yml(path_head)
+    dump_uflcache_json(userexpr_dict,path_head)
 
 def main():
     import getopt
