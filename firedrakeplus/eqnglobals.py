@@ -16,5 +16,7 @@ def set_eqn_globals(comp,uflcache_dict):
         forcing_g = comp['forcing_g'] if settings.options.manufactured else 'as_vector([0,0,0,0,0])'
         s_bdy = uflcache_dict['s_bdy'] if 's_bdy' in uflcache_dict.keys() else 'as_vector([0,0,0,0,0])' # warning: may want to consider this carefully
 
+        w_bdy_nu = uflcache_dict['w_bdy_nu'] if 'w_bdy_nu' in uflcache_dict.keys() else 'FacetNormal(mesh)'
+
         energies = comp['energies']
         energies_minmom = comp['energies_minmom']

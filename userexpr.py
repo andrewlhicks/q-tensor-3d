@@ -51,6 +51,19 @@ class FromVector(FromSympy):
 yaml.add_constructor('!FromVector',fs_constructor(FromVector))
 yaml.add_representer(FromVector,fs_representer('!FromVector'))
 
+class SpatialVector(FromSympy):
+    def __new__(cls,matrix:list):
+        if len(matrix) != 3:
+            raise ValueError('Vector must be length 3.')
+        return super().__new__(cls,matrix)
+    @property
+    def result(self):
+        return self
+    def __repr__(self):
+        return f'FromVector {self.result}'
+yaml.add_constructor('!SpatialVector',fs_constructor(SpatialVector))
+yaml.add_representer(SpatialVector,fs_representer('!SpatialVector'))
+
 class FromDirector(FromSympy):
     @property
     def result(self):

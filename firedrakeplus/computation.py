@@ -124,8 +124,7 @@ def compute_energy(*functions, der=0, min_moment=None):
 
     mesh = q.function_space().mesh()
     x0, x1, x2 = SpatialCoordinate(mesh)
-    # nu = FacetNormal(mesh)
-    nu = as_vector([x0-0.5,x1-0.5,x2-0.5])/sqrt((x0-0.5)**2+(x1-0.5)**2+(x2-0.5)**2)
+    nu = eval(EqnGlobals.w_bdy_nu)
 
     f = eval(EqnGlobals.forcing_f)
     g = eval(EqnGlobals.forcing_g)
