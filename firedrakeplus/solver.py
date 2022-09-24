@@ -335,10 +335,13 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             
             if xi == 0:
                 pr.warning('step size is 0, probably linspace min from exact2 ls')
+                if not full_hessian:
+                    pr.fail('gradient descent failed')
+                    exit()
                 if damp_newton:
-                    pr.iter_info_verbose('switching from damp newton to full newton', i=ii, j=jj)
-                    pr.warning(f'allowing for energy increase of {diff}')
-                    xi = 1
+                    pr.warning('newton direction failed')
+                    pr.iter_info_verbose('switched to pos def', i=ii, j=jj)
+                    full_hessian = False
 
             # assign the new q_soln
             q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
