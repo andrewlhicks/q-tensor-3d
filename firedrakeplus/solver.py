@@ -311,12 +311,12 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             
             # once slope_val becomes sufficiently small, switch to full hessian
             if slope_val < settings.pde.tol_l and not full_hessian:
-                pr.iter_info_verbose('switched to full hessian', i=ii, j=jj)
                 full_hessian = True
+                pr.iter_info_verbose('switched to full hessian', i=ii, j=jj)
             # however, if slope_val returns to high level, switch back to pos def matrix
             if slope_val > settings.pde.tol_u and full_hessian:
-                pr.iter_info_verbose('switched to pos def', i=ii, j=jj)
                 full_hessian = False
+                pr.iter_info_verbose('switched to pos def', i=ii, j=jj)
             # finally, if slope_val becomes very small, break the loop
             if slope_val < settings.pde.tol:
                 pr.iter_info_verbose('tolerance reached, moving to next time step', i=ii, j=jj)
@@ -341,8 +341,8 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
                     exit()
                 if damp_newton:
                     pr.warning('newton direction failed')
-                    pr.iter_info_verbose('switched to pos def', i=ii, j=jj)
                     full_hessian = False
+                    pr.iter_info_verbose('switched to pos def', i=ii, j=jj)
 
             # assign the new q_soln
             q_newt_soln.assign(q_newt_prev + xi * q_newt_delt)
@@ -355,8 +355,9 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
         pr.info(f'n. solve failed to converge at n. iteration {jj}')
         raise ConvergenceError
 
-    pr.iter_info_verbose('updating current solution solution', i=ii)
+    pr.iter_info_verbose('updating current solution...', i=ii)
     q_soln.assign(q_newt_soln)
+    pr.iter_info_verbose('current solution updated', i=ii)
 
 def _checkpoint(q_soln,current_time):
         # write eigen-info to Paraview
