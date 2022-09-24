@@ -319,6 +319,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
                 full_hessian = False
             # finally, if slope_val becomes very small, break the loop
             if slope_val < settings.pde.tol:
+                pr.iter_info_verbose('tolerance reached, moving to next time step', i=ii, j=jj)
                 break
             
             damp_newton = False
@@ -354,6 +355,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
         pr.info(f'n. solve failed to converge at n. iteration {jj}')
         raise ConvergenceError
 
+    pr.iter_info_verbose('updating current solution solution', i=ii)
     q_soln.assign(q_newt_soln)
 
 def _checkpoint(q_soln,current_time):
