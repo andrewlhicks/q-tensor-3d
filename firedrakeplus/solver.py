@@ -296,7 +296,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             q_newt_prev.assign(q_newt_soln)
 
             # now that q_newt_prev has been set, compute residual value
-            res_val = compute_res_val(res)
+            # res_val = compute_res_val(res)
             
             # set eqn to be with full hessian or else just the positive definite matrix
             eqn = eqn_hessian if full_hessian else eqn_posdef
@@ -305,9 +305,10 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             solve(eqn, q_newt_delt, bcs=bcs, solver_parameters=solver_parameters, Jp=preconditioner)
 
             # LOOP CONTROL
-            slope_val = compute_slope_val(res,q_newt_delt) # I would guess this method is faster than using compute_energy()
+            # slope_val1 = compute_slope_val(res,q_newt_delt) # I would guess this method is faster than using compute_energy()
+            slope_val = sqrt(abs(compute_energy(q_newt_prev, q_newt_delt, der=1, min_moment=initial_guess)))
 
-            pr.iter_info_verbose('INITIAL RESULTS', f'slope value = {slope_val}', f'res value = {res_val}', i=ii, j=jj)
+            pr.iter_info_verbose('INITIAL RESULTS', f'slope value = {slope_val}', i=ii, j=jj)
             
             # once slope_val becomes sufficiently small, switch to full hessian
             if slope_val < settings.pde.tol_l and not full_hessian:
