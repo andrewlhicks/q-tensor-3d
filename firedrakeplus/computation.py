@@ -134,7 +134,7 @@ def compute_energy(*functions, der=0, min_moment=None):
     domain_assembly = 0
     for energy in energies['domain']:
         domain_assembly += eval(energy)
-    domain_integral = assemble(domain_assembly*dx)
+    domain_integral = assemble(domain_assembly*dx) if domain_assembly != 0 else 0
 
     # Assemble boundary integral
 
@@ -143,7 +143,7 @@ def compute_energy(*functions, der=0, min_moment=None):
         boundary_assembly = 0
         for energy in energies['boundary']:
             boundary_assembly += eval(energy)
-        boundary_integral = assemble(boundary_assembly*measure)
+        boundary_integral = assemble(boundary_assembly*measure) if boundary_assembly != 0 else 0
     else:
         boundary_integral = 0
 
