@@ -1,0 +1,180 @@
+#!/usr/bin/env python
+
+import getopt
+import os
+import sys
+from loaddump import load_json
+import uflcache
+from firedrake import COMM_WORLD as comm
+from firedrakeplus import *
+
+def print0(*args,**kwargs):
+    if comm.rank == 0:
+        print(*args,**kwargs)
+
+help_text = """usage: python qtensor3d.py [-r | -o] <save-directory>"""
+
+def usage():
+    print0(help_text)
+
+def answers_yes_to(input_message):
+    while True:
+        answer = input(input_message) if comm.rank == 0 else None
+        answer = comm.bcast(answer,root=0)
+        if answer in ('y','Y'):
+            return True
+        if answer in ('n','N'):
+            return False
+
+def check_if_valid_save(path):
+    if not os.path.exists(path):
+        print0(f'no save at path "{path}"')
+        sys.exit()
+    for filename in ('constants.yml','settings.yml','userexpr.yml'):
+        if not os.path.exists(f'{path}/{filename}'):
+            print0(f'missing file: "{filename}"')
+            sys.exit()
+
+def check_if_checkpoint_exists(path):
+        if not os.path.exists(f'{path}/chk/q_soln.h5') or not os.path.exists(f'{path}/chk/q_prev.h5'):
+            print0("cannot resume since no checkpoint found. Try overwriting instead.")
+            sys.exit()
+
+def run(path, mode='r'):
+    comm.Barrier()
+    # These three modules must be imported in order and before other modules, or else they won't work properly
+
+    import config
+    config.initialize(f'{path}/settings.yml',f'{path}/constants.yml')
+    from config import settings
+    from time import sleep
+
+    import saves
+    saves.initialize(mode,path)
+
+    # Import other modules
+
+    import printoff as pr
+    import matplotlib.pyplot as plt
+
+    from misc import Timer, get_range, check
+
+    # Print info
+
+    pr.constants_info()
+    pr.settings_info()
+
+    check.elastic_constants()
+
+    sleep(1)
+    pr.stext(f'PRELIMINARY COMPUTATIONS:',color='uline')
+
+    # Preliminary computations
+
+    timer = Timer()
+
+    timer.start()
+
+    import compute
+
+    comp = compute.compute()
+
+    timer.stop()
+
+    if mode == 'o':
+        pr.text("Rebuilding UFL cache...",end=' ')
+        uflcache.build_uflcache(saves.current_directory)
+        pr.text("build successful.")
+
+    try:
+        uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
+    except FileNotFoundError:
+        pr.text("UFL cache not found. Rebuilding...",end=' ')
+        uflcache.build_uflcache(saves.current_directory)
+        pr.text("build successful.")
+        uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
+
+    pr.stext(f'Finished preliminary computations in {timer.str_time}.')
+    sleep(1)
+    pr.stext(f'PDE SOLVE:',color='uline')
+
+    for refinement_level in get_range(settings.mesh.refs):
+        if settings.mesh.builtin:
+            mesh = BuiltinMesh(settings.mesh.name,refinement_level)
+        else:
+            mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
+        H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
+        x0, x1, x2 = SpatialCoordinate(mesh)
+        nu = FacetNormal(mesh)
+
+        q_manu = firedrakefy(comp['manufac_q'],mesh)
+
+        set_eqn_globals(comp,uflcache_dict)
+
+        manu_energy = compute_energy(q_manu)
+
+        q_soln, time_elapsed, times, energies = solve_PDE(mesh,ref_lvl=refinement_level)
+
+        h1_error = errorH1(q_soln,q_manu,mesh)
+        l2_error = errorL2(q_soln,q_manu,mesh)
+
+        if settings.options.manufactured:
+            pr.pde_solve_info(refinement_level=refinement_level,
+                h1_error=h1_error,
+                l2_error=l2_error,
+                energy=energies[-1],
+                custom={'title':'Manu. Sol. Energy','text':manu_energy},
+                time_elapsed=time_elapsed)
+        else:
+            try:
+                pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
+            except IndexError:
+                pr.fail('Index error')
+
+def resume(path):
+    check_if_valid_save(path)
+    check_if_checkpoint_exists(path)
+    print0(f"resuming save at '{path}'")
+    run(path, 'r')
+
+def overwrite(path):
+    check_if_valid_save(path)
+
+    if answers_yes_to(f"will overwrite save at '{path}'. Are you sure you want to continue? (y/n) "):
+        print0(f"overwriting save at '{path}'")
+        run(path, 'o')
+    else:
+        print0('exiting')
+        sys.exit()
+
+def main():
+    sys_argv = sys.argv[1:]
+    if len(sys_argv) == 0:
+        print0('no argument supplied')
+        sys.exit()
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],'o:r:',['help'])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print(err)
+        print('use --help for usage')
+        sys.exit()
+
+    for o, a in opts:
+        if o in ('-o'):
+            overwrite(a)
+            break
+        elif o in ('-r'):
+            resume(a)
+            break
+        elif o in ('--help'):
+            usage()
+            break
+        else:
+            sys.exit()
+
+if __name__ == '__main__':
+	main()
+
+# END OF CODE

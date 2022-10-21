@@ -41,7 +41,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 
     global times, energies
 
-    if saves.SaveMode == 'resume':
+    if saves.SaveMode in ('r','resume'):
         # RESUME MODE : load from previous state
         q_soln = saves.load_checkpoint(H1_vec,'q_soln') # load q_soln
         q_prev = saves.load_checkpoint(H1_vec,'q_prev') # load q_prev
@@ -54,14 +54,14 @@ def solve_PDE(msh,ref_lvl='Not specified'):
         times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
         t_init = 0 # initial time set to 0
 
-    pr.iter_info_verbose(f'INITIAL CONDITIONS', f'E = {compute_energy(q_soln)}', i=0)
+    pr.iter_info_verbose(f'INITIAL CONDITIONS', f'E = {compute_energy(q_soln)}', i=len(energies))
 
     # Initilize the list of times and energies
 
     new_times = saves.TimeList.by_prev(t_init,num_times=settings.time.num,step=settings.time.step)
     times = times + new_times
 
-    if saves.SaveMode == 'overwrite': visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
+    if saves.SaveMode in ('o','overwrite'): visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
 
     # define boundary conditions
     bcs = _define_bcs(EqnGlobals.s_bdy)

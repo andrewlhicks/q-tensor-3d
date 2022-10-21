@@ -8,12 +8,16 @@ def initialize(save_mode,save_name,remote=False):
     SaveMode = save_mode
     SaveName = save_name
 
-    if SaveMode == None:
-        current_directory = 'defaults'
-    elif remote == False:
-        current_directory = f'saves/{SaveName}'
-    else:
+    current_directory = f'saves/{SaveName}'
+
+    if remote:
         current_directory = f'saves-remote/{SaveName}'
+
+    if SaveMode is None:
+        current_directory = 'defaults'
+
+    if SaveMode in ('r','o'):
+        current_directory = SaveName
 
 def load_checkpoint(vector_space,name='dump'):
     """ Loads a checkpoint and outputs the function with name specified. """
@@ -68,7 +72,7 @@ def save_pvd(*args,time=None):
     from firedrake import File
     global outfile
     if outfile is None:
-        mode = 'a' if SaveMode == 'resume' else 'w'
+        mode = 'a' if SaveMode in ('r','resume') else 'w'
         outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
     outfile.write(*args,time=time)
 
