@@ -94,8 +94,8 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 def _define_a_L(pde_d : dict, pde_b : dict):
     from config import settings
 
-    pde_d = {k:eval(v) for k,v in pde_d.items()}
-    pde_b = {k:eval(v) for k,v in pde_b.items()}
+    pde_d = {key:eval(xhs) for key,xhs in pde_d.items()} # establishes lhs and rhs with corresponding keys
+    pde_b = {key:eval(xhs) for key,xhs in pde_b.items()}
 
     a = pde_d['lhs'] * dx
     L = pde_d['rhs'] * dx
