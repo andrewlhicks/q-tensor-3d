@@ -94,8 +94,8 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 def _define_a_L(pde_d : dict, pde_b : dict):
     from config import settings
 
-    pde_d = {k:eval(v) for k,v in pde_d.items()}
-    pde_b = {k:eval(v) for k,v in pde_b.items()}
+    pde_d = {key:eval(xhs) for key,xhs in pde_d.items()} # establishes lhs and rhs with corresponding keys
+    pde_b = {key:eval(xhs) for key,xhs in pde_b.items()}
 
     a = pde_d['lhs'] * dx
     L = pde_d['rhs'] * dx
@@ -218,6 +218,8 @@ def _n_solve(*args,**kwargs):
         _dynamic_solve(*args,**kwargs)
     elif settings.pde.solver == 'newton':
         _newton_solve(*args,**kwargs)
+    elif settings.pde.solver == 'builtin_nonlinear':
+        _builtin_nonlinear_solve(*args,**kwargs)
     elif settings.pde.solver == 'none': # make into separate function
         # first, remove newton_parameters or Firedrake will raise an error
         kwargs.pop('newton_parameters',None)
@@ -359,6 +361,28 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     pr.iter_info_verbose('updating current solution...', i=ii)
     q_soln.assign(q_newt_soln)
     pr.iter_info_verbose('current solution updated', i=ii)
+
+def _builtin_nonlinear_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
+    from firedrakeplus.eqnglobals import EqnGlobals
+
+    function_space = q_soln.function_space()
+
+    initial_guess = newton_parameters['initial_guess']
+    
+    # redefine q as a Function instead of a TrialFunction
+    global q
+    q = Function(function_space)
+
+    q.assign(initial_guess)
+
+    # original PDE system
+    a, L = _define_a_L(*EqnGlobals.pde)
+    solver_parameters.pop('snes_type',False)
+    solver_parameters.pop('mat_type',False)
+
+    solve(a - L == 0, q, bcs=bcs, solver_parameters=solver_parameters)
+
+    q_soln.assign(q)
 
 def _checkpoint(q_soln,current_time):
         # write eigen-info to Paraview
