@@ -5,7 +5,7 @@ from firedrake import solve, interpolate
 from firedrake import dx, ds
 from firedrakeplus.math import nrm
 from firedrakeplus.check import check_energy_decrease
-from firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, linesearch
+from firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, determine_measure, linesearch
 from firedrakeplus.vis import visualize
 
 from datetime import datetime
@@ -105,10 +105,7 @@ def _define_a_L(pde_d : dict, pde_b : dict):
     if weak_boundary is None or weak_boundary == 'none':
         return (a, L)
 
-    if weak_boundary == 'all':
-        measure = ds
-    elif isinstance(weak_boundary,int):
-        measure = ds(weak_boundary)
+    measure = determine_measure(weak_boundary)
     
     if pde_b['lhs'] != 0:
         a += pde_b['lhs'] * measure

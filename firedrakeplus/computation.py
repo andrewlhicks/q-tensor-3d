@@ -188,6 +188,7 @@ def determine_measure(boundary_indicator):
     # The following is quick patch and should       #
     # be rewritten along with this whole function   #
     if isinstance(boundary_indicator,list):
+        from numpy import sum
         return sum([ds(bdy_ind) for bdy_ind in boundary_indicator])
     #################################################
     raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
