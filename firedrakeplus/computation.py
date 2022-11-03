@@ -184,6 +184,12 @@ def determine_measure(boundary_indicator):
         if boundary_indicator >=0:
             return ds(boundary_indicator)
         raise ValueError('Boundary integer specified must be positive.')
+    #################################################
+    # The following is quick patch and should       #
+    # be rewritten along with this whole function   #
+    if isinstance(boundary_indicator,list):
+        return sum([ds(bdy_ind) for bdy_ind in boundary_indicator])
+    #################################################
     raise ValueError('Boundary specified must be \'all\', \'none\', or a positive integer.')
 
 def critical_pts_of_poly(x_values, y_values, degree):
