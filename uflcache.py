@@ -4,7 +4,7 @@ controls the PDE to be solved. """
 from loaddump import *
 from userexpr import *
 
-userexpr_types = ('initcond','w_bdy_nu','s_bdy')
+userexpr_types = ('initcond','w_bdy_nu','s_bdy','manu_q','forcing_f','forcing_g')
 
 def usage():
     usage = """usage: python uflcache.py (-l | -r) <save-name>

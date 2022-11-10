@@ -10,6 +10,12 @@ class FromSympy(Matrix):
     @property
     def result(self):
         return None
+    def strong_form_domain(self):
+        from compute_terms import strong_F
+        return vectorfy(strong_F(self.result))
+    def strong_form_boundary(self):
+        from compute_terms import strong_G
+        return vectorfy(strong_G(self.result))
     def uflfy(self):
         return uflfy(self.result)
 def fs_constructor(cls):
