@@ -103,7 +103,7 @@ def compute():
         ]
     if settings.pde.formulation == 'lavrentovich':
         del lhs_d[1]
-        GeneralForm(2*c.q0*c.L1*(mixedp(Q,P) + mixedp(P,Q)) + 4*c.q0**2*c.L1*innerp(Q,P),Dqq,Dpp,name='a_T(Q,P)')
+        lhs_d.append(GeneralForm(2*c.q0*c.L1*(mixedp(Q,P) + mixedp(P,Q)) + 4*c.q0**2*c.L1*innerp(Q,P),Dqq,Dpp,name='a_T(Q,P)'))
     rhs_d = [ # rhs domain
         GeneralForm(f.dot(p),Dpp,name='f(P)')
     ]
