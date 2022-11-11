@@ -81,7 +81,10 @@ def compute():
     # Define 'energies' used to calculate the energy    
     energies = EnergyForm(Dqq,Dpp,Drr)
     energies.add_domain(GeneralForm(c.L1/2*termL1(Dq,Dq)+c.L2/2*termL2(Dq,Dq)+c.L3/2*termL3(Dq,Dq),Dqq,name='Elastic Energy'))
-    energies.add_domain(GeneralForm(2*c.q0*c.L1*mixedp(Q,Q),Dqq,name='Twist Energy'))
+    if settings.pde.formulation == 'default':
+        energies.add_domain(GeneralForm(2*c.q0*c.L1*mixedp(Q,Q),Dqq,name='Twist Energy'))
+    elif settings.pde.formulation == 'lavrentovich':
+        energies.add_domain(GeneralForm(2*c.q0*c.L1*mixedp(Q,Q) + 2*c.q0**2*c.L1*innerp(Q,Q),Dqq,name='Twist Energy'))
     energies.add_domain(GeneralForm((1/c.ep**2)*(1 - (c.A/2)*innerp(Q,Q) - (c.B/3)*trace(Q**3) + (c.C/4)*trace(Q**2)**2),Dqq,name='Bulk Energy'))
     energies.add_domain(GeneralForm(-f.dot(q),Dqq,name='Domain Forcing Energy'))
     energies.add_boundary(GeneralForm(c.W0/2*innerp(Q-Q0,Q-Q0),Dqq,name='Homeotropic Anchoring'))
@@ -98,6 +101,9 @@ def compute():
         GeneralForm(2*c.q0*c.L1*(mixedp(Q,P) + mixedp(P,Q)),Dqq,Dpp,name='a_T(Q,P)'),
         GeneralForm((1/c.ep**2)*(-c.A*innerp(Q,P) - c.B*innerp(Q**2,P) + c.C*innerp(Q,Q)*innerp(Q,P)),Dqq,Dpp,name='Dψ(Q):P')
         ]
+    if settings.pde.formulation == 'lavrentovich':
+        del lhs_d[1]
+        GeneralForm(2*c.q0*c.L1*(mixedp(Q,P) + mixedp(P,Q)) + 4*c.q0**2*c.L1*innerp(Q,P),Dqq,Dpp,name='a_T(Q,P)')
     rhs_d = [ # rhs domain
         GeneralForm(f.dot(p),Dpp,name='f(P)')
     ]
