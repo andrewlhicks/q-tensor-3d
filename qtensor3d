@@ -107,9 +107,9 @@ def run(path, mode='r'):
         x0, x1, x2 = SpatialCoordinate(mesh)
         nu = FacetNormal(mesh)
 
-        q_manu = firedrakefy(comp['manufac_q'],mesh)
-
         set_eqn_globals(comp,uflcache_dict)
+
+        q_manu = firedrakefy(EqnGlobals['manufac_q'],mesh)
 
         manu_energy = compute_energy(q_manu)
 
