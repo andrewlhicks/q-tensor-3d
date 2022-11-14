@@ -4,6 +4,10 @@ from sympyplus import *
 import yaml
 from loaddump import *
 
+constructors = ('SpatialVector','FromTensor','FromVector','FromDirector',
+    'FromTensorStrongF','FromVectorStrongF','FromDirectorStrongF',
+    'FromTensorStrongG','FromVectorStrongG','FromDirectorStrongG')
+
 # Base class
 
 class FromSympy(Matrix):
@@ -15,12 +19,6 @@ class FromSympy(Matrix):
     @property
     def result(self):
         return self.per_se_expr
-    def strong_form_domain(self,vector):
-        from compute_terms import strong_F
-        return vectorfy(strong_F(q_tensorfy(vector)))
-    def strong_form_boundary(self,vector):
-        from compute_terms import strong_G
-        return vectorfy(strong_G(q_tensorfy(vector)))
     def uflfy(self):
         return uflfy(self.result)
 def fs_constructor(cls):
@@ -37,6 +35,20 @@ def fs_representer(tag):
         # return dumper.represent_scalar(tag,data)
     return representer
 
+# Additional base classes
+
+class FromSympyStrongF(FromSympy):
+    @property
+    def result(self):
+        from compute_terms import strong_F
+        return vectorfy(strong_F(q_tensorfy(self.per_se_expr)))
+
+class FromSympyStrongG(FromSympy):
+    @property
+    def result(self):
+        from compute_terms import strong_G
+        return vectorfy(strong_G(q_tensorfy(self.per_se_expr)))
+
 # Base class for 3d vector
 
 class SpatialVector(FromSympy):
@@ -49,8 +61,6 @@ class SpatialVector(FromSympy):
         return self
     def __repr__(self):
         return f'FromVector {self.result}'
-yaml.add_constructor('!SpatialVector',fs_constructor(SpatialVector))
-yaml.add_representer(SpatialVector,fs_representer('!SpatialVector'))
 
 # Base classes for 5d vectors
 class FromTensor(FromSympy):
@@ -62,8 +72,6 @@ class FromTensor(FromSympy):
         return m
     def __repr__(self):
         return f'FromTensor {self.result}'
-yaml.add_constructor('!FromTensor',fs_constructor(FromTensor))
-yaml.add_representer(FromTensor,fs_representer('!FromTensor'))
 
 class FromVector(FromSympy):
     def __new__(cls,matrix:list):
@@ -75,8 +83,6 @@ class FromVector(FromSympy):
         return self
     def __repr__(self):
         return f'FromVector {self.result}'
-yaml.add_constructor('!FromVector',fs_constructor(FromVector))
-yaml.add_representer(FromVector,fs_representer('!FromVector'))
 
 class FromDirector(FromSympy):
     @property
@@ -89,63 +95,37 @@ class FromDirector(FromSympy):
         return m
     def __repr__(self):
         return f'FromDirector {self.result}'
-yaml.add_constructor('!FromDirector',fs_constructor(FromDirector))
-yaml.add_representer(FromDirector,fs_representer('!FromDirector'))
 
 # Base classes for 5d vectors with domain strong form
 
-class FromTensorStrongF(FromTensor):
-    @property
-    def result(self):
-        return self.strong_form_domain(self.per_se_expr)
+class FromTensorStrongF(FromTensor,FromSympyStrongF):
     def __repr__(self):
         return f'FromTensorStrongF {self.result}'
-yaml.add_constructor('!FromTensorStrongF',fs_constructor(FromTensorStrongF))
-yaml.add_representer(FromTensorStrongF,fs_representer('!FromTensorStrongF'))
 
-class FromVectorStrongF(FromVector):
-    @property
-    def result(self):
-        return self.strong_form_domain(self.per_se_expr)
+class FromVectorStrongF(FromVector,FromSympyStrongF):
     def __repr__(self):
         return f'FromVectorStrongF {self.result}'
-yaml.add_constructor('!FromVectorStrongF',fs_constructor(FromVectorStrongF))
-yaml.add_representer(FromVectorStrongF,fs_representer('!FromVectorStrongF'))
 
-class FromDirectorStrongF(FromDirector):
-    @property
-    def result(self):
-        return self.strong_form_domain(self.per_se_expr)
+class FromDirectorStrongF(FromDirector,FromSympyStrongF):
     def __repr__(self):
         return f'FromDirectorStrongF {self.result}'
-yaml.add_constructor('!FromDirectorStrongF',fs_constructor(FromDirectorStrongF))
-yaml.add_representer(FromDirectorStrongF,fs_representer('!FromDirectorStrongF'))
 
 # Base classes for 5d vectors with boundary strong form
 
-class FromTensorStrongG(FromTensor):
-    @property
-    def result(self):
-        return self.strong_form_boundary(self.per_se_expr)
+class FromTensorStrongG(FromTensor,FromSympyStrongG):
     def __repr__(self):
         return f'FromTensorStrongG {self.result}'
-yaml.add_constructor('!FromTensorStrongG',fs_constructor(FromTensorStrongG))
-yaml.add_representer(FromTensorStrongG,fs_representer('!FromTensorStrongG'))
 
-class FromVectorStrongG(FromVector):
-    @property
-    def result(self):
-        return self.strong_form_boundary(self.per_se_expr)
+class FromVectorStrongG(FromVector,FromSympyStrongG):
     def __repr__(self):
         return f'FromVectorStrongG {self.result}'
-yaml.add_constructor('!FromVectorStrongG',fs_constructor(FromVectorStrongG))
-yaml.add_representer(FromVectorStrongG,fs_representer('!FromVectorStrongG'))
 
-class FromDirectorStrongG(FromDirector):
-    @property
-    def result(self):
-        return self.strong_form_boundary(self.per_se_expr)
+class FromDirectorStrongG(FromDirector,FromSympyStrongG):
     def __repr__(self):
         return f'FromDirectorStrongG {self.result}'
-yaml.add_constructor('!FromDirectorStrongG',fs_constructor(FromDirectorStrongG))
-yaml.add_representer(FromDirectorStrongG,fs_representer('!FromDirectorStrongG'))
+
+for constructor in constructors:
+    constructor_name = '!' + constructor
+    constructor = eval(constructor)
+    yaml.add_constructor(constructor_name,fs_constructor(constructor))
+    # yaml.add_representer(constructor,fs_representer(constructor_name)) # Won't add since not implemented
