@@ -35,3 +35,7 @@ def RandomFunction(function_space):
         function.dat.data[ii] = random.rand(5)*1e+1
 
     return function
+
+def ManuQ(mesh):
+    from firedrakeplus.eqnglobals import EqnGlobals
+    return firedrakefy(EqnGlobals.manu_q,mesh)
