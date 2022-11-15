@@ -6,7 +6,8 @@ import sys
 from loaddump import load_json
 import uflcache
 from firedrake import COMM_WORLD as comm
-from firedrakeplus import *
+from firedrakeplus import Mesh, BuiltinMesh
+from firedrakeplus import set_eqn_globals, solve_PDE
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
@@ -103,33 +104,34 @@ def run(path, mode='r'):
             mesh = BuiltinMesh(settings.mesh.name,refinement_level)
         else:
             mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
-        H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
-        x0, x1, x2 = SpatialCoordinate(mesh)
-        nu = FacetNormal(mesh)
+        # H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
+        # x0, x1, x2 = SpatialCoordinate(mesh)
+        # nu = FacetNormal(mesh)
 
-        set_eqn_globals(comp,uflcache_dict)
+        EqnGlobals = set_eqn_globals(comp,uflcache_dict)
 
-        q_manu = firedrakefy(EqnGlobals['manufac_q'],mesh)
+        # q_manu = firedrakefy(EqnGlobals['manufac_q'],mesh)
 
-        manu_energy = compute_energy(q_manu)
+        # manu_energy = compute_energy(q_manu)
 
         q_soln, time_elapsed, times, energies = solve_PDE(mesh,ref_lvl=refinement_level)
 
-        h1_error = errorH1(q_soln,q_manu,mesh)
-        l2_error = errorL2(q_soln,q_manu,mesh)
+        # h1_error = errorH1(q_soln,q_manu,mesh)
+        # l2_error = errorL2(q_soln,q_manu,mesh)
 
         if settings.options.manufactured:
-            pr.pde_solve_info(refinement_level=refinement_level,
-                h1_error=h1_error,
-                l2_error=l2_error,
-                energy=energies[-1],
-                custom={'title':'Manu. Sol. Energy','text':manu_energy},
-                time_elapsed=time_elapsed)
+            pass
+            # pr.pde_solve_info(refinement_level=refinement_level,
+            #     h1_error=h1_error,
+            #     l2_error=l2_error,
+            #     energy=energies[-1],
+            #     custom={'title':'Manu. Sol. Energy','text':manu_energy},
+            #     time_elapsed=time_elapsed)
         else:
             try:
                 pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
             except IndexError:
-                pr.fail('Index error')
+                pass
 
 def resume(path):
     check_if_valid_save(path)
