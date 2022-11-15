@@ -121,12 +121,15 @@ def run(path, mode='r'):
             l2_error = errorL2(q_soln,q_manu,mesh)
 
             # print a verbose summary of the PDE solve info
-            pr.pde_solve_info(refinement_level=refinement_level,
-                h1_error=h1_error,
-                l2_error=l2_error,
-                energy=energies[-1],
-                custom={'title':'Manu. Sol. Energy','text':manu_energy},
-                time_elapsed=time_elapsed)
+            try:
+                pr.pde_solve_info(refinement_level=refinement_level,
+                    h1_error=h1_error,
+                    l2_error=l2_error,
+                    energy=energies[-1],
+                    custom={'title':'Manu. Sol. Energy','text':manu_energy},
+                    time_elapsed=time_elapsed)
+            except IndexError:
+                pass
             
             return
         
