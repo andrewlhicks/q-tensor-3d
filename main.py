@@ -6,9 +6,9 @@ import os
 import sys
 from loaddump import load_json
 import uflcache
-from mpi4py import MPI
-
-comm = MPI.COMM_WORLD
+from firedrake import COMM_WORLD as comm
+from firedrakeplus import Mesh, BuiltinMesh, ManuQ
+from firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
@@ -75,8 +75,7 @@ else:
     usage()
     sys.exit()
 
-# These three modules must be imported in order and before other modules, or else they won't work properly
-
+# these three modules must be imported in order and before other modules, or else they won't work properly
 import config
 config.initialize(settings_path,constants_path)
 from config import settings
@@ -85,88 +84,89 @@ from time import sleep
 import saves
 saves.initialize(SaveMode,SaveName)
 
-# Import other modules
-
-from firedrakeplus import *
+# import other modules
 import printoff as pr
-
-import matplotlib.pyplot as plt
-import plot
-
 from misc import Timer, get_range, check
 
-# Print info
-
-pr.text(f"Starting {SaveMode} of '{SaveName}'...")
-
+# print info
 pr.constants_info()
 pr.settings_info()
 
+# perform a check that will ensure the elastic constants are physical
 check.elastic_constants()
 
 sleep(1)
 pr.stext(f'PRELIMINARY COMPUTATIONS:',color='uline')
 
-# Preliminary computations
-
+# perform sympyplus preliminary computations
 timer = Timer()
-
 timer.start()
 
 import compute
-
 comp = compute.compute()
 
 timer.stop()
 
-if SaveMode == 'overwrite':
+# rebuild UFL cache if in overwrite mode
+if SaveMode == 'o':
     pr.text("Rebuilding UFL cache...",end=' ')
-    uflcache.build_uflcache(saves.current_directory)
+    uflcache.build_uflcache(saves.SavePath)
     pr.text("build successful.")
 
+# if, however, the UFL cache is missing, rebuild it regardless of the mode
 try:
-    uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
+    uflcache_dict = load_json(f'{saves.SavePath}/uflcache.json')
 except FileNotFoundError:
     pr.text("UFL cache not found. Rebuilding...",end=' ')
-    uflcache.build_uflcache(saves.current_directory)
+    uflcache.build_uflcache(saves.SavePath)
     pr.text("build successful.")
-    uflcache_dict = load_json(f'{saves.current_directory}/uflcache.json')
+    uflcache_dict = load_json(f'{saves.SavePath}/uflcache.json')
 
 pr.stext(f'Finished preliminary computations in {timer.str_time}.')
 sleep(1)
 pr.stext(f'PDE SOLVE:',color='uline')
 
+# allow for multiple refinement levels for an in-depth comparison
 for refinement_level in get_range(settings.mesh.refs):
+    # choose mesh, either builtin or one made in GMSH
     if settings.mesh.builtin:
         mesh = BuiltinMesh(settings.mesh.name,refinement_level)
     else:
         mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
-    H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5)
-    x0, x1, x2 = SpatialCoordinate(mesh)
-    nu = FacetNormal(mesh)
 
-    q_manu = firedrakefy(comp['manufac_q'],mesh)
-
+    # set equation globals to initialize
     set_eqn_globals(comp,uflcache_dict)
 
-    manu_energy = compute_energy(q_manu)
-
+    # solve PDE and get info about it
     q_soln, time_elapsed, times, energies = solve_PDE(mesh,ref_lvl=refinement_level)
 
-    h1_error = errorH1(q_soln,q_manu,mesh)
-    l2_error = errorL2(q_soln,q_manu,mesh)
+    # if a manufactured solution was specified in userexpr.yml,
+    # go ahead and compute its energy, and compare it to the
+    # solution we got from solve_PDE()
+    if 'manu_q' in uflcache.load_userexpr_yml(saves.SavePath).keys():
+        q_manu = ManuQ(mesh)
+        manu_energy = compute_energy(q_manu)
+        h1_error = errorH1(q_soln,q_manu,mesh)
+        l2_error = errorL2(q_soln,q_manu,mesh)
 
-    if settings.options.manufactured:
-        pr.pde_solve_info(refinement_level=refinement_level,
-            h1_error=h1_error,
-            l2_error=l2_error,
-            energy=energies[-1],
-            custom={'title':'Manu. Sol. Energy','text':manu_energy},
-            time_elapsed=time_elapsed)
-    else:
+        # print a verbose summary of the PDE solve info
         try:
-            pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
+            pr.pde_solve_info(refinement_level=refinement_level,
+                h1_error=h1_error,
+                l2_error=l2_error,
+                energy=energies[-1],
+                custom={'title':'Manu. Sol. Energy','text':manu_energy},
+                time_elapsed=time_elapsed)
         except IndexError:
-            pr.fail('Index error')
+            pass
+        
+        sys.exit()
+    
+    # if a manufactured solution was not specified, then print
+    # an abbreviated summary of the PDE solve info
+    try:
+        pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
+    except IndexError:
+        pass
 
 # END OF CODE
