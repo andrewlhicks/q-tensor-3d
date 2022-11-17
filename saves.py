@@ -1,23 +1,43 @@
 outfile = None
 SaveMode = None
-SaveName = None
 
-def initialize(save_mode,save_name,remote=False):
-    global SaveMode, SaveName, current_directory
+save_modes = ('r','o')
+save_modes_legacy = ('resume','overwrite','OVERWRITE')
+
+def initialize(save_mode,save_path,remote=False):
+    """ Establishes the SaveMode, as well as a SavePath which depends on
+    whether current or legacy SaveMode in use, then repairs the save if
+    needed. """
+
+    global SaveMode, SavePath
 
     SaveMode = save_mode
-    SaveName = save_name
-
-    current_directory = f'saves/{SaveName}'
-
-    if remote:
-        current_directory = f'saves-remote/{SaveName}'
+    
+    if SaveMode in save_modes:
+        SavePath = save_path
+        repair_save(SavePath)
+        return
+    
+    if SaveMode in save_modes_legacy:
+        save_name = save_path
+        SavePath = f'saves-remote/{save_name}' if remote else f'saves/{save_name}'
+        repair_save(SavePath)
+        return
 
     if SaveMode is None:
-        current_directory = 'defaults'
+        SavePath = 'defaults'
+        return
+    
+    raise ValueError('Must choose current ("' + '","'.join(save_modes) + '") or legacy ("' + '","'.join(save_modes_legacy) + '") save mode')
 
-    if SaveMode in ('r','o'):
-        current_directory = SaveName
+def repair_save(save_path):
+    import os
+
+    directories = (f'{save_path}/chk',f'{save_path}/energy',f'{save_path}/vis')
+
+    for directory in directories:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
 def load_checkpoint(vector_space,name='dump'):
     """ Loads a checkpoint and outputs the function with name specified. """
@@ -25,7 +45,7 @@ def load_checkpoint(vector_space,name='dump'):
 
     q_dump = Function(vector_space,name=name)
 
-    with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_READ) as chk:
+    with DumbCheckpoint(f'{SavePath}/chk/{name}',mode=FILE_READ) as chk:
         chk.load(q_dump)
 
     return q_dump
@@ -39,13 +59,13 @@ def save_checkpoint(q_dump,name='dump'):
 
     q_dump.rename(name)
 
-    with DumbCheckpoint(f'{current_directory}/chk/{name}',mode=FILE_CREATE) as chk:
+    with DumbCheckpoint(f'{SavePath}/chk/{name}',mode=FILE_CREATE) as chk:
         chk.store(q_dump)
 
 def load_energies():
     import yaml
 
-    with open(f'{current_directory}/energy/energies.yml') as energies_file:
+    with open(f'{SavePath}/energy/energies.yml') as energies_file:
         yaml_load = yaml.load(energies_file, Loader=yaml.Loader)
 
     times = yaml_load['times']
@@ -65,7 +85,7 @@ def save_energies(times,energies):
 
     yaml_dump = {'times':times, 'energies':energies}
 
-    with open(f'{current_directory}/energy/energies.yml','w') as energies_file:
+    with open(f'{SavePath}/energy/energies.yml','w') as energies_file:
         energies_file.write(yaml.dump(yaml_dump))
 
 def save_pvd(*args,time=None):
@@ -73,7 +93,7 @@ def save_pvd(*args,time=None):
     global outfile
     if outfile is None:
         mode = 'a' if SaveMode in ('r','resume') else 'w'
-        outfile = File(f'{current_directory}/vis/vis.pvd',mode=mode)
+        outfile = File(f'{SavePath}/vis/vis.pvd',mode=mode)
     outfile.write(*args,time=time)
 
 # Classes for custom data types

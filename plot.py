@@ -53,7 +53,7 @@ def time_vs_energy(times,energies,refinement_level='Not specified',open_file=Fal
 		ax2.set_yscale('symlog')
 		ax2.grid()
 
-		file_path = f'{saves.current_directory}/energy/ref_{refinement_level}.png'
+		file_path = f'{saves.SavePath}/energy/ref_{refinement_level}.png'
 		
 		plt.savefig(file_path)
 
@@ -79,7 +79,7 @@ def scatter_vs_poly(scatter,poly):
 	ax.set_xlabel('xi')
 	ax.set_ylabel('E')
 
-	plt.savefig(f'{saves.current_directory}/energy/poly.png')
+	plt.savefig(f'{saves.SavePath}/energy/poly.png')
 	plt.close()
 
 def main():

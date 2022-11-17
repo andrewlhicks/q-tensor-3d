@@ -16,7 +16,7 @@ def main():
         from firedrake import COMM_WORLD
         if COMM_WORLD.rank == 0:
             mode = 'a' if saves.SaveMode == 'resume' else 'w'
-            with open(f'{saves.current_directory}/log.txt',mode) as file:
+            with open(f'{saves.SavePath}/log.txt',mode) as file:
                 now = datetime.now()
                 file.write(now.strftime('%c') + '\n')
                 file.write('\n')
@@ -64,7 +64,7 @@ def plogger(func):
             value = func(*args, **kwargs)
             return value
 
-        with open(f'{saves.current_directory}/log.txt','a') as file:
+        with open(f'{saves.SavePath}/log.txt','a') as file:
             def plog(string='', color=None, *args, **kwargs):
                 file.write(string+'\n')
                 Print(string, color, *args, **kwargs)
