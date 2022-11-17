@@ -5,7 +5,6 @@ mesh:
   refs: 0
 options:
   nondim: false
-  manufactured: false
   strong_boundary: [5,6] # plane z == 0 and z == Lz
   weak_boundary: none
 pde:
