@@ -55,8 +55,6 @@ def run(path, mode='r'):
 
     # import other modules
     import printoff as pr
-    import matplotlib.pyplot as plt
-
     from misc import Timer, get_range, check
 
     # print info

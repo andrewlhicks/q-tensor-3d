@@ -6,10 +6,8 @@ from firedrake.petsc import PETSc
 import sys
 import getopt
 import yaml
-from mpi4py import MPI
+from firedrake import COMM_WORLD as comm
 import time
-
-comm = MPI.COMM_WORLD
 
 def usage():
     print('python extractor.py [-m] (-l | -r) <savename>')
