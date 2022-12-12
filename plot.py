@@ -11,7 +11,6 @@ def usage():
 	print(usage)
 
 def time_vs_energy(times,energies,refinement_level='Not specified',open_file=False):
-	from _tkinter import TclError
 	from config import settings
 	import matplotlib
 
@@ -63,7 +62,7 @@ def time_vs_energy(times,energies,refinement_level='Not specified',open_file=Fal
 		plt.close()
 
 		return file_path
-	except TclError as err:
+	except Exception as err: # temporary replacement for TclError until I figure out why that doesn't work anymore
 		print(err)
 
 def scatter_vs_poly(scatter,poly):
