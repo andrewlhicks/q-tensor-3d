@@ -140,6 +140,9 @@ for refinement_level in get_range(settings.mesh.refs):
     # solve PDE and get info about it
     q_soln, time_elapsed, times, energies = solve_PDE(mesh,ref_lvl=refinement_level)
 
+    # in case q_soln was loaded with a mesh from checkpoint, use this mesh instead of the other one
+    mesh = q_soln.function_space().mesh()
+
     # if a manufactured solution was specified in userexpr.yml,
     # go ahead and compute its energy, and compare it to the
     # solution we got from solve_PDE()
