@@ -37,7 +37,7 @@ def check_if_valid_save(path):
             sys.exit()
 
 def check_if_checkpoint_exists(path):
-        if not os.path.exists(f'{path}/chk/q_soln.h5') or not os.path.exists(f'{path}/chk/q_prev.h5'):
+        if not os.path.exists(f'{path}/chk/checkpoint.h5') and (not os.path.exists(f'{path}/chk/q_soln.h5') or not os.path.exists(f'{path}/chk/q_prev.h5')):
             print0("cannot resume since no checkpoint found. Try overwriting instead.")
             sys.exit()
 

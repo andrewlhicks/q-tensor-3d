@@ -1,3 +1,7 @@
+import os
+import yaml
+from firedrake import File, Function, CheckpointFile, DumbCheckpoint, FILE_READ, FILE_CREATE
+
 outfile = None
 SaveMode = None
 
@@ -39,32 +43,58 @@ def repair_save(save_path):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-def load_checkpoint(vector_space,name='dump'):
+def load_checkpoint(*names):
+    path = f'{SavePath}/chk/checkpoint.h5'
+
+    if not os.path.exists(path):
+        raise FileNotFoundError
+
+    with CheckpointFile(path,'r') as file:
+        mesh = file.load_mesh()
+        functions = []
+        for name in names:
+            function = file.load_function(mesh,name)
+            functions.append(function)
+        
+    return (mesh, *functions)
+
+def save_checkpoint(mesh,*functions):
+    path = f'{SavePath}/chk/checkpoint.h5'
+
+    with CheckpointFile(path,'w') as file:
+        file.save_mesh(mesh)
+        for function in functions:
+            file.save_function(function)
+
+def load_dumb_checkpoint(vector_space,name='dump'):
     """ Loads a checkpoint and outputs the function with name specified. """
-    from firedrake import Function, DumbCheckpoint, FILE_READ
+
+    path = f'{SavePath}/chk/{name}'
+
+    if not os.path.exists(f'{path}.h5'):
+        raise FileNotFoundError
 
     q_dump = Function(vector_space,name=name)
 
-    with DumbCheckpoint(f'{SavePath}/chk/{name}',mode=FILE_READ) as chk:
+    with DumbCheckpoint(path,mode=FILE_READ) as chk:
         chk.load(q_dump)
 
     return q_dump
 
-def save_checkpoint(q_dump,name='dump'):
+def save_dumb_checkpoint(q_dump,name='dump'):
     """ Saves a checkpoint the input being the function with name specified. """
-    from firedrake import Function, DumbCheckpoint, FILE_CREATE
+
+    path = f'{SavePath}/chk/{name}'
 
     if not isinstance(q_dump,Function):
         raise TypeError('Must be a Firedrake Function.')
 
     q_dump.rename(name)
 
-    with DumbCheckpoint(f'{SavePath}/chk/{name}',mode=FILE_CREATE) as chk:
+    with DumbCheckpoint(path,mode=FILE_CREATE) as chk:
         chk.store(q_dump)
 
 def load_energies():
-    import yaml
-
     with open(f'{SavePath}/energy/energies.yml') as energies_file:
         yaml_load = yaml.load(energies_file, Loader=yaml.Loader)
 
@@ -77,7 +107,6 @@ def load_energies():
     return TimeList(times), EnergyList(energies)
 
 def save_energies(times,energies):
-    import yaml
     if not isinstance(times,TimeList):
         raise TypeError
     if not isinstance(energies,EnergyList):
@@ -89,7 +118,6 @@ def save_energies(times,energies):
         energies_file.write(yaml.dump(yaml_dump))
 
 def save_pvd(*args,time=None):
-    from firedrake import File
     global outfile
     if outfile is None:
         mode = 'a' if SaveMode in ('r','resume') else 'w'

@@ -21,38 +21,43 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     from config import settings
 
     # globalize stuff that needs to be accessed inside other functions, delete later
-    global mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
-
-    # define function space, coordinates, and q_soln
-    mesh = msh
-    refinement_level = ref_lvl
-    H1_vec = VectorFunctionSpace(mesh, "CG", 1, 5) # 5 dimensional vector
-    x0, x1, x2 = SpatialCoordinate(mesh)
-    nu = eval(EqnGlobals.w_bdy_nu)
-    q = TrialFunction(H1_vec)
-    p = TestFunction(H1_vec)
-    q_prev = Function(H1_vec)
-    q_prev_prev = Function(H1_vec)
-    q_newt_prev = Function(H1_vec)
-    f = eval(EqnGlobals.forcing_f)
-    g = eval(EqnGlobals.forcing_g)
-
-    # Load data for resumption of computation, if needed
-
-    global times, energies
+    global mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g, times, energies
 
     if saves.SaveMode in ('r','resume'):
         # RESUME MODE : load from previous state
-        q_soln = saves.load_checkpoint(H1_vec,'q_soln') # load q_soln
-        q_prev = saves.load_checkpoint(H1_vec,'q_prev') # load q_prev
+        try:
+            mesh, q_soln, q_prev = saves.load_checkpoint('q_soln','q_prev')
+            H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
+        except FileNotFoundError:
+            # if the proper checkpoint file is not found, check to see if a dumb checkpoint exists
+            mesh = msh
+            H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
+            q_soln = saves.load_dumb_checkpoint(H1_vec,'q_soln') # load q_soln
+            q_prev = saves.load_dumb_checkpoint(H1_vec,'q_prev') # load q_prev
         times, energies = saves.load_energies() # load times, energies
         t_init = times.final # initial time set to final time of previous iteration
     else:
         # OVERWRITE/NONE MODE
-        q_soln = interpolate(eval(EqnGlobals.initial_q),H1_vec) # q_soln is q_init
+        mesh = msh
+        H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
+        x0, x1, x2 = SpatialCoordinate(mesh)
+        q_soln = Function(H1_vec,name='q_soln')
+        q_soln.interpolate(eval(EqnGlobals.initial_q)) # q_soln is q_init
+        q_prev = Function(H1_vec,name='q_prev')
         q_prev.assign(q_soln) # q_prev is q_init
         times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
         t_init = 0 # initial time set to 0
+    
+    # define function space, coordinates, and q_soln
+    refinement_level = ref_lvl
+    x0, x1, x2 = SpatialCoordinate(mesh)
+    nu = eval(EqnGlobals.w_bdy_nu)
+    q = TrialFunction(H1_vec)
+    p = TestFunction(H1_vec)
+    q_prev_prev = Function(H1_vec)
+    q_newt_prev = Function(H1_vec)
+    f = eval(EqnGlobals.forcing_f)
+    g = eval(EqnGlobals.forcing_g)
 
     pr.iter_info_verbose(f'INITIAL CONDITIONS', f'E = {compute_energy(q_soln)}', i=len(energies))
 
@@ -388,9 +393,8 @@ def _checkpoint(q_soln,current_time):
         # truncate times to match the energies
         truncated_times = times.truncate(len(energies))
 
-        # save checkpoint first. If you resume on a different number of cores, an error will be raised
-        saves.save_checkpoint(q_soln,name='q_soln')
-        saves.save_checkpoint(q_prev,name='q_prev')
+        # save checkpoint first
+        saves.save_checkpoint(mesh,q_soln,q_prev)
         saves.save_energies(truncated_times,energies)
         
         # plot time vs energy

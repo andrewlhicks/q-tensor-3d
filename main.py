@@ -63,7 +63,7 @@ elif len(sys.argv[1:]) == 2:
     if sys.argv[1] == 'OVERWRITE':
         SaveMode = 'overwrite'
     if sys.argv[1] == 'resume':
-        if not os.path.exists(f'saves/{SaveName}/chk/q_soln.h5') or not os.path.exists(f'saves/{SaveName}/chk/q_prev.h5'):
+        if not os.path.exists(f'saves/{SaveName}/chk/checkpoint.h5') and (not os.path.exists(f'saves/{SaveName}/chk/q_soln.h5') or not os.path.exists(f'saves/{SaveName}/chk/q_prev.h5')):
             print0("Cannot resume since no checkpoint found. Try overwriting instead.")
             sys.exit()
         SaveMode = 'resume'
