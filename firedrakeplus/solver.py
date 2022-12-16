@@ -59,7 +59,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     f = eval(EqnGlobals.forcing_f)
     g = eval(EqnGlobals.forcing_g)
 
-    pr.iter_info_verbose(f'INITIAL CONDITIONS', f'E = {compute_energy(q_soln)}', i=len(energies))
+    pr.iter_info_verbose(f'INITIAL CONDITIONS', f'energy = {compute_energy(q_soln)}', i=len(energies))
 
     # Initilize the list of times and energies
 
@@ -200,7 +200,7 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
         energies.append(compute_energy(q_soln))
 
         # print energy
-        pr.iter_info(f'NON GD SOLVE COMPLETED', f't = {current_time}', f'E = {energies[-1]}', i=0, p='+', b='[]')
+        pr.iter_info_verbose(f'NON GD SOLVE COMPLETED', f'energy = {energies[-1]}', i=len(energies))
 
         # checkpoint
         _checkpoint(q_soln,current_time)
@@ -233,6 +233,9 @@ def _n_solve(*args,**kwargs):
 def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     from firedrakeplus.eqnglobals import EqnGlobals
 
+    # obtain current gradient descent time step number
+    ii = len(energies)
+
     function_space = q_soln.function_space()
 
     initial_guess = newton_parameters['initial_guess']
@@ -248,7 +251,7 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     preconditioner, _ = _define_a_L(*EqnGlobals.pde_pd)
 
     try:
-        for ii in range(no_newt_steps):      
+        for jj in range(no_newt_steps):      
             q_newt_prev.assign(q_newt_soln)
 
             # Solve
@@ -260,7 +263,8 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
             slope_val = sqrt(abs(compute_energy(q_newt_prev,q_newt_delt,der=1)))
             enrgy_val = compute_energy(q_newt_soln)
 
-            pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii, p='-')
+            # pr.iter_info(f'δE = {slope_val}', f'δQ = {nrm.inf(q_newt_delt)}', f' E = {enrgy_val}', i=ii, p='-')
+            pr.iter_info_verbose('ITERATION SUMMARY', f'energy = {enrgy_val}', i=ii, j=jj)
 
             if slope_val < 1e-8: break
     except ConvergenceError:
