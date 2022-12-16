@@ -102,8 +102,8 @@ def _define_a_L(pde_d : dict, pde_b : dict):
     pde_d = {key:eval(xhs) for key,xhs in pde_d.items()} # establishes lhs and rhs with corresponding keys
     pde_b = {key:eval(xhs) for key,xhs in pde_b.items()}
 
-    a = pde_d['lhs'] * dx
-    L = pde_d['rhs'] * dx
+    a = pde_d['lhs'] * dx if pde_d['lhs'] != 0 else 0
+    L = pde_d['rhs'] * dx if pde_d['rhs'] != 0 else 0
 
     weak_boundary = settings.options.weak_boundary
 
