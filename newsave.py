@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import getopt
 import os
 import shutil
@@ -6,11 +8,12 @@ from loaddump import *
 from userexpr import * # needed to process userexpr.yml
 
 def usage():
-    usage_str = """usage: python newsave.py (-b | -c) <save_name>
-  b: builds new save <save_name> from yml's in ./defaults
+    usage_str = """usage: ./q-save (-c | -h ) <old_save_path> <new_save_path>
   c: copies yml's from <save_name> to new save
-python newsave.py --list
-  lists the current saves
+  h: hard copy: copies yml's and checkpoints from <save_name> to new save
+./q-save (-b | -r) <save_path>
+  b: builds new save at <save_path> from yml's in ./defaults
+  r: repairs save at <save_path> from yml's in ./defaults
 """
     print(usage_str)
 
@@ -52,8 +55,8 @@ def nondimensionalize(const,R):
 
 # MAIN FUNCTIONS
 
-def build(save_name:str):
-    """ Builds new save <save_name> from yml's in ./defaults. """
+def build(save_path:str):
+    """ Builds new save at <save_path> from yml's in ./defaults. """
 
     # load settings, constants, and userexpr text
     settings_txt = load_txt('defaults/settings.yml')
@@ -61,49 +64,77 @@ def build(save_name:str):
     userexpr_txt = load_txt('defaults/userexpr.yml')
 
     # create save
-    create_save(save_name,settings_txt,constants_txt,userexpr_txt)
+    create_save(save_path,settings_txt,constants_txt,userexpr_txt)
 
-def copy(save_name:str):
+def copy(old_save_path:str,new_save_path:str):
     """ Copies yml's from <save_name> to new save. """
 
+    if not os.path.exists(old_save_path):
+        print(f'Save does not exist at \'{old_save_path}\'. Cannot copy.')
+        sys.exit()
+    
     # load settings, constants, and userexpr text
     try:
-        settings_txt = load_txt(f'saves/{save_name}/settings.yml')
+        settings_txt = load_txt(f'{old_save_path}/settings.yml')
     except FileNotFoundError:
         print('No settings file found. Reverting to default...')
         settings_txt = load_txt('defaults/settings.yml')
     try:
-        constants_txt = load_txt(f'saves/{save_name}/constants.yml')
+        constants_txt = load_txt(f'{old_save_path}/constants.yml')
     except FileNotFoundError:
         print('No constants file found. Reverting to default...')
         constants_txt = load_txt('defaults/constants.yml')
     try:
-        userexpr_txt = load_txt(f'saves/{save_name}/userexpr.yml')
+        userexpr_txt = load_txt(f'{old_save_path}/userexpr.yml')
     except FileNotFoundError:
         print('No userepxr file found. Reverting to default...')
         userexpr_txt = load_txt('defaults/userexpr.yml')
 
-    new_save_name = create_save(save_name,settings_txt,constants_txt,userexpr_txt)
+    create_save(new_save_path,settings_txt,constants_txt,userexpr_txt)
 
-    return new_save_name
+    return new_save_path
 
-def hard_copy(save_name:str):
+def hard_copy(old_save_path:str,new_save_path:str):
     """ Does everything copy() does, but also copies checkpoints. """
 
     # It goes without saying that mixing a custom copy function with the built-in 
     # shutil copy is poor form. I will have to change this.
 
-    if not os.path.exists(f'saves/{save_name}/chk/q_soln.h5') or not os.path.exists(f'saves/{save_name}/chk/q_prev.h5') or not os.path.exists(f'saves/{save_name}/energy/energies.yml'):
+    if not os.path.exists(old_save_path):
+        print(f'Save does not exist at \'{old_save_path}\'. Cannot copy.')
+        sys.exit()
+
+    if not os.path.exists(f'{old_save_path}/chk/checkpoint.h5') and (not os.path.exists(f'{old_save_path}/chk/q_soln.h5') or not os.path.exists(f'{old_save_path}/chk/q_prev.h5')):
         raise FileNotFoundError('One or more checkpoint file missing')
     
-    new_save_name = copy(save_name)
+    if not os.path.exists(f'{old_save_path}/energy/energies.yml'):
+        raise FileNotFoundError('energies.yml missing')
+    
+    copy(old_save_path,new_save_path)
 
-    shutil.copy(f'saves/{save_name}/chk/q_soln.h5',f'saves/{new_save_name}/chk')
-    shutil.copy(f'saves/{save_name}/chk/q_prev.h5',f'saves/{new_save_name}/chk')
-    shutil.copy(f'saves/{save_name}/energy/energies.yml',f'saves/{new_save_name}/energy')
+    try:
+        shutil.copy(f'{old_save_path}/chk/checkpoint.h5',f'{new_save_path}/chk')
+    except FileNotFoundError:
+        print(f'Failed to copy {old_save_path}/chk/checkpoint.h5')
+    try:
+        shutil.copy(f'{old_save_path}/chk/q_soln.h5',f'{new_save_path}/chk')
+    except FileNotFoundError:
+        print(f'Failed to copy {old_save_path}/chk/q_soln.h5')
+    try:
+        shutil.copy(f'{old_save_path}/chk/q_prev.h5',f'{new_save_path}/chk')
+    except FileNotFoundError:
+        print(f'Failed to copy {old_save_path}/chk/q_prev.h5')
+    try:
+        shutil.copy(f'{old_save_path}/energy/energies.yml',f'{new_save_path}/energy')
+    except FileNotFoundError:
+        print(f'Failed to copy {old_save_path}/energy/energies.h5')
 
-def repair(save_name:str):
+def repair(save_path:str):
     """ Repairs save with missing attributes in settings.yml or constants.yml. """
+
+    if not os.path.exists(save_path):
+        print(f'Save does not exist at \'{save_path}\'. Cannot repair.')
+        sys.exit()
 
     def repair_dict(bad_dict,good_dict):
         global repair_index
@@ -118,11 +149,9 @@ def repair(save_name:str):
                 good_subdict = val
                 repair_dict(bad_subdict,good_subdict)
     
-    def repair_yml(save_name:str,file_name:str):
+    def repair_yml(save_path:str,file_name:str):
         global repair_index
         repair_index = 0
-
-        save_path = 'saves/' + save_name
 
         bad_yml_path = f'{save_path}/{file_name}'
         good_yml_path = f'defaults/{file_name}'
@@ -134,42 +163,38 @@ def repair(save_name:str):
         
         dump_yml(bad_yml,bad_yml_path)
         
-        print(f'Made {repair_index} repairs to {file_name} in save "{save_name}".')
+        print(f'Made {repair_index} repairs to {file_name} in save at \'{save_path}\'.')
 
         del repair_index
     
-    repair_yml(save_name,'settings.yml')
-    repair_yml(save_name,'constants.yml')
-
-def show_list():
-    [print(save) for save in os.listdir('saves') if not os.path.isfile('saves'+save)]
+    repair_yml(save_path,'settings.yml')
+    repair_yml(save_path,'constants.yml')
 
 # SUPPLEMENTARY FUNCTIONS
 
-def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
+def create_save(save_path,settings_txt,constants_txt,userexpr_txt):
     """ Creates a new save <save_name> (unless there is a naming conflict) with
     specifed settings, constants, and userexpr text. """
 
-    # get path
-    save_path = 'saves/' + save_name
-
     if os.path.exists(save_path):
-        i = 1
-        while True:
-            if not os.path.exists(f'{save_path}{i}'):
-                new_save_name = f'{save_name}{i}'
-                new_save_path = f'{save_path}{i}'
-                break
-            i += 1
-        while True:
-            answer = input(f"Save '{save_name}' already exists. Create save at '{new_save_name}' instead? (y/n) ")
-            if answer in ('y','Y'):
-                save_name = new_save_name
-                save_path = new_save_path
-                break
-            if answer in ('n','N'):
-                print("No new save created.")
-                sys.exit()
+        # i = 1
+        # while True:
+        #     if not os.path.exists(f'{save_path}{i}'):
+        #         new_save_name = f'{save_path}{i}'
+        #         new_save_path = f'{save_path}{i}'
+        #         break
+        #     i += 1
+        # while True:
+        #     answer = input(f"Save '{save_path}' already exists. Create save at '{new_save_name}' instead? (y/n) ")
+        #     if answer in ('y','Y'):
+        #         save_path = new_save_name
+        #         save_path = new_save_path
+        #         break
+        #     if answer in ('n','N'):
+        #         print("No new save created.")
+        #         sys.exit()
+        print(f"Save already exists at '{save_path}'. Try another path.")
+        sys.exit()
 
     os.makedirs(save_path)
     os.makedirs(save_path+'/chk') # stores checkpoints
@@ -181,9 +206,9 @@ def create_save(save_name,settings_txt,constants_txt,userexpr_txt):
     dump_txt(constants_txt,f'{save_path}/constants.yml')
     dump_txt(userexpr_txt,f'{save_path}/userexpr.yml')
 
-    print(f"New save '{save_name}' successfully created.")
+    print(f"New save at '{save_path}' successfully created.")
 
-    return save_name
+    return save_path
 
 # MAIN
 
@@ -192,26 +217,40 @@ def main():
         os.makedirs('saves')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],'b:c:h:r:',['help','list'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'c:h:br',['help'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)
-        print('use --help for usage')
+        print('Use --help for usage.')
         sys.exit()
 
     for o, a in opts:
-        if o in ('-b'):
-            build(a)
-        elif o in ('-c'):
-            copy(a)
+        if o in ('-c'):
+            try:
+                copy(a,listargs[-1])
+            except IndexError:
+                print('Missing <new_save_path>. Use --help for usage.')
+                sys.exit()
         elif o in ('-h'):
-            hard_copy(a)
+            try:
+                hard_copy(a,listargs[-1])
+            except IndexError:
+                print('Missing <new_save_path>. Use --help for usage.')
+                sys.exit()
+        elif o in ('-b'):
+            try:
+                build(listargs[-1])
+            except IndexError:
+                print('Missing <save_path>. Use --help for usage.')
+                sys.exit()
         elif o in ('-r'):
-            repair(a)
+            try:
+                repair(listargs[-1])
+            except IndexError:
+                print('Missing <save_path>. Use --help for usage.')
+                sys.exit()
         elif o in ('--help'):
             usage()
-        elif o in ('--list'):
-            show_list()
         else:
             sys.exit()
 
