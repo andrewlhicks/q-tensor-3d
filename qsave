@@ -8,10 +8,10 @@ from loaddump import *
 from userexpr import * # needed to process userexpr.yml
 
 def usage():
-    usage_str = """usage: ./q-save (-c | -h ) <old_save_path> <new_save_path>
+    usage_str = """usage: ./qsave (-c | -h ) <old_save_path> <new_save_path>
   c: copies yml's from <save_name> to new save
   h: hard copy: copies yml's and checkpoints from <save_name> to new save
-./q-save (-b | -r) <save_path>
+./qsave (-b | -r) <save_path>
   b: builds new save at <save_path> from yml's in ./defaults
   r: repairs save at <save_path> from yml's in ./defaults
 """
