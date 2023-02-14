@@ -115,8 +115,10 @@ def compute():
     ]
 
     if settings.pde.grad_desc:
-        lhs_d.append(GeneralForm((1/c.dt)*q.dot(p),Dqq,Dpp,name='Q:P/dt'))
-        rhs_d.append(GeneralForm((1/c.dt)*qp.dot(p),Dpp,name='Q_p:P/dt'))
+        lhs_d.append(GeneralForm((1/c.dt)*(1/c.ep**2)*q.dot(p),Dqq,Dpp,name='(Ω)Q:P/dt'))
+        lhs_b.append(GeneralForm((1/c.dt)*(c.W2)*q.dot(p),Dqq,Dpp,name='(Γ)Q:P/dt'))
+        rhs_d.append(GeneralForm((1/c.dt)*(1/c.ep**2)*qp.dot(p),Dpp,name='(Ω)Q_p:P/dt'))
+        rhs_b.append(GeneralForm((1/c.dt)*(c.W2)*qp.dot(p),Dpp,name='(Γ)Q_p:P/dt'))
 
     # assemble two PDEs
     pde_d = PDE(lhs_d,rhs_d,Dqq,Dpp,over='domain')
