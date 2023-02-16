@@ -1,4 +1,4 @@
-import printoff as pr
+import q3d.printoff as pr
 
 def check_energy_decrease(energies,current_time):
     """ Checks for energy decreasee in latest energy iteration. """

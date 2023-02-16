@@ -1,8 +1,8 @@
 """ Takes the setup data given and compiles the file uflcache.json, which
 controls the PDE to be solved. """
 
-from loaddump import *
-from userexpr import *
+from q3d.loaddump import *
+from q3d.userexpr import *
 
 userexpr_types = ('initcond','w_bdy_nu','s_bdy','manu_q','forcing_f','forcing_g')
 
@@ -62,7 +62,7 @@ def build_uflcache(path_head):
 def main():
     import getopt
     import sys
-    import config
+    import q3d.config as config
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'l:r:', ['help'])

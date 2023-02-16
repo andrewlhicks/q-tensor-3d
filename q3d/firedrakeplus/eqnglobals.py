@@ -1,5 +1,5 @@
 def set_eqn_globals(comp,uflcache_dict):
-    from config import settings
+    from q3d.config import settings
 
     global EqnGlobals
     class EqnGlobals:

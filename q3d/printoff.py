@@ -6,7 +6,7 @@ My intent is to deprecate this in favor of using the built-in logging
 module, but this will take time to migrate. """
 
 from multiprocessing.sharedctypes import Value
-import saves
+import q3d.saves as saves
 import functools
 from datetime import datetime
 
@@ -146,7 +146,7 @@ def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()'):
 
 @plogger
 def constants_info():
-    from config import constants as c
+    from q3d.config import constants as c
     plog()
     plog('CONSTANTS:',color='uline')
     plog()
@@ -156,7 +156,7 @@ def constants_info():
 
 @plogger
 def settings_info():
-    from config import settings
+    from q3d.config import settings
 
     plog('SETTINGS:',color='uline')
     plog()

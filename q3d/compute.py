@@ -1,7 +1,7 @@
 from sympyplus import *
 
-from config import constants as c
-from config import settings
+from q3d.config import constants as c
+from q3d.config import settings
 
 # Set up Qvector objects
 

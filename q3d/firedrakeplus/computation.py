@@ -3,7 +3,7 @@ from firedrake import FacetNormal
 from firedrake import interpolate, assemble
 from firedrake import dx, ds
 from ufl.operators import *
-import printoff as pr
+import q3d.printoff as pr
 
 class linesearch:
     def ls(name,*args,**kwargs):
@@ -21,7 +21,7 @@ class linesearch:
     def backtrack(q_prev,time_der,alpha):
         """ Given the previous guess, the time derivative, and the time step
         alpha, returns xi computed by backtracking. """
-        from firedrakeplus.eqnglobals import EqnGlobals
+        from q3d.firedrakeplus.eqnglobals import EqnGlobals
 
         H1_vec = q_prev.function_space()
 
@@ -96,8 +96,8 @@ class linesearch:
         return alpha
 
 def compute_energy(*functions, der=0, min_moment=None):
-    from firedrakeplus.eqnglobals import EqnGlobals
-    from config import settings
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.config import settings
 
     # Check for correct values
 

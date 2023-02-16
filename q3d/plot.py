@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import saves
+import q3d.saves as saves
 
 def usage():
 	usage = """usage: python plot.py [-o] (-l | -r) <save-name>
@@ -11,7 +11,7 @@ def usage():
 	print(usage)
 
 def time_vs_energy(times,energies,refinement_level='Not specified',open_file=False):
-	from config import settings
+	from q3d.config import settings
 	import matplotlib
 
 	if not open_file:
@@ -84,7 +84,7 @@ def scatter_vs_poly(scatter,poly):
 def main():
 	import getopt
 	import sys
-	import config
+	import q3d.config as config
 
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], 'l:r:o', ['help'])

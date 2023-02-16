@@ -71,7 +71,7 @@ def nondimensionalize(c:FromDict,R:float):
         c.beta = 1
 
 def initialize(settings_path,constants_path=None):
-    from loaddump import load_yml
+    from q3d.loaddump import load_yml
 
     # make settings global, thus importable
     global settings

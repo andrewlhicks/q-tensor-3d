@@ -4,12 +4,12 @@ import functools
 
 class check:
     def elastic_constants():
-        import printoff as pr
-        from config import constants as c
+        import q3d.printoff as pr
+        from q3d.config import constants as c
         if 0>=c.L1 or -c.L1>=c.L3 or c.L3>=2*c.L1 or -3/5*c.L1-1/10*c.L3>=c.L2:
             pr.warning('L1, L2, and L3 do not satisfy the proper inequalities')
     def energy_decrease(times,energies):
-        import printoff as pr
+        import q3d.printoff as pr
         for i in range(len(energies)-1):
             change_in_energy = energies[i+1]-energies[i]
             if change_in_energy > 0:
@@ -130,7 +130,7 @@ class Timer: # adapted from 'https://realpython.com/python-timer/' on 6/24/20
 # Decorators
 
 def time_this(func):
-    import printoff as pr
+    import q3d.printoff as pr
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         timer = Timer()

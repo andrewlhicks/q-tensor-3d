@@ -3,22 +3,22 @@ from firedrake import Function, SpatialCoordinate, DirichletBC, ConvergenceError
 from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunction
 from firedrake import solve, interpolate
 from firedrake import dx, ds
-from firedrakeplus.math import nrm
-from firedrakeplus.check import check_energy_decrease
-from firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, determine_measure, linesearch
-from firedrakeplus.vis import visualize
+from q3d.firedrakeplus.math import nrm
+from q3d.firedrakeplus.check import check_energy_decrease
+from q3d.firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, determine_measure, linesearch
+from q3d.firedrakeplus.vis import visualize
 
 from datetime import datetime
-from misc import Timer
-import printoff as pr
-import plot
-import saves
+from q3d.misc import Timer
+import q3d.printoff as pr
+import q3d.plot as plot
+import q3d.saves as saves
 from ufl import H1
 from ufl.operators import *
 
 def solve_PDE(msh,ref_lvl='Not specified'):
-    from firedrakeplus.eqnglobals import EqnGlobals
-    from config import settings
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.config import settings
 
     # globalize stuff that needs to be accessed inside other functions, delete later
     global mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g, times, energies
@@ -97,7 +97,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     return (q_soln, timer.str_time, times, energies)
 
 def _define_a_L(pde_d : dict, pde_b : dict):
-    from config import settings
+    from q3d.config import settings
 
     pde_d = {key:eval(xhs) for key,xhs in pde_d.items()} # establishes lhs and rhs with corresponding keys
     pde_b = {key:eval(xhs) for key,xhs in pde_b.items()}
@@ -124,7 +124,7 @@ def _define_a_L_eqn(pde_d: dict, pde_b: dict):
     return a == L
 
 def _define_bcs(bdy_cond : str):
-    from config import settings
+    from q3d.config import settings
 
     strong_boundary = settings.options.strong_boundary
 
@@ -142,7 +142,7 @@ def _define_bcs(bdy_cond : str):
     return bcs
 
 def _g_solve(*args,**kwargs):
-    from config import settings
+    from q3d.config import settings
 
     if settings.pde.grad_desc:
         _graddesc_solve(*args,**kwargs)
@@ -150,7 +150,7 @@ def _g_solve(*args,**kwargs):
         _non_graddesc_solve(*args,**kwargs)
 
 def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
-    from config import settings
+    from q3d.config import settings
 
     # create counter object
     counter = _CheckpointCounter()
@@ -206,8 +206,8 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
         _checkpoint(q_soln,current_time)
 
 def _n_solve(*args,**kwargs):
-    from config import settings
-    from firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.config import settings
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
 
     # fetch q_soln
     q_soln = args[0]
@@ -231,7 +231,7 @@ def _n_solve(*args,**kwargs):
         raise ValueError
 
 def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
-    from firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
 
     # obtain current gradient descent time step number
     ii = len(energies)
@@ -274,8 +274,8 @@ def _newton_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     q_soln.assign(q_newt_soln)
 
 def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
-    from firedrakeplus.eqnglobals import EqnGlobals
-    from config import settings
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.config import settings
     from firedrake import assemble
 
     # obtain current gradient descent time step number
@@ -369,7 +369,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
     pr.iter_info_verbose('current solution updated', i=ii)
 
 def _builtin_nonlinear_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
-    from firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
 
     function_space = q_soln.function_space()
 
@@ -409,8 +409,8 @@ def _checkpoint(q_soln,current_time):
 
 class _CheckpointCounter:
     def __init__(self):
-        from saves import SaveMode
-        from config import settings
+        from q3d.saves import SaveMode
+        from q3d.config import settings
         self.__save_mode = SaveMode
         self.__save_every = settings.time.save_every
         self.__counter = 0

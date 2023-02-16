@@ -5,7 +5,7 @@ an appendage that is only causing harm to the code as a whole. """
 
 from sympyplus import *
 
-from config import constants as c
+from q3d.config import constants as c
 
 # Set up Qvector objects
 

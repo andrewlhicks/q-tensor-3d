@@ -3,11 +3,11 @@
 import getopt
 import os
 import sys
-from loaddump import load_json
-import uflcache
+from q3d.loaddump import load_json
+import q3d.uflcache as uflcache
 from firedrake import COMM_WORLD as comm
-from firedrakeplus import Mesh, BuiltinMesh, ManuQ
-from firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1
+from q3d.firedrakeplus import Mesh, BuiltinMesh, ManuQ
+from q3d.firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
@@ -45,17 +45,17 @@ def run(path, mode='r'):
     comm.Barrier()
 
     # these three modules must be imported in order and before other modules, or else they won't work properly
-    import config
+    import q3d.config as config
     config.initialize(f'{path}/settings.yml',f'{path}/constants.yml')
-    from config import settings
+    from q3d.config import settings
     from time import sleep
 
-    import saves
+    import q3d.saves as saves
     saves.initialize(mode,path)
 
     # import other modules
-    import printoff as pr
-    from misc import Timer, get_range, check
+    import q3d.printoff as pr
+    from q3d.misc import Timer, get_range, check
 
     # print info
     pr.constants_info()
@@ -71,7 +71,7 @@ def run(path, mode='r'):
     timer = Timer()
     timer.start()
 
-    import compute
+    import q3d.compute as compute
     comp = compute.compute()
 
     timer.stop()

@@ -2,7 +2,7 @@
 
 from sympyplus import *
 import yaml
-from loaddump import *
+from q3d.loaddump import *
 
 constructors = ('SpatialVector','FromTensor','FromVector','FromDirector',
     'FromTensorStrongF','FromVectorStrongF','FromDirectorStrongF',
@@ -40,13 +40,13 @@ def fs_representer(tag):
 class FromSympyStrongF(FromSympy):
     @property
     def result(self):
-        from compute_terms import strong_F
+        from q3d.compute_terms import strong_F
         return vectorfy(strong_F(q_tensorfy(self.per_se_expr)))
 
 class FromSympyStrongG(FromSympy):
     @property
     def result(self):
-        from compute_terms import strong_G
+        from q3d.compute_terms import strong_G
         return vectorfy(strong_G(q_tensorfy(self.per_se_expr)))
 
 # Base class for 3d vector
@@ -87,7 +87,7 @@ class FromVector(FromSympy):
 class FromDirector(FromSympy):
     @property
     def per_se_expr(self):
-        from config import constants as c
+        from q3d.config import constants as c
         n = Matrix(self)
         n = n/sqrt(n[0]**2+n[1]**2+n[2]**2)
         M = c.S0*(outerp(n,n) - 1/3*eye(3))

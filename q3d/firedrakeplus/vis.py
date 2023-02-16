@@ -1,12 +1,12 @@
 from firedrake import FunctionSpace, SpatialCoordinate, Function, op2
 from firedrake import TensorFunctionSpace, VectorFunctionSpace
 from firedrake import interpolate, as_vector, sqrt, dot
-from firedrakeplus.fy import tensorfy
-import eigen
-import saves
+from q3d.firedrakeplus.fy import tensorfy
+import q3d.eigen as eigen
+import q3d.saves as saves
 
 def visualize(q_vis,mesh,time=None,new_outfile=False):
-    from config import settings
+    from q3d.config import settings
     
     # Create functions to store eigenvectors and eigenvalues
 

@@ -37,5 +37,5 @@ def RandomFunction(function_space):
     return function
 
 def ManuQ(mesh):
-    from firedrakeplus.eqnglobals import EqnGlobals
+    from q3d.firedrakeplus.eqnglobals import EqnGlobals
     return firedrakefy(EqnGlobals.manu_q,mesh)
