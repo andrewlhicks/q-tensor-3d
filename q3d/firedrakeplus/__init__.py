@@ -3,11 +3,11 @@ firedrake. The functions here are intended to be used on firedrake objects
 only. """
 
 from firedrake import *
-from firedrakeplus.eqnglobals import *
-from firedrakeplus.check import *
-from firedrakeplus.computation import *
-from firedrakeplus.fy import *
-from firedrakeplus.math import *
-from firedrakeplus.mesh import *
-from firedrakeplus.solver import *
-from firedrakeplus.vis import *
+from q3d.firedrakeplus.eqnglobals import *
+from q3d.firedrakeplus.check import *
+from q3d.firedrakeplus.computation import *
+from q3d.firedrakeplus.fy import *
+from q3d.firedrakeplus.math import *
+from q3d.firedrakeplus.mesh import *
+from q3d.firedrakeplus.solver import *
+from q3d.firedrakeplus.vis import *

@@ -13,7 +13,7 @@ def print0(*args,**kwargs):
     if comm.rank == 0:
         print(*args,**kwargs)
 
-help_text = """usage: python qtensor3d.py [-r | -o] <save-directory>"""
+help_text = """usage: qtensor3d [-r | -o] <save-directory>"""
 
 def usage():
     print0(help_text)
