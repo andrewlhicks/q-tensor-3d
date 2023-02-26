@@ -4,28 +4,80 @@ import getopt
 import os
 import shutil
 import sys
+import yaml
 from q3d.loaddump import *
 from q3d.userexpr import * # needed to process userexpr.yml
+
+default_ymls = {}
+
+default_ymls['settings'] = """mesh:
+  builtin: true
+  name: BoxMesh 10 10 10 1 1 1
+  radius: 1 # the characteristic length for non-dimensionalization
+  refs: 0
+options:
+  nondim: false
+  strong_boundary: [5,6] # plane z == 0 and z == Lz
+  weak_boundary: none
+pde:
+  formulation: default
+  grad_desc: true
+  gd_ls: none
+  solver: dynamic
+  tol_u: 2.0
+  tol_l: 0.2
+  tol: 1.0e-8
+solver:
+  ksp_type: gmres
+  pc_type: gamg
+time:
+  num: 1
+  save_every: 1
+  step: 1
+vis:
+  normal: upward"""
+
+default_ymls['constants'] = """A: 7.502103740308257
+B: 60.97581316589323
+C: 66.51906890824715
+L0: 552.2309672093506
+L1: 1.0
+L2: 0
+L3: 0
+W0: 0
+W1: 0
+W2: 0
+beta: 0
+ep: 1.0
+q0: 0"""
+
+default_ymls['userexpr'] = """initcond:
+  # simple: !FromDirector [1,0,0]
+  simple: !FromTensor [cos(x0),sin(x1),cos(x2),sin(x1),sin(x2),cos(x0),cos(x2),cos(x0),-cos(x0)-sin(x2)]
+  # piecewise:
+  #   if: eq(abs(x2-0.25),0.25)
+  #   then: !FromDirector [0,0,1]
+  #   else: !FromDirector [x0-0.21,x1-0.27,x2-0.26]"""
 
 def usage():
     usage_str = """usage: qsave (-c | -h ) <old_save_path> <new_save_path>
   c: copies yml's from <save_name> to new save
   h: hard copy: copies yml's and checkpoints from <save_name> to new save
 qsave (-b | -r) <save_path>
-  b: builds new save at <save_path> from yml's in ./defaults
-  r: repairs save at <save_path> from yml's in ./defaults
+  b: builds new save at <save_path> from yml's
+  r: repairs save at <save_path> from default yml's
 """
     print(usage_str)
 
 # MAIN FUNCTIONS
 
 def build(save_path:str):
-    """ Builds new save at <save_path> from yml's in ./defaults. """
+    """ Builds new save at <save_path> from default yml's. """
 
     # load settings, constants, and userexpr text
-    settings_txt = load_txt('defaults/settings.yml')
-    constants_txt = load_txt('defaults/constants.yml')
-    userexpr_txt = load_txt('defaults/userexpr.yml')
+    settings_txt = default_ymls['settings']
+    constants_txt = default_ymls['constants']
+    userexpr_txt = default_ymls['userexpr']
 
     # create save
     create_save(save_path,settings_txt,constants_txt,userexpr_txt)
@@ -42,17 +94,17 @@ def copy(old_save_path:str,new_save_path:str):
         settings_txt = load_txt(f'{old_save_path}/settings.yml')
     except FileNotFoundError:
         print('No settings file found. Reverting to default...')
-        settings_txt = load_txt('defaults/settings.yml')
+        settings_txt = default_ymls['settings']
     try:
-        constants_txt = load_txt(f'{old_save_path}/constants.yml')
+        constants_txt = f'{old_save_path}/constants.yml'
     except FileNotFoundError:
         print('No constants file found. Reverting to default...')
-        constants_txt = load_txt('defaults/constants.yml')
+        constants_txt = default_ymls['constants']
     try:
         userexpr_txt = load_txt(f'{old_save_path}/userexpr.yml')
     except FileNotFoundError:
         print('No userepxr file found. Reverting to default...')
-        userexpr_txt = load_txt('defaults/userexpr.yml')
+        userexpr_txt = default_ymls['userexpr']
 
     create_save(new_save_path,settings_txt,constants_txt,userexpr_txt)
 
@@ -113,26 +165,25 @@ def repair(save_path:str):
                 good_subdict = val
                 repair_dict(bad_subdict,good_subdict)
     
-    def repair_yml(save_path:str,file_name:str):
+    def repair_yml(save_path:str,file_type:str):
         global repair_index
         repair_index = 0
 
-        bad_yml_path = f'{save_path}/{file_name}'
-        good_yml_path = f'defaults/{file_name}'
+        bad_yml_path = f'{save_path}/{file_type}.yml'
 
         bad_yml = load_yml(bad_yml_path)
-        good_yml = load_yml(good_yml_path)
+        good_yml = yaml.load(default_ymls[file_type],Loader=yaml.Loader)
 
         repair_dict(bad_yml,good_yml)
         
         dump_yml(bad_yml,bad_yml_path)
         
-        print(f'Made {repair_index} repairs to {file_name} in save at \'{save_path}\'.')
+        print(f'Made {repair_index} repairs to {file_type}.yml in save at \'{save_path}\'.')
 
         del repair_index
     
-    repair_yml(save_path,'settings.yml')
-    repair_yml(save_path,'constants.yml')
+    repair_yml(save_path,'settings')
+    repair_yml(save_path,'constants')
 
 # SUPPLEMENTARY FUNCTIONS
 

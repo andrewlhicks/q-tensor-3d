@@ -1,6 +1,7 @@
 """ Takes the setup data given and compiles the file uflcache.json, which
 controls the PDE to be solved. """
 
+import sys
 from q3d.loaddump import *
 from q3d.userexpr import *
 
@@ -43,8 +44,8 @@ def load_userexpr_yml(path_head):
     try:
         userexpr_dict = load_yml(f'{path_head}/userexpr.yml')
     except FileNotFoundError:
-        print(f'File "{path_head}/userexpr.yml" not found, falling back to default.')
-        userexpr_dict = load_yml('defaults/userexpr.yml')
+        print(f'File "{path_head}/userexpr.yml" not found, please provide.')
+        sys.exit()
     for key in userexpr_dict.keys():
         if key not in userexpr_types:
             types = '("' + '","'.join(userexpr_types) + '")'

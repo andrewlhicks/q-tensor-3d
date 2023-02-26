@@ -29,8 +29,7 @@ def initialize(save_mode,save_path,remote=False):
         return
 
     if SaveMode is None:
-        SavePath = 'defaults'
-        return
+        raise ValueError('Must have a SaveMode other than None')
     
     raise ValueError('Must choose current ("' + '","'.join(save_modes) + '") or legacy ("' + '","'.join(save_modes_legacy) + '") save mode')
 
@@ -95,7 +94,20 @@ def save_dumb_checkpoint(q_dump,name='dump'):
         chk.store(q_dump)
 
 def load_energies():
+    """ This loader for the energies ensures easy backwards compatibility with older YAML
+    documents named 'energies.yml' that did not contain the !EnergyList and !TimeList
+    constructors. These older documents were very much dependent on the relative import
+    structure of the q-tensor-3d module, and thus imported from 'saves' directly as if
+    it were a module in the . directory. A good fix to this is to make the replacement
+    that I have specified in the code below. Thi is dependent on the name of the package
+    for q-tensor-3d being 'q3d', but I don't plan on changing this name. So this should
+    get rid of all backwards-compatibility issues. """
+
     with open(f'{SavePath}/energy/energies.yml') as energies_file:
+        # first ensure backwards compatibility
+        energies_file = energies_file.read()
+        energies_file = energies_file.replace('!!python/object/new:saves','!!python/object/new:q3d.saves')
+        # then load the file into yaml
         yaml_load = yaml.load(energies_file, Loader=yaml.Loader)
 
     times = yaml_load['times']
@@ -208,3 +220,22 @@ class TimeList(CustomList):
         if not isinstance(truncation_length,int):
             raise TypeError('Truncation length must be type int.')
         return self.__class__(self[:truncation_length])
+
+def list_constructor(cls):
+    def constructor(loader,node):
+        value = loader.construct_sequence(node)
+        return cls(value)
+    return constructor
+
+def list_representer(tag):
+    def representer(dumper,data):
+        return dumper.represent_sequence(tag,data)
+    return representer
+
+constructors = ('EnergyList','TimeList')
+
+for constructor in constructors:
+    constructor_name = '!' + constructor
+    constructor = eval(constructor)
+    yaml.add_constructor(constructor_name,list_constructor(constructor))
+    yaml.add_representer(constructor,list_representer(constructor_name))
