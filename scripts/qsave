@@ -96,7 +96,7 @@ def copy(old_save_path:str,new_save_path:str):
         print('No settings file found. Reverting to default...')
         settings_txt = default_ymls['settings']
     try:
-        constants_txt = f'{old_save_path}/constants.yml'
+        constants_txt = load_txt(f'{old_save_path}/constants.yml')
     except FileNotFoundError:
         print('No constants file found. Reverting to default...')
         constants_txt = default_ymls['constants']
