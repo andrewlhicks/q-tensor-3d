@@ -228,9 +228,6 @@ def create_save(save_path,settings_txt,constants_txt,userexpr_txt):
 # MAIN
 
 def main():
-    if not os.path.exists('saves'):
-        os.makedirs('saves')
-
     try:
         opts, listargs = getopt.getopt(sys.argv[1:],'c:h:br',['help'])
     except getopt.GetoptError as err:
