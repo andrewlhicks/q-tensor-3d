@@ -97,13 +97,17 @@ def run(path, mode='r'):
 
     # allow for multiple refinement levels for an in-depth comparison
     for refinement_level in get_range(settings.mesh.refs):
-        # choose mesh, either builtin or one made in GMSH
-        if settings.mesh.builtin:
+        if settings.mesh.source not in ('builtin','local','global','legacy'):
+            raise ValueError('Mesh source must be builtin, file, or folder')
+
+        if settings.mesh.source == 'builtin':
             mesh = BuiltinMesh(settings.mesh.name,refinement_level)
-        elif settings.mesh.name == 'local':
-            mesh = Mesh(f'{path}/mesh.msh')
+        elif settings.mesh.source == 'local':
+            mesh = Mesh(f'{path}/{settings.mesh.name}') # use mesh name as relative path from the local save path
+        elif settings.mesh.source == 'global':
+            mesh = Mesh(settings.mesh.name) # use mesh name as absolute path
         else:
-            mesh = Mesh(f'meshes/{settings.mesh.name}/{settings.mesh.name}{refinement_level}.msh')
+            mesh = Mesh(f'{settings.mesh.name}{refinement_level}.msh') # legacy mode, use mesh name as the path to the refinements
 
         # set equation globals to initialize
         set_eqn_globals(comp,uflcache_dict)
