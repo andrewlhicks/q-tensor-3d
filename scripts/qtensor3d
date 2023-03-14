@@ -41,12 +41,12 @@ def check_if_checkpoint_exists(path):
             print0("cannot resume since no checkpoint found. Try overwriting instead.")
             sys.exit()
 
-def run(path, mode='r'):
+def run(path, mode='r', supersessions={}):
     comm.Barrier()
 
     # these three modules must be imported in order and before other modules, or else they won't work properly
     import q3d.config as config
-    config.initialize(f'{path}/settings.yml',f'{path}/constants.yml')
+    config.initialize(f'{path}/settings.yml',f'{path}/constants.yml',supersessions)
     from q3d.config import settings
     from time import sleep
 
@@ -147,18 +147,18 @@ def run(path, mode='r'):
         except IndexError:
             pass
 
-def resume(path):
+def resume(path, supersessions):
     check_if_valid_save(path)
     check_if_checkpoint_exists(path)
     print0(f"resuming save at '{path}'")
-    run(path, 'r')
+    run(path, 'r', supersessions)
 
-def overwrite(path):
+def overwrite(path, supersessions):
     check_if_valid_save(path)
 
     if answers_yes_to(f"will overwrite save at '{path}'. Are you sure you want to continue? (y/n) "):
         print0(f"overwriting save at '{path}'")
-        run(path, 'o')
+        run(path, 'o', supersessions)
     else:
         print0('exiting')
         sys.exit()
@@ -170,7 +170,7 @@ def main():
         sys.exit()
 
     try:
-        opts, listargs = getopt.getopt(sys.argv[1:],'o',['gd=','help'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'o',['no-gd','dt=','num-steps=','save-every=','help'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print0(err)
@@ -179,24 +179,27 @@ def main():
 
     # resume mode is default
     mode = 'r'
+    supersessions = {}
 
     for o, a in opts:
+        # change to overwrite mode
         if o in ('-o'):
-            # change to overwrite mode
             mode = 'o'
-        elif o in ('--gd'):
-            pass
+        # allow for supersessions over what was specified in settings/constants files
+        elif o in ('--no-gd','--dt','--num-steps','--save-every'):
+            supersessions[o[2:]] = a
+        # get help
         elif o in ('--help'):
             usage()
             sys.exit()
         else:
             sys.exit()
-    
+    print(supersessions)
     # overwrite or resume
     if mode == 'o':
-        overwrite(listargs[-1])
+        overwrite(listargs[-1],supersessions)
     elif mode == 'r':
-        resume(listargs[-1])
+        resume(listargs[-1],supersessions)
 
 if __name__ == '__main__':
 	main()

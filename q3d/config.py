@@ -70,7 +70,7 @@ def nondimensionalize(c:FromDict,R:float):
     except AttributeError:
         c.beta = 1
 
-def initialize(settings_path,constants_path=None):
+def initialize(settings_path, constants_path=None, supersessions={}):
     from q3d.loaddump import load_yml
 
     # make settings global, thus importable
@@ -78,6 +78,15 @@ def initialize(settings_path,constants_path=None):
 
     # load settings as FromDict
     settings = FromDict(load_yml(settings_path))
+
+    if 'no-gd' in supersessions:
+        settings.pde.grad_desc = False
+    if 'dt' in supersessions:
+        settings.time.step = float(supersessions['dt'])
+    if 'num-steps' in supersessions:
+        settings.time.num = int(supersessions['num-steps'])
+    if 'save-every' in supersessions:
+        settings.time.save_every = int(supersessions['save-every'])
 
     # process settings
     process_settings(settings)
