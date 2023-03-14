@@ -170,25 +170,33 @@ def main():
         sys.exit()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],'o:r:',['help'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'o',['gd=','help'])
     except getopt.GetoptError as err:
         # print help information and exit:
-        print(err)
-        print('use --help for usage')
+        print0(err)
+        print0('use --help for usage')
         sys.exit()
+
+    # resume mode is default
+    mode = 'r'
 
     for o, a in opts:
         if o in ('-o'):
-            overwrite(a)
-            break
-        elif o in ('-r'):
-            resume(a)
-            break
+            # change to overwrite mode
+            mode = 'o'
+        elif o in ('--gd'):
+            pass
         elif o in ('--help'):
             usage()
-            break
+            sys.exit()
         else:
             sys.exit()
+    
+    # overwrite or resume
+    if mode == 'o':
+        overwrite(listargs[-1])
+    elif mode == 'r':
+        resume(listargs[-1])
 
 if __name__ == '__main__':
 	main()
