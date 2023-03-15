@@ -6,11 +6,18 @@ import mymesh
 import numpy as np
 
 def usage():
-    usage_str = """usage: mesh (-c <center>) (-r <radius) (-s <mesh_size>) <mesh_type> <mesh_path>
-  c: specifies center <center> of inner sphere, should be comma-separated with no spaces
-  r: specifies radius <radius> of inner sphere
-  s: specifies mesh size <mesh_size> of mesh
-"""
+    usage_str = """usage:
+    qmesh [-c {0}center{1}] [-r {0}radius{1}] [-s {0}mesh-size{1}] {0}mesh-type{1} {0}mesh-path{1}
+
+Creates a mesh file of type {0}mesh-type{1} at {0}mesh-path{1} using GMSH.
+
+options for {0}mesh-type{1} are:
+    shell
+
+options:
+    -c  specifies center {0}center{1} of inner sphere, should be comma-separated with no spaces
+    -r  specifies radius {0}radius{1} of inner sphere
+    -s  specifies mesh size {0}mesh-size{1} of mesh""".format('\033[4m','\033[0m')
     print(usage_str)
 
 def main():

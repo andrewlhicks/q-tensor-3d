@@ -13,10 +13,20 @@ def print0(*args,**kwargs):
     if comm.rank == 0:
         print(*args,**kwargs)
 
-help_text = """usage: qtensor3d [-r | -o] <save-directory>"""
-
 def usage():
-    print0(help_text)
+    usage_str = """usage:
+    qtensor3d [-o] [--no-gd] [--dt={0}step-size{1}] [--num-steps={0}numsteps{1}]
+              [--save-every={0}save-every{1}] {0}save-directory{1}
+
+Opens save at {0}save-directory{1} and solves.
+              
+options:
+    -o                          overwrite mode
+    --no-gd                     turns off gradient descent and directly solves
+    --dt={0}step-size{1}              specify the step size of gradient descent
+    --num-steps={0}num-steps{1}       specify the number of time steps
+    --save-every={0}save-every{1}     specify the number of steps before saving state""".format('\033[4m','\033[0m')
+    print0(usage_str)
 
 def answers_yes_to(input_message):
     while True:
