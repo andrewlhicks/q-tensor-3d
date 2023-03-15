@@ -194,7 +194,7 @@ def main():
             sys.exit()
         else:
             sys.exit()
-    print(supersessions)
+    
     # overwrite or resume
     if mode == 'o':
         overwrite(listargs[-1],supersessions)
