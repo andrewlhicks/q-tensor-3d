@@ -15,7 +15,7 @@ def print0(*args,**kwargs):
 
 def usage():
     usage_str = """usage:
-    qtensor3d [-o] [--no-gd] [--dt={0}step-size{1}] [--num-steps={0}numsteps{1}]
+    qtensor3d [-o] [--no-gd] [--dt={0}step-size{1}] [--num-steps={0}num-steps{1}]
               [--save-every={0}save-every{1}] {0}save-directory{1}
 
 Opens save at {0}save-directory{1} and solves.
