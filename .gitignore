@@ -1,8 +1,6 @@
 __pycache__
 .vscode
 constants
-defaults/uflcache.json
-geo
 meshes
 saves
 saves-remote
