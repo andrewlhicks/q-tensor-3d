@@ -108,7 +108,7 @@ def run(path, mode='r', supersessions={}):
     # allow for multiple refinement levels for an in-depth comparison
     for refinement_level in get_range(settings.mesh.refs):
         if settings.mesh.source not in ('builtin','local','global','legacy'):
-            raise ValueError('Mesh source must be builtin, file, or folder')
+            raise ValueError('Mesh source must be builtin, local, global, or legacy')
 
         if settings.mesh.source == 'builtin':
             mesh = BuiltinMesh(settings.mesh.name,refinement_level)

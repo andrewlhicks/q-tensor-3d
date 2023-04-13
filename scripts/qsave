@@ -67,7 +67,7 @@ def usage():
 options:
     -c  copies yml's from {0}old-save-path{1} to {0}new-save-path{1}
     -h  hard copy: copies yml's and checkpoints from {0}old-save-path{1} to {0}new-save-path{1}
-    -b  builds new save at {0}save-path{1} from yml's
+    -b  builds new save at {0}save-path{1} from default yml's
     -r  repairs save at {0}save-path{1} from default yml's""".format('\033[4m','\033[0m')
     print(usage_str)
 
