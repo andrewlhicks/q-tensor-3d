@@ -20,10 +20,7 @@ class FromFromDict(dict):
 
 def process_settings(s: FromDict) -> None:
     """ Takes the settings FromDict (s) and provided missing data for outdated formats. """
-    try:
-        s.mesh.builtin
-    except AttributeError:
-        s.mesh.builtin = False
+    pass
 
 def process_constants(c: FromDict) -> None:
     """ Takes the constants FromDict (c) and adds L0, S0, and dt.
