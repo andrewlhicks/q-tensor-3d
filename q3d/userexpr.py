@@ -87,10 +87,15 @@ class FromVector(FromSympy):
 class FromDirector(FromSympy):
     @property
     def per_se_expr(self):
-        from q3d.config import constants as c
+        try:
+            from q3d.config import constants
+            S0 = constants.S0
+        except ImportError:
+            S0 = 1
+        
         n = Matrix(self)
         n = n/sqrt(n[0]**2+n[1]**2+n[2]**2)
-        M = c.S0*(outerp(n,n) - 1/3*eye(3))
+        M = S0*(outerp(n,n) - 1/3*eye(3))
         m = vectorfy(M)
         return m
     def __repr__(self):
