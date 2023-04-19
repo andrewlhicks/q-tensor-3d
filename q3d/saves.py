@@ -129,12 +129,18 @@ def save_energies(times,energies):
     with open(f'{SavePath}/energy/energies.yml','w') as energies_file:
         energies_file.write(yaml.dump(yaml_dump))
 
-def save_pvd(*args,time=None):
+def save_pvd(*args, time=None, path=None, mode=None):
+    # default kwarg
+    path = path if path is not None else 'vis/vis.pvd'
+    mode = mode if mode is not None else 'a' if SaveMode in ('r','resume') else 'w'
+
+    # check if outfile already created earlier. If not, create it
     global outfile
     if outfile is None:
-        mode = 'a' if SaveMode in ('r','resume') else 'w'
-        outfile = File(f'{SavePath}/vis/vis.pvd',mode=mode)
-    outfile.write(*args,time=time)
+        outfile = File(f'{SavePath}/{path}', mode=mode)
+    
+    # write to outfile
+    outfile.write(*args, time=time)
 
 # Classes for custom data types
 

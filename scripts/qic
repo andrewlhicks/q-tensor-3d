@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+import getopt
+import os
+import sys
+
+from firedrake import COMM_WORLD as comm
+from firedrake import Function, SpatialCoordinate, VectorFunctionSpace
+from ufl.operators import *  # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
+
+import q3d.saves as saves
+import q3d.uflcache as uflcache
+from q3d.firedrakeplus import choose_mesh, process_uflcache_dict, visualize
+from q3d.loaddump import load_json, load_yml
+
+
+def usage():
+    pass
+
+def print0(*args,**kwargs):
+    if comm.rank == 0:
+        print(*args,**kwargs)
+
+def check_if_valid_save(path):
+    if not os.path.exists(path):
+        print0(f'no save at path "{path}"')
+        sys.exit()
+    for filename in ('userexpr.yml','settings.yml'):
+        if not os.path.exists(f'{path}/{filename}'):
+            print0(f'missing file: "{filename}"')
+            sys.exit()
+
+def run(path, **kwargs):
+    # check if valid save, then initialize at current directory
+    check_if_valid_save(path)
+    saves.initialize('o', path)
+
+    # build uflcache at current directory, then read it and process it
+    print0("Rebuilding UFL cache...", end=' ')
+    uflcache.build_uflcache(path)
+    print0("build successful.")
+    uflcache_dict = load_json(f'{path}/uflcache.json')
+
+    process_uflcache_dict(uflcache_dict)
+
+    # read settings, constants yml
+    settings_dict = load_yml(f'{path}/settings.yml')
+
+    # get values from settings dict
+    vis_normal = kwargs.get('normal_vec', settings_dict['vis']['normal'])
+    mesh_source = settings_dict['mesh']['source']
+    mesh_name = settings_dict['mesh']['name']
+
+    # set up mesh, function space, spatial coords, and then interpolate initial condition
+    print0("Interpolating initial condition...", end=' ')
+    mesh = choose_mesh(mesh_source, mesh_name)
+    H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5)
+    x0, x1, x2 = SpatialCoordinate(mesh)
+    initcond = Function(H1_vec,name='initcond')
+    initcond.interpolate(eval(uflcache_dict['initcond'])) 
+    print0("done.")
+
+    # visualize initial condition
+    print0("Writing to file...", end=' ')
+    visualize(initcond, mesh, time=0, normal_vec=vis_normal, path='vis/initcond.pvd', mode='w')
+    print("done.")
+
+def main():
+    try:
+        opts, listargs = getopt.getopt(sys.argv[1:],'',['help'])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print(err)
+        print('use --help for usage')
+        sys.exit()
+    
+    kwargs = {}
+
+    for o, a in opts:
+        if o in ('--help'):
+            usage()
+            sys.exit()
+        elif o in ('--normal-vec'):
+            kwargs['normal_vec'] = a
+    
+    run(*listargs, **kwargs)
+
+if __name__ == '__main__':
+    main()

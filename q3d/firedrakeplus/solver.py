@@ -1,4 +1,3 @@
-from cProfile import label
 from firedrake import Function, SpatialCoordinate, DirichletBC, ConvergenceError
 from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunction
 from firedrake import solve, interpolate
@@ -8,13 +7,11 @@ from q3d.firedrakeplus.check import check_energy_decrease
 from q3d.firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, determine_measure, linesearch
 from q3d.firedrakeplus.vis import visualize
 
-from datetime import datetime
 from q3d.misc import Timer
 import q3d.printoff as pr
 import q3d.plot as plot
 import q3d.saves as saves
-from ufl import H1
-from ufl.operators import *
+from ufl.operators import * # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
 
 def solve_PDE(msh,ref_lvl='Not specified'):
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
@@ -66,7 +63,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     new_times = saves.TimeList.by_prev(t_init,num_times=settings.time.num,step=settings.time.step)
     times = times + new_times
 
-    if saves.SaveMode in ('o','overwrite'): visualize(q_soln,mesh,time=0) # Visualize 0th step on overwrite mode
+    if saves.SaveMode in ('o','overwrite'): visualize(q_soln, mesh, time=0, normal_vec=settings.vis.normal) # Visualize 0th step on overwrite mode
 
     # define boundary conditions
     bcs = _define_bcs(EqnGlobals.s_bdy)
@@ -391,21 +388,22 @@ def _builtin_nonlinear_solve(q_soln,bcs=None,solver_parameters={},newton_paramet
     q_soln.assign(q)
 
 def _checkpoint(q_soln,current_time):
-        # write eigen-info to Paraview
-        visualize(q_soln,mesh,time=current_time)
+    from q3d.config import settings
+    # write eigen-info to Paraview
+    visualize(q_soln, mesh, time=current_time, normal_vec=settings.vis.normal)
 
-        # truncate times to match the energies
-        truncated_times = times.truncate(len(energies))
+    # truncate times to match the energies
+    truncated_times = times.truncate(len(energies))
 
-        # save checkpoint first
-        saves.save_checkpoint(mesh,q_soln,q_prev)
-        saves.save_energies(truncated_times,energies)
-        
-        # plot time vs energy
-        plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
+    # save checkpoint first
+    saves.save_checkpoint(mesh,q_soln,q_prev)
+    saves.save_energies(truncated_times,energies)
+    
+    # plot time vs energy
+    plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
-        # print checkpoint info
-        pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)}')
+    # print checkpoint info
+    pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)}')
 
 class _CheckpointCounter:
     def __init__(self):

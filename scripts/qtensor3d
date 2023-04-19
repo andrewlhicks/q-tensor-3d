@@ -6,8 +6,8 @@ import sys
 from q3d.loaddump import load_json
 import q3d.uflcache as uflcache
 from firedrake import COMM_WORLD as comm
-from q3d.firedrakeplus import Mesh, BuiltinMesh, ManuQ
-from q3d.firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1
+from q3d.firedrakeplus import ManuQ
+from q3d.firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1, choose_mesh
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
@@ -107,17 +107,8 @@ def run(path, mode='r', supersessions={}):
 
     # allow for multiple refinement levels for an in-depth comparison
     for refinement_level in get_range(settings.mesh.refs):
-        if settings.mesh.source not in ('builtin','local','global','legacy'):
-            raise ValueError('Mesh source must be builtin, local, global, or legacy')
-
-        if settings.mesh.source == 'builtin':
-            mesh = BuiltinMesh(settings.mesh.name,refinement_level)
-        elif settings.mesh.source == 'local':
-            mesh = Mesh(f'{path}/{settings.mesh.name}') # use mesh name as relative path from the local save path
-        elif settings.mesh.source == 'global':
-            mesh = Mesh(settings.mesh.name) # use mesh name as absolute path
-        else:
-            mesh = Mesh(f'{settings.mesh.name}{refinement_level}.msh') # legacy mode, use mesh name as the path to the refinements
+        # choose mesh, depending on the mesh source and mesh name, as well as the refinement level
+        mesh = choose_mesh(settings.mesh.source, settings.mesh.name, refinement_level=refinement_level)
 
         # set equation globals to initialize
         set_eqn_globals(comp,uflcache_dict)
