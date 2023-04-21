@@ -12,14 +12,23 @@ import q3d.saves as saves
 import q3d.uflcache as uflcache
 from q3d.firedrakeplus import choose_mesh, process_uflcache_dict, visualize
 from q3d.loaddump import load_json, load_yml
+from q3d.misc import Timer
 
 
 def usage():
-    pass
+    usage_str = """usage:
+    qic [--normal-vec={0}normal-vec{1}] {0}save-path{1}
+
+Visualizes initial condition specified in the save file specified.
+
+options for {0}normal-vec{1} are:
+    outward
+    upward""".format('\033[4m','\033[0m')
+    print(usage_str)
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
-        print(*args,**kwargs)
+        print(*args,flush=True,**kwargs)
 
 def check_if_valid_save(path):
     if not os.path.exists(path):
@@ -31,6 +40,9 @@ def check_if_valid_save(path):
             sys.exit()
 
 def run(path, **kwargs):
+    timer = Timer()
+    timer.start()
+
     # check if valid save, then initialize at current directory
     check_if_valid_save(path)
     saves.initialize('o', path)
@@ -65,9 +77,12 @@ def run(path, **kwargs):
     visualize(initcond, mesh, time=0, normal_vec=vis_normal, path='vis/initcond.pvd', mode='w')
     print("done.")
 
+    timer.stop()
+    print0(f'Time elapsed: {timer.str_minutes}')
+
 def main():
     try:
-        opts, listargs = getopt.getopt(sys.argv[1:],'',['help'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'',['help','normal-vec='])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)
