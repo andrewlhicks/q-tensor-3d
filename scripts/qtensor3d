@@ -218,7 +218,9 @@ def main():
         elif o in ('-a'):
             auto = True
         # allow for supersessions over what was specified in settings/constants files
-        elif o in ('--no-gd','--dt','--num-steps','--save-every'):
+        elif o in ('--dt','--num-steps','--save-every'):
+            supersessions[o[2:]] = float(a)
+        elif o == '--no-gd':
             supersessions[o[2:]] = a
         # get help
         elif o in ('--help'):
