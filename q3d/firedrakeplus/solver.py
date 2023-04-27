@@ -56,7 +56,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     f = eval(EqnGlobals.forcing_f)
     g = eval(EqnGlobals.forcing_g)
 
-    pr.iter_info_verbose(f'INITIAL CONDITIONS', f'energy = {compute_energy(q_soln)}', i=len(energies))
+    pr.iter_info_verbose(f'INITIAL CONDITIONS', f'energy = {compute_energy(q_soln)}', i=len(energies), spaced=True)
 
     # Initilize the list of times and energies
 
@@ -149,6 +149,9 @@ def _g_solve(*args,**kwargs):
 def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
     from q3d.config import settings
 
+    # print info
+    pr.stext(f'*** Beginning GRADIENT DESCENT with step size {settings.time.step} ***')
+
     # create counter object
     counter = _CheckpointCounter()
 
@@ -181,6 +184,9 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
             _checkpoint(q_soln,current_time)
 
 def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
+        # print info
+        pr.stext(f'*** Beginning DIRECT SOLVE ***')
+
         # pull first time value as a dummy current time
         current_time = times_list[0]
 

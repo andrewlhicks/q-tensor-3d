@@ -122,7 +122,7 @@ def iter_info(*strings: str, i: int, p: str='-', b: str='()', show_numbering: bo
     plog(''.join([p for _ in range(15)]))
 
 @plogger
-def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()'):
+def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()', spaced=False):
     now = datetime.now().strftime('%c')
     for string in strings:
         if not isinstance(string,str):
@@ -140,6 +140,8 @@ def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()'):
     plog(f'{now_str} {it_str} {strings[0]}')
     for string in strings[1:]:
         plog(spacing + string)
+    
+    if spaced: plog('')
 
 
 # Plogger functions
