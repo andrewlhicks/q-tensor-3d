@@ -86,12 +86,13 @@ def solve_PDE(msh,ref_lvl='Not specified'):
 
     # gradient descent solve
     timer.start()
-    _g_solve(new_times, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
+    # completed will be True if solve completes, False if convergence error occurs
+    completed = _g_solve(new_times, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
     timer.stop()
 
     del mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
 
-    return (q_soln, timer.str_time, times, energies)
+    return (q_soln, timer.str_time, times, energies, completed)
 
 def _define_a_L(pde_d : dict, pde_b : dict):
     from q3d.config import settings
@@ -141,10 +142,11 @@ def _define_bcs(bdy_cond : str):
 def _g_solve(*args,**kwargs):
     from q3d.config import settings
 
+    # in either case, return True if solve completes, False if convergence error occurs
     if settings.pde.grad_desc:
-        _graddesc_solve(*args,**kwargs)
+        return _graddesc_solve(*args,**kwargs)
     else:
-        _non_graddesc_solve(*args,**kwargs)
+        return _non_graddesc_solve(*args,**kwargs)
 
 def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
     from q3d.config import settings
@@ -161,9 +163,10 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
             _n_solve(q_soln, bcs=bcs,
                 solver_parameters=solver_parameters,
                 newton_parameters=newton_parameters)
+        # if solve fails, state this and return False
         except ConvergenceError:
             pr.fail('Convergence error')
-            return
+            return False
         
         # perform line search for optimal timestep
         time_der = 1/settings.time.step * (q_soln - q_prev)
@@ -182,6 +185,9 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
         # check if checkpoint, if so then make checkpoint
         if counter.is_checkpoint():
             _checkpoint(q_soln,current_time)
+        
+    # if solve completes, return True
+    return True
 
 def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
         # print info
@@ -195,9 +201,10 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
             _n_solve(q_soln, bcs=bcs,
                 solver_parameters=solver_parameters,
                 newton_parameters=newton_parameters)
+        # if solve fails, state this and return False
         except ConvergenceError:
             pr.fail('Convergence error')
-            return
+            return False
         
         # add the energy of q_soln to the energies
         energies.append(compute_energy(q_soln))
@@ -207,6 +214,9 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
 
         # checkpoint
         _checkpoint(q_soln,current_time)
+
+        # if solve completes, return True
+        return True
 
 def _n_solve(*args,**kwargs):
     from q3d.config import settings

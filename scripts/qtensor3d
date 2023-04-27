@@ -8,6 +8,7 @@ import q3d.uflcache as uflcache
 from firedrake import COMM_WORLD as comm
 from q3d.firedrakeplus import ManuQ
 from q3d.firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1, choose_mesh
+import q3d.printoff as pr
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
@@ -51,9 +52,7 @@ def check_if_checkpoint_exists(path):
             print0("cannot resume since no checkpoint found. Try overwriting instead.")
             sys.exit()
 
-def run(path, mode='r', supersessions={}):
-    comm.Barrier()
-
+def run(path, *, mode='r', supersessions={}):
     # these three modules must be imported in order and before other modules, or else they won't work properly
     import q3d.config as config
     config.initialize(f'{path}/settings.yml',f'{path}/constants.yml',supersessions)
@@ -114,7 +113,7 @@ def run(path, mode='r', supersessions={}):
         set_eqn_globals(comp,uflcache_dict)
 
         # solve PDE and get info about it
-        q_soln, time_elapsed, times, energies = solve_PDE(mesh,ref_lvl=refinement_level)
+        q_soln, time_elapsed, times, energies, completed = solve_PDE(mesh,ref_lvl=refinement_level)
 
         # in case q_soln was loaded with a mesh from checkpoint, use this mesh instead of the other one
         mesh = q_soln.function_space().mesh()
@@ -139,7 +138,8 @@ def run(path, mode='r', supersessions={}):
             except IndexError:
                 pass
             
-            return
+            # returns True if solve completes, False if convergence error occurs
+            return completed
         
         # if a manufactured solution was not specified, then print
         # an abbreviated summary of the PDE solve info
@@ -147,22 +147,50 @@ def run(path, mode='r', supersessions={}):
             pr.pde_solve_info(refinement_level=refinement_level,energy=energies[-1],time_elapsed=time_elapsed)
         except IndexError:
             pass
+        
+        # returns True if solve completes, False if convergence error occurs
+        return completed
 
-def resume(path, supersessions):
+def resume_save(path, *, supersessions):
     check_if_valid_save(path)
     check_if_checkpoint_exists(path)
-    print0(f"resuming save at '{path}'")
-    run(path, 'r', supersessions)
 
-def overwrite(path, supersessions):
+    pr.text(f"resuming save at '{path}'")
+    return run(path, mode='r', supersessions=supersessions)
+
+def overwrite_save(path, *, supersessions):
     check_if_valid_save(path)
 
     if answers_yes_to(f"will overwrite save at '{path}'. Are you sure you want to continue? (y/n) "):
-        print0(f"overwriting save at '{path}'")
-        run(path, 'o', supersessions)
-    else:
-        print0('exiting')
+        pr.text(f"overwriting save at '{path}'")
+        return run(path, mode='o', supersessions=supersessions)
+
+    print0('exiting')
+
+def auto_run(path, *, overwrite=False, supersessions):
+    check_if_valid_save(path)
+
+    # default supersessions given here, may be overriden on command line
+    supersessions['dt'] = supersessions.get('dt', 0.001)
+    supersessions['num-steps'] = supersessions.get('num-steps', 50)
+    supersessions['save-every'] = supersessions.get('save-every', 50)
+    if 'no-gd' in supersessions:
+        print0("cannot choose --no-gd in auto mode")
         sys.exit()
+    
+    for i in range(100):
+        completed = False
+        while not completed:
+            if i == 0 and overwrite:
+                completed = overwrite_save(path, supersessions=supersessions)
+            else:
+                completed = resume_save(path, supersessions=supersessions)
+
+            if completed:
+                supersessions['dt'] *= 10
+                continue
+
+            supersessions['dt'] *= 0.1
 
 def main():
     sys_argv = sys.argv[1:]
@@ -171,7 +199,7 @@ def main():
         sys.exit()
 
     try:
-        opts, listargs = getopt.getopt(sys.argv[1:],'o',['no-gd','dt=','num-steps=','save-every=','help'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'oa',['no-gd','dt=','num-steps=','save-every=','help'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print0(err)
@@ -179,13 +207,16 @@ def main():
         sys.exit()
 
     # resume mode is default
-    mode = 'r'
+    overwrite = False
+    auto = False
     supersessions = {}
 
     for o, a in opts:
         # change to overwrite mode
         if o in ('-o'):
-            mode = 'o'
+            overwrite = True
+        elif o in ('-a'):
+            auto = True
         # allow for supersessions over what was specified in settings/constants files
         elif o in ('--no-gd','--dt','--num-steps','--save-every'):
             supersessions[o[2:]] = a
@@ -197,10 +228,15 @@ def main():
             sys.exit()
     
     # overwrite or resume
-    if mode == 'o':
-        overwrite(listargs[-1],supersessions)
-    elif mode == 'r':
-        resume(listargs[-1],supersessions)
+    if auto:
+        auto_run(listargs[-1], overwrite=overwrite, supersessions=supersessions)
+        return
+    
+    if overwrite:
+        overwrite_save(listargs[-1], supersessions=supersessions)
+        return
+    
+    resume_save(listargs[-1], supersessions=supersessions)
 
 if __name__ == '__main__':
 	main()
