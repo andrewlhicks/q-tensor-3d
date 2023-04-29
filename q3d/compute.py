@@ -1,47 +1,6 @@
 from sympyplus import *
 
-from q3d.config import constants as c
-from q3d.config import settings
-
-# Set up Qvector objects
-
-nu = AbstractVector('nu')
-
-q = QVector('q')
-Dq = q.grad
-Dqq = Param([Dq,q])
-Q = q.tens
-
-p = QVector('p')
-Dp = p.grad
-Dpp = Param([Dp,p])
-P = p.tens
-
-r = QVector('r')
-Dr = r.grad
-Drr = Param([Dr,r])
-R = r.tens
-
-qp = QVector('q_prev')
-Dqp = qp.grad
-QP = qp.tens
-
-qpp = QVector('q_prev_prev')
-Dqpp = qpp.grad
-QPP = qpp.tens
-
-qnp = QVector('q_newt_prev')
-Dqnp = qnp.grad
-Dqnpqnp = Param([Dqnp,qnp])
-QNP = qnp.tens
-
-f = QVector('f')
-g = QVector('g')
-
-Q0 = c.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
-Pi = eye(3) - outerp(nu,nu)
-
-#################################################################
+# functions that give the individual terms
 
 def termL1(grad1,grad2):
     return innerp(grad1,grad2)
@@ -71,9 +30,49 @@ def term_twist_var(q,p):
 
     return 2*c.q0*mixedp(Q,P) + 2*c.q0*mixedp(P,Q)
 
-#########################################################
+# compute function, which puts the PDE system together
 
 def compute():
+    from q3d.config import constants as c
+    from q3d.config import settings
+
+    # set up Qvector objects
+    nu = AbstractVector('nu')
+
+    q = QVector('q')
+    Dq = q.grad
+    Dqq = Param([Dq,q])
+    Q = q.tens
+
+    p = QVector('p')
+    Dp = p.grad
+    Dpp = Param([Dp,p])
+    P = p.tens
+
+    r = QVector('r')
+    Dr = r.grad
+    Drr = Param([Dr,r])
+    R = r.tens
+
+    qp = QVector('q_prev')
+    Dqp = qp.grad
+    QP = qp.tens
+
+    qpp = QVector('q_prev_prev')
+    Dqpp = qpp.grad
+    QPP = qpp.tens
+
+    qnp = QVector('q_newt_prev')
+    Dqnp = qnp.grad
+    Dqnpqnp = Param([Dqnp,qnp])
+    QNP = qnp.tens
+
+    f = QVector('f')
+    g = QVector('g')
+
+    Q0 = c.S0*(outerp(nu,nu) - (1.0/3.0)*eye(3))
+    Pi = eye(3) - outerp(nu,nu)
+
     # Define 'energies' used to calculate the energy    
     energies = EnergyForm(Dqq,Dpp,Drr)
     energies.add_domain(GeneralForm(c.L1/2*termL1(Dq,Dq)+c.L2/2*termL2(Dq,Dq)+c.L3/2*termL3(Dq,Dq),Dqq,name='Elastic Energy'))

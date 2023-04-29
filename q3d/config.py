@@ -67,7 +67,7 @@ def nondimensionalize(c:FromDict,R:float):
     except AttributeError:
         c.beta = 1
 
-def initialize(settings_path, constants_path=None, supersessions={}):
+def initialize(settings_path, constants_path=None, *, supersessions={}):
     from q3d.loaddump import load_yml
 
     # make settings global, thus importable
@@ -103,6 +103,8 @@ def initialize(settings_path, constants_path=None, supersessions={}):
 
     # process constants
     process_constants(constants)
+
+    return settings, constants
 
 def main():
     initialize('settings/settings.yml','constants/5cb.yml')

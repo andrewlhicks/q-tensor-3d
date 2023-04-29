@@ -3,12 +3,20 @@
 import getopt
 import os
 import sys
-from q3d.loaddump import load_json
-import q3d.uflcache as uflcache
+from time import sleep
+
 from firedrake import COMM_WORLD as comm
-from q3d.firedrakeplus import ManuQ
-from q3d.firedrakeplus import set_eqn_globals, solve_PDE, compute_energy, errorL2, errorH1, choose_mesh
+
+import q3d.compute as compute
+import q3d.config as config
 import q3d.printoff as pr
+import q3d.saves as saves
+import q3d.uflcache as uflcache
+from q3d.firedrakeplus import (ManuQ, choose_mesh, compute_energy, errorH1,
+                               errorL2, set_eqn_globals, solve_PDE)
+from q3d.loaddump import load_json
+from q3d.misc import Timer, check, get_range
+
 
 def print0(*args,**kwargs):
     if comm.rank == 0:
@@ -52,19 +60,32 @@ def check_if_checkpoint_exists(path):
             print0("cannot resume since no checkpoint found. Try overwriting instead.")
             sys.exit()
 
-def run(path, *, mode='r', supersessions={}):
-    # these three modules must be imported in order and before other modules, or else they won't work properly
-    import q3d.config as config
-    config.initialize(f'{path}/settings.yml',f'{path}/constants.yml',supersessions)
-    from q3d.config import settings
-    from time import sleep
+def run(path, *, overwrite=False, supersessions={}):
+    # first, check if path is a valid save
+    check_if_valid_save(path)
 
-    import q3d.saves as saves
+    # then, check if checkpoint exists if in resume mode
+    if not overwrite:
+        check_if_checkpoint_exists(path)
+    
+    # if in overwrite mode, make sure the user really wants to overwrite
+    if overwrite and not answers_yes_to(f"will overwrite save at '{path}'. Are you sure you want to continue? (y/n) "):
+        pr.text('exiting')
+        return
+
+    # confirm th action of overwriting or resuming
+    BLANK = 'overwrit' if overwrite else 'resum'
+    pr.info(f"{BLANK}ing save at '{path}'")
+
+    # must initialize q3d.config before q3d.saves, otherwise will break
+    settings, constants = config.initialize(f'{path}/settings.yml', f'{path}/constants.yml', supersessions=supersessions)
+    mode = 'o' if overwrite else 'r'
     saves.initialize(mode,path)
 
-    # import other modules
-    import q3d.printoff as pr
-    from q3d.misc import Timer, get_range, check
+    # if we have time steps that, when added together, would be 16 digits or more, we must stop this
+    if (dt := settings.time.step) < 1.0e-5 or dt >= 1.0e+9:
+        pr.fail(f'step size {dt} not allowed')
+        return
 
     # print info
     pr.constants_info()
@@ -79,14 +100,11 @@ def run(path, *, mode='r', supersessions={}):
     # perform sympyplus preliminary computations
     timer = Timer()
     timer.start()
-
-    import q3d.compute as compute
     comp = compute.compute()
-
     timer.stop()
 
     # rebuild UFL cache if in overwrite mode
-    if mode == 'o':
+    if overwrite:
         pr.text("Rebuilding UFL cache...",end=' ')
         uflcache.build_uflcache(path)
         pr.text("build successful.")
@@ -176,27 +194,22 @@ def auto_run(path, *, overwrite=False, supersessions):
     supersessions['save-every'] = supersessions.get('save-every', 50)
     if 'no-gd' in supersessions:
         print0("cannot choose --no-gd in auto mode")
-        sys.exit()
+        return
     
     for i in range(100):
+        # assume not completed, then run iterations until completed, adjusting the step size as appropriate
         completed = False
         while not completed:
-            if i == 0 and overwrite:
-                completed = overwrite_save(path, supersessions=supersessions)
-            else:
-                completed = resume_save(path, supersessions=supersessions)
-
-            if completed:
-                supersessions['dt'] *= 10 if supersessions['dt'] <= 1_000_000_000 else 1
-                continue
-
-            supersessions['dt'] *= 0.1
+            completed = run(path, overwrite=overwrite, supersessions=supersessions)
+            supersessions['dt'] *= 10 if completed else 0.1
+        # turn off overwrite mode after iteration i == 0 is completed
+        overwrite = False
 
 def main():
     sys_argv = sys.argv[1:]
     if len(sys_argv) == 0:
         print0('no argument supplied')
-        sys.exit()
+        return
 
     try:
         opts, listargs = getopt.getopt(sys.argv[1:],'oa',['no-gd','dt=','num-steps=','save-every=','help'])
@@ -204,7 +217,7 @@ def main():
         # print help information and exit:
         print0(err)
         print0('use --help for usage')
-        sys.exit()
+        return
 
     # resume mode is default
     overwrite = False
@@ -225,20 +238,16 @@ def main():
         # get help
         elif o in ('--help'):
             usage()
-            sys.exit()
+            return
         else:
-            sys.exit()
+            return
     
     # overwrite or resume
     if auto:
         auto_run(listargs[-1], overwrite=overwrite, supersessions=supersessions)
         return
     
-    if overwrite:
-        overwrite_save(listargs[-1], supersessions=supersessions)
-        return
-    
-    resume_save(listargs[-1], supersessions=supersessions)
+    run(listargs[-1], overwrite=overwrite, supersessions=supersessions)
 
 if __name__ == '__main__':
 	main()
