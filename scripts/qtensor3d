@@ -187,7 +187,7 @@ def auto_run(path, *, overwrite=False, supersessions):
                 completed = resume_save(path, supersessions=supersessions)
 
             if completed:
-                supersessions['dt'] *= 10 if supersessions['dt'] >= 1_000_000_000 else 1
+                supersessions['dt'] *= 10 if supersessions['dt'] <= 1_000_000_000 else 1
                 continue
 
             supersessions['dt'] *= 0.1
