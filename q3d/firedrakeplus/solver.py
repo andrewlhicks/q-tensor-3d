@@ -3,7 +3,7 @@ from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunct
 from firedrake import solve, interpolate
 from firedrake import dx, ds
 from q3d.firedrakeplus.math import nrm
-from q3d.firedrakeplus.check import check_energy_decrease
+from q3d.firedrakeplus.check import check_energy_decrease, energy_decrease
 from q3d.firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, determine_measure, linesearch
 from q3d.firedrakeplus.vis import visualize
 
@@ -180,14 +180,29 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
 
         # print info and check for energy decrease
         pr.iter_info_verbose(f'TIME STEP COMPLETED', f'energy = {energies[-1]}', i=len(energies))
-        check_energy_decrease(energies,current_time)
+        
+        try:
+            decreased, change_in_energy = energy_decrease(energies[-1], energies[-2])
+        except IndexError:
+            decreased, change_in_energy = True, 0
+
+        # if energy doesn't decrease, print warning
+        if not decreased:
+            pr.warning(f'ΔE=+{change_in_energy:.05e}')
+
+        # if the change in energy is sufficiently small, do a direct solve and return its return value ('direct-solve') if it completes
+        if -1.0e-6 <= change_in_energy < 0:
+            _checkpoint(q_soln, current_time)
+            if (return_val := _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters)):
+                return return_val
+            continue
 
         # check if checkpoint, if so then make checkpoint
         if counter.is_checkpoint():
             _checkpoint(q_soln,current_time)
         
-    # if solve completes, return True
-    return True
+    # if solve completes, return 'gd-solve'
+    return 'gd-solve'
 
 def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameters):
         # print info
@@ -215,8 +230,8 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
         # checkpoint
         _checkpoint(q_soln,current_time)
 
-        # if solve completes, return True
-        return True
+        # if solve completes, return 'direct-solve'
+        return 'direct-solve'
 
 def _n_solve(*args,**kwargs):
     from q3d.config import settings
@@ -419,7 +434,7 @@ def _checkpoint(q_soln,current_time):
     plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)
 
     # print checkpoint info
-    pr.blue(f'Checkpoint saved @t={current_time:.2f} @k={len(energies)}')
+    pr.sblue('Checkpoint saved')
 
 class _CheckpointCounter:
     def __init__(self):

@@ -8,3 +8,10 @@ def check_energy_decrease(energies,current_time):
     threshold = 1.0e-12
     if change_in_energy > threshold:
         pr.warning(f'ΔE=+{change_in_energy:.05e} @t={current_time:.2f} @k={energy_index}')
+
+def energy_decrease(energy_ult, energy_penult):
+    change_in_energy = energy_ult - energy_penult
+    threshold = 1.0e-12
+    if change_in_energy > threshold:
+        return False, change_in_energy
+    return True, change_in_energy
