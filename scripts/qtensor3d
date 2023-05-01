@@ -14,7 +14,7 @@ import q3d.saves as saves
 import q3d.uflcache as uflcache
 from q3d.firedrakeplus import (ManuQ, choose_mesh, compute_energy, errorH1,
                                errorL2, set_eqn_globals, solve_PDE)
-from q3d.loaddump import load_json
+from q3d.loaddump import load_json, load_yml
 from q3d.misc import Timer, check, get_range
 
 
@@ -178,6 +178,9 @@ def auto_run(path, *, overwrite=False, supersessions):
     supersessions['save-every'] = supersessions.get('save-every', 50)
     if 'no-gd' in supersessions:
         print0("cannot choose --no-gd in auto mode")
+        return
+    if not load_yml(f'{path}/settings.yml')['pde']['grad_desc']:
+        print("cannot turn off settings.pde.grad_desc in auto mode")
         return
     
     for i in range(100):
