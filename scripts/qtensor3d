@@ -189,6 +189,7 @@ def auto_run(path, *, overwrite=False, supersessions):
         while not completed:
             completed = run(path, overwrite=overwrite, supersessions=supersessions)
             supersessions['dt'] *= 10 if completed else 0.1
+            if supersessions['dt'] > 100_000: supersessions['dt'] = 100_000
         # if a direct solve was completed, then stop the auto_run
         if completed == 'direct-solve': break
         # turn off overwrite mode after iteration i == 0 is completed
