@@ -79,14 +79,17 @@ def run(path, *, overwrite=False, supersessions={}):
     TSFCKernel._cache.clear()
     GlobalKernel._cache.clear()
 
-    # confirm th action of overwriting or resuming
-    BLANK = 'overwrit' if overwrite else 'resum'
-    pr.info(f"{BLANK}ing save at '{path}'")
-
     # must initialize q3d.config before q3d.saves, otherwise will break
     settings, constants = config.initialize(f'{path}/settings.yml', f'{path}/constants.yml', supersessions=supersessions)
+
+    # initialize saves. Must be done before logging to a file can occur
     mode = 'o' if overwrite else 'r'
     saves.initialize(mode,path)
+    
+    if overwrite:
+        pr.info(f'overwriting save at {path}', mode='w')
+    else:
+        pr.info(f'resuming save at {path}')
 
     # if we have time steps that, when added together, would be 16 digits or more, we must stop this
     if (dt := settings.time.step) < 1.0e-5 or dt >= 1.0e+9:

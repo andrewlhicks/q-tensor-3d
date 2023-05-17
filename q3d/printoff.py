@@ -1,27 +1,14 @@
-""" Here, most of the printing is controlled. Most of it is done through
+""" This module prints and logs information. This is done through
 'plogging', i.e. print-logging, where the information is printed to the
-console and then put into a log file.
+console and then put into a log file. """
 
-My intent is to deprecate this in favor of using the built-in logging
-module, but this will take time to migrate. """
-
-from multiprocessing.sharedctypes import Value
-import q3d.saves as saves
 import functools
 from datetime import datetime
 
-def main():
-    if saves.SaveMode:
-        from datetime import datetime
-        from firedrake import COMM_WORLD
-        if COMM_WORLD.rank == 0:
-            mode = 'a' if saves.SaveMode == 'resume' else 'w'
-            with open(f'{saves.SavePath}/log.txt',mode) as file:
-                now = datetime.now()
-                file.write(now.strftime('%c') + '\n')
-                file.write('\n')
-                Print(now.strftime('%c'))
-                Print()
+from firedrake import COMM_WORLD
+from firedrake.petsc import PETSc
+
+import q3d.saves as saves
 
 # utility functions
 
@@ -30,9 +17,7 @@ def rstr(string,number):
 
 # Decorators
 
-def Print(string='', color=None, *args, **kwargs):
-    from firedrake.petsc import PETSc
-
+def Print(string='', *, color=None, **kwargs):
     colors = {'header' : '\033[95m%s\033[0m',
         'blue' : '\033[94m%s\033[0m',
         'green' : '\033[92m%s\033[0m',
@@ -44,7 +29,7 @@ def Print(string='', color=None, *args, **kwargs):
     if color is not None:
         string = colors[color] % string
 
-    PETSc.Sys.Print(string, *args, **kwargs)
+    PETSc.Sys.Print(string, **kwargs)
 
 def plogger(func):
     """ A decorator that defines a plog function every time it is called. The
@@ -55,22 +40,23 @@ def plogger(func):
         from firedrake import COMM_WORLD
         global plog
 
+        mode = kwargs.pop('mode', 'a')
+
         if COMM_WORLD.rank != 0:
             return
 
         if not saves.SaveMode:
-            def plog(string='', color=None, *args, **kwargs):
-                Print(string, color, *args, **kwargs)
+            def plog(string='', *, color=None, **plog_kwargs):
+                Print(string, color=color, **plog_kwargs)
             value = func(*args, **kwargs)
             return value
 
-        with open(f'{saves.SavePath}/log.txt','a') as file:
-            def plog(string='', color=None, *args, **kwargs):
+        with open(f'{saves.SavePath}/log.txt', mode) as file:
+            def plog(string='', *, color=None, **plog_kwargs):
                 file.write(string+'\n')
-                Print(string, color, *args, **kwargs)
+                Print(string, color=color, **plog_kwargs)
             value = func(*args, **kwargs)
         return value
-
     return wrapper_plogger
 
 # Functions that print lines
@@ -195,52 +181,48 @@ def pde_solve_info(**kwargs):
     print_lines(*dicts)
 
 @plogger
-def text(string, spaced=False, color=None, *args, **kwargs):
+def text(string, *, spaced=False, color=None, **kwargs):
     if not isinstance(string,str):
         raise TypeError('Text must be composed of a string.')
-    plog(string, color=color, *args, **kwargs)
+    plog(string, color=color, **kwargs)
     if spaced: plog('')
 
-def stext(string, color=None, *args, **kwargs):
-    text(string, spaced=True, color=color, *args, **kwargs)
+def stext(string, *, color=None, **kwargs):
+    text(string, spaced=True, color=color, **kwargs)
 
 @plogger
-def info(string, spaced=False, color=None, *args, **kwargs):
+def info(string, *, spaced=False, color=None, **kwargs):
     now = datetime.now().strftime('%c')
     if not isinstance(string,str):
         raise TypeError('Text must be composed of a string.')
-    plog(f'[{now}] {string}', color=color, *args, **kwargs)
+    plog(f'[{now}] {string}', color=color, **kwargs)
     if spaced: plog('')
 
-def green(string, spaced=False, *args, **kwargs):
-    info(string, spaced=spaced, color='green', *args, **kwargs)
+def green(string, *, spaced=False, **kwargs):
+    info(string, spaced=spaced, color='green', **kwargs)
 
-def blue(string, spaced=False, *args, **kwargs):
-    info(string, spaced=spaced, color='blue', *args, **kwargs)
+def blue(string, *, spaced=False, **kwargs):
+    info(string, spaced=spaced, color='blue', **kwargs)
 
-def warning(string, spaced=False, *args, **kwargs):
-    info(f'warning: {string}', spaced=spaced, color='warning', *args, **kwargs)
+def warning(string, *, spaced=False, **kwargs):
+    info(f'warning: {string}', spaced=spaced, color='warning', **kwargs)
 
-def fail(string, spaced=False, *args, **kwargs):
-    info(f'fatal: {string}', spaced=spaced, color='fail', *args, **kwargs)
+def fail(string, *, spaced=False, **kwargs):
+    info(f'fatal: {string}', spaced=spaced, color='fail', **kwargs)
 
-def sinfo(string, color=None, *args, **kwargs):
-    info(string, spaced=True, color=color, *args, **kwargs)
+def sinfo(string, *, color=None, **kwargs):
+    info(string, spaced=True, color=color, **kwargs)
 
-def sgreen(string, *args, **kwargs):
-    green(string, spaced=True, *args, **kwargs)
+def sgreen(string, **kwargs):
+    green(string, spaced=True, **kwargs)
 
-def sblue(string, *args, **kwargs):
-    blue(string, spaced=True, *args, **kwargs)
+def sblue(string, **kwargs):
+    blue(string, spaced=True, **kwargs)
 
-def swarning(string, *args, **kwargs):
-    warning(string, spaced=True, *args, **kwargs)
+def swarning(string, **kwargs):
+    warning(string, spaced=True, **kwargs)
 
-def sfail(string, *args, **kwargs):
-    fail(string, spaced=True, *args, **kwargs)
-
-# MAIN
-
-main()
+def sfail(string, **kwargs):
+    fail(string, spaced=True, **kwargs)
 
 # END OF CODE
