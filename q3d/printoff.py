@@ -15,8 +15,6 @@ import q3d.saves as saves
 def rstr(string,number):
     return ''.join([string for _ in range(number)])
 
-# Decorators
-
 def Print(string='', *, color=None, **kwargs):
     colors = {'header' : '\033[95m%s\033[0m',
         'blue' : '\033[94m%s\033[0m',
@@ -31,39 +29,54 @@ def Print(string='', *, color=None, **kwargs):
 
     PETSc.Sys.Print(string, **kwargs)
 
+# decorators
+
 def plogger(func):
     """ A decorator that defines a plog function every time it is called. The
     reason for this is to ensure that the 'with' statement is used correctly.
     """
     @functools.wraps(func)
     def wrapper_plogger(*args, **kwargs):
-        from firedrake import COMM_WORLD
-        global plog
-
-        mode = kwargs.pop('mode', 'a')
-
+        # exit function if not on processor 0
         if COMM_WORLD.rank != 0:
             return
 
+        # must make plog global to reach @plogger functions' scopes
+        global plog
+
+        # allow user to specify write mode, otherwise give 'a'
+        mode = kwargs.pop('mode', 'a')
+
+        # if SaveMode not specified, plog is the same as Print
         if not saves.SaveMode:
             def plog(string='', *, color=None, **plog_kwargs):
                 Print(string, color=color, **plog_kwargs)
             value = func(*args, **kwargs)
+            del plog # important to ensure plog is not accessed by non-plogger functions
             return value
 
+        # if SaveMode is specified, plog will Print and write to log file
         with open(f'{saves.SavePath}/log.txt', mode) as file:
             def plog(string='', *, color=None, **plog_kwargs):
                 file.write(string+'\n')
                 Print(string, color=color, **plog_kwargs)
             value = func(*args, **kwargs)
+            del plog # important to ensure plog is not accessed by non-plogger functions
         return value
     return wrapper_plogger
 
-# Functions that print lines
+# functions that print lines
 
 def print_lines(*args):
     """ Prints a lines, each line containing a tile and text. Args are
-    dictionaries with 'title' and 'text' attributes. """
+    dictionaries with 'title' and 'text' attributes. MUST be called
+    within a @plogger function. """
+
+    try:
+        plog
+    except NameError:
+        fail('must be called within @plogger function')
+        raise
 
     def print_line(title,text):
         if not isinstance(title,str):
@@ -130,7 +143,7 @@ def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()', spaced=Fa
     if spaced: plog('')
 
 
-# Plogger functions
+# plogger functions
 
 @plogger
 def constants_info():
