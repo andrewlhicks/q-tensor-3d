@@ -1,9 +1,3 @@
 __pycache__
-.vscode
-constants
-meshes
-saves
-saves-remote
-settings
-user_expressions
 q3d.egg-info
+test.py
