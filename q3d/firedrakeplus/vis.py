@@ -44,8 +44,23 @@ def visualize(q_vis, mesh, *, time=None, normal_vec='outward', path=None, mode=N
     magnitude = interpolate(abs(dot(normal,eigvec[0])),H1_scl)
     magnitude.rename('Magnitude')
 
+    Q_00 = Function(H1_scl, name='Q_00')
+    Q_10 = Function(H1_scl, name='Q_10')
+    Q_20 = Function(H1_scl, name='Q_20')
+    Q_21 = Function(H1_scl, name='Q_21')
+    Q_22 = Function(H1_scl, name='Q_22')
+
+    Q_00.interpolate(Q_vis[0,0])
+    Q_10.interpolate(Q_vis[1,0])
+    Q_20.interpolate(Q_vis[2,0])
+    Q_21.interpolate(Q_vis[2,1])
+    Q_22.interpolate(Q_vis[2,2])
+
+    nu = Function(H1_vec, name='nu')
+    nu.interpolate(as_vector([x0, x1, x2])/(x0**2 + x1**2 + x2**2)**(1/2))
+
     # prepare values to write to vis file
-    values_to_write = normal, eigvec[0], eigvec[1], eigvec[2], eigval[0], eigval[1], eigval[2], difference, magnitude, norm_q
+    values_to_write = normal, eigvec[0], eigvec[1], eigvec[2], eigval[0], eigval[1], eigval[2], difference, magnitude, norm_q, Q_00, Q_10, Q_20, Q_21, Q_22, nu,
 
     # write to file
     saves.save_pvd(*values_to_write, time=time, path=path, mode=mode)
