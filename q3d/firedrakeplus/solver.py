@@ -63,7 +63,7 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     new_times = saves.TimeList.by_prev(t_init,num_times=settings.time.num,step=settings.time.step)
     times = times + new_times
 
-    if saves.SaveMode in ('o','overwrite'): visualize(q_soln, mesh, time=0, normal_vec=settings.vis.normal) # Visualize 0th step on overwrite mode
+    if saves.SaveMode in ('o','overwrite'): visualize(q_soln, mesh, write_outward=settings.vis.write_outward, time=0) # Visualize 0th step on overwrite mode
 
     # define boundary conditions
     bcs = _define_bcs(EqnGlobals.s_bdy)
@@ -421,7 +421,7 @@ def _builtin_nonlinear_solve(q_soln,bcs=None,solver_parameters={},newton_paramet
 def _checkpoint(q_soln,current_time):
     from q3d.config import settings
     # write eigen-info to Paraview
-    visualize(q_soln, mesh, time=current_time, normal_vec=settings.vis.normal)
+    visualize(q_soln, mesh, write_outward=settings.vis.write_outward, time=current_time)
 
     # truncate times to match the energies
     truncated_times = times.truncate(len(energies))

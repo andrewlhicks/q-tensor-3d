@@ -17,13 +17,12 @@ from q3d.misc import Timer
 
 def usage():
     usage_str = """usage:
-    qic [--normal-vec={0}normal-vec{1}] {0}save-path{1}
+    qic [--write-outward] {0}save-path{1}
 
 Visualizes initial condition specified in the save file specified.
 
-options for {0}normal-vec{1} are:
-    outward
-    upward""".format('\033[4m','\033[0m')
+options:
+    --write-outward         specify that the outward normal vector should be written to file""".format('\033[4m','\033[0m')
     print(usage_str)
 
 def print0(*args,**kwargs):
@@ -59,7 +58,7 @@ def run(path, **kwargs):
     settings_dict = load_yml(f'{path}/settings.yml')
 
     # get values from settings dict
-    vis_normal = kwargs.get('normal_vec', settings_dict['vis']['normal'])
+    write_outward = kwargs.get('write-outward', settings_dict['vis']['write_outward'])
     mesh_source = settings_dict['mesh']['source']
     mesh_name = settings_dict['mesh']['name']
 
@@ -74,7 +73,7 @@ def run(path, **kwargs):
 
     # visualize initial condition
     print0("Writing to file...", end=' ')
-    visualize(initcond, mesh, time=0, normal_vec=vis_normal, path='vis/initcond.pvd', mode='w')
+    visualize(initcond, mesh, time=0, write_outward=write_outward, path='vis/initcond.pvd', mode='w')
     print("done.")
 
     timer.stop()
@@ -82,7 +81,7 @@ def run(path, **kwargs):
 
 def main():
     try:
-        opts, listargs = getopt.getopt(sys.argv[1:],'',['help','normal-vec='])
+        opts, listargs = getopt.getopt(sys.argv[1:],'',['help','write-outward'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)
@@ -95,7 +94,7 @@ def main():
         if o in ('--help'):
             usage()
             sys.exit()
-        elif o in ('--normal-vec'):
+        elif o in ('--write-outward'):
             kwargs['normal_vec'] = a
     
     run(*listargs, **kwargs)

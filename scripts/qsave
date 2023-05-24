@@ -35,7 +35,7 @@ time:
   save_every: 1
   step: 1
 vis:
-  normal: upward"""
+  write_outward: True"""
 
 default_ymls['constants'] = """A: 7.502103740308257
 B: 60.97581316589323
