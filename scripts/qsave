@@ -11,7 +11,7 @@ from q3d.userexpr import * # needed to process userexpr.yml
 default_ymls = {}
 
 default_ymls['settings'] = """mesh:
-  source: builtin # builtin, local, file, or folder
+  source: builtin # builtin, local, global, or legacy
   name: BoxMesh 10 10 10 1 1 1
   radius: 1 # the characteristic length for non-dimensionalization
   refs: 0
@@ -23,7 +23,7 @@ pde:
   formulation: default
   grad_desc: true
   gd_ls: none
-  solver: dynamic
+  solver: builtin_nonlinear
   tol_u: 2.0
   tol_l: 0.2
   tol: 1.0e-8
@@ -44,7 +44,7 @@ L0: 552.2309672093506
 L1: 1.0
 L2: 0
 L3: 0
-W0: 0
+W0: 1.0
 W1: 0
 W2: 0
 beta: 0
