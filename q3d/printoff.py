@@ -9,6 +9,7 @@ from firedrake import COMM_WORLD
 from firedrake.petsc import PETSc
 
 import q3d.saves as saves
+from q3d.loaddump import load_txt
 
 # utility functions
 
@@ -146,26 +147,14 @@ def iter_info_verbose(*strings: str, i: int, j: int=None, b: str='()', spaced=Fa
 # plogger functions
 
 @plogger
-def constants_info():
-    from q3d.config import constants as c
+def yml_info():
     plog()
-    plog('CONSTANTS:',color='uline')
-    plog()
-    for key, val in c.as_dict().items():
-        plog(f'{key} = {val}')
-    plog()
-
-@plogger
-def settings_info():
-    from q3d.config import settings
-
-    plog('SETTINGS:',color='uline')
-    plog()
-    for key, val in settings.as_dict().items():
-        plog(f'{key}:')
-        for key, val in val.items():
-            plog(f'  {key} : {val}')
-    plog()
+    plog('CONSTANTS.YML:', color='uline', end='\n\n')
+    plog(load_txt(f'{saves.SavePath}/constants.yml'), end='\n\n')
+    plog('SETTINGS.YML:', color='uline', end='\n\n')
+    plog(load_txt(f'{saves.SavePath}/settings.yml'), end='\n\n')
+    plog('USEREXPR.YML:', color='uline', end='\n\n')
+    plog(load_txt(f'{saves.SavePath}/userexpr.yml'), end='\n\n')
 
 @plogger
 def pde_solve_info(**kwargs):

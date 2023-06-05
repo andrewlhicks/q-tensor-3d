@@ -96,9 +96,8 @@ def run(path, *, overwrite=False, supersessions={}):
         pr.fail(f'step size {dt} not allowed')
         sys.exit()
 
-    # print info
-    pr.constants_info()
-    pr.settings_info()
+    # print contents of YML's
+    pr.yml_info()
 
     # perform a check that will ensure the elastic constants are physical
     check.elastic_constants(constants)
