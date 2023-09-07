@@ -210,7 +210,7 @@ def main():
         return
 
     try:
-        opts, listargs = getopt.getopt(sys.argv[1:],'oac',['no-gd','dt=','num-steps=','save-every=','help'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'oa',['no-gd','dt=','num-steps=','save-every=','help'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print0(err)
