@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+import os
+import sys
+import getopt
+from q3d.uflcache import build_uflcache
+from firedrake import COMM_WORLD as comm
+
+def usage():
+    usage = """usage: python uflcache.py (-l | -r) <save-name>
+  l: file in './saves'
+  r: file in './saves-remote'"""
+    print(usage)
+
+def print0(*args,**kwargs):
+    if comm.rank == 0:
+        print(*args,**kwargs)
+
+def check_if_valid_save(path):
+    if not os.path.exists(path):
+        print0(f'no save at path "{path}"')
+        sys.exit()
+    for filename in ('userexpr.yml','settings.yml'):
+        if not os.path.exists(f'{path}/{filename}'):
+            print0(f'missing file: "{filename}"')
+            sys.exit()
+
+def main():
+    import q3d.config as config
+
+    try:
+        opts, listargs = getopt.getopt(sys.argv[1:], '', ['help'])
+    except getopt.GetoptError as err:
+        print(err)  # will print something like "option -a not recognized"
+        sys.exit()
+
+    for o, a in opts:
+        if o in ('--help'):
+            usage()
+            sys.exit()
+        else:
+            assert False, "unhandled option"
+    
+    save_path = listargs[-1]
+
+    config.initialize(f'{save_path}/settings.yml',f'{save_path}/constants.yml') # So userexpr.py has constants.S0
+
+    build_uflcache(save_path)
+    print(f"Done writing uflcache.json at '{save_path}'.")
+
+if __name__ == '__main__':
+    main()
