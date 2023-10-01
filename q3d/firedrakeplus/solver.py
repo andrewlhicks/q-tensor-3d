@@ -189,6 +189,9 @@ def _graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_parameter
         # if energy doesn't decrease, print warning
         if not decreased:
             pr.warning(f'ΔE=+{change_in_energy:.05e}')
+            if change_in_energy > 1.0e-8:
+                pr.fail('Energy failed to decrease.')
+                return False
 
         # if the change in energy is sufficiently small, do a direct solve and return its return value ('direct-solve') if it completes
         if -1.0e-6 <= change_in_energy < 0:
