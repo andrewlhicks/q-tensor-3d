@@ -23,15 +23,17 @@ def nondimensionalize(const,R):
 
 	# Define auxiliary constants
 
-	AM = max(const['A'],const['B'],const['C'])
+	S0 = (const['B'] + sqrt(const['B']**2 + 24*const['A']*const['C']))/(4*const['C'])
+	C0 = - const['A']/3*S0**2 - 2*const['B']/27*S0**3 + const['C']/9*S0**4
+	# AM = max(const['A'],const['B'],const['C'])
 	LM = max(const['L1'],const['L2'],const['L3'])
 
 	# Define non-dimensionalized constants
 
 	nd_const['L0'] = const['L0']
-	nd_const['A'] = const['A']/AM
-	nd_const['B'] = const['B']/AM
-	nd_const['C'] = const['C']/AM
+	nd_const['A'] = const['A']/C0
+	nd_const['B'] = const['B']/C0
+	nd_const['C'] = const['C']/C0
 	nd_const['L1'] = const['L1']/LM
 	nd_const['L2'] = const['L2']/LM
 	nd_const['L3'] = const['L3']/LM
@@ -39,7 +41,7 @@ def nondimensionalize(const,R):
 	nd_const['W1'] = const['W1']*R/(LM)
 	nd_const['W2'] = const['W2']*R/(LM)
 	nd_const['q0'] = const['q0']*R
-	nd_const['ep'] = sqrt(LM/AM)/R
+	nd_const['ep'] = sqrt(LM/(C0*R**2))
 	try:
 		nd_const['beta'] = const['beta']
 	except:
