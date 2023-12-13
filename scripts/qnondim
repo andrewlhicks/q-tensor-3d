@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """ Converts a YAML file with constants to a new file using their
 non-dimensionalized counterparts. """
 
@@ -6,12 +8,16 @@ import sys
 import getopt
 import yaml
 
-usage_str = """
-usage: python nondim.py [-s] <constants-file>.yml <radius>
-"""
-
 def usage():
-	print(usage_str)
+    usage_str = """usage:
+	nondim [-s] --xi={0}char-len{1} {0}const-file{1}.yml
+
+Displays a nondimensionalized version of the constants given in {0}const-file{1}.yml,
+given a characteristic length of xi={0}char-len{1}
+
+options:
+    -s  saves a copy of the nondimensionalization at {0}const-file{1}.nd.yml""".format('\033[4m','\033[0m')
+    print(usage_str)
 
 def nondimensionalize(const,R):
 	""" For a constants dictionary const and a length R (for a sphere-like mesh,
@@ -23,10 +29,9 @@ def nondimensionalize(const,R):
 
 	# Define auxiliary constants
 
-	S0 = (const['B'] + sqrt(const['B']**2 + 24*const['A']*const['C']))/(4*const['C'])
-	C0 = - const['A']/3*S0**2 - 2*const['B']/27*S0**3 + const['C']/9*S0**4
-	# AM = max(const['A'],const['B'],const['C'])
-	LM = max(const['L1'],const['L2'],const['L3'])
+	S0 = (const['B'] + sqrt(const['B']**2 + 24*const['A']*const['C']))/(4*const['C']) # minimizer of the double well
+	C0 = const['A']/3*S0**2 + 2*const['B']/27*S0**3 - const['C']/9*S0**4 # minimum of the double well
+	LM = max(const['L1'],const['L2'],const['L3']) # max of the elastic constants
 
 	# Define non-dimensionalized constants
 
@@ -42,10 +47,6 @@ def nondimensionalize(const,R):
 	nd_const['W2'] = const['W2']*R/(LM)
 	nd_const['q0'] = const['q0']*R
 	nd_const['ep'] = sqrt(LM/(C0*R**2))
-	try:
-		nd_const['beta'] = const['beta']
-	except:
-		nd_const['beta'] = 1
 
 	# Return the non-dimensionalized constants
 
@@ -55,58 +56,62 @@ def main():
 	save_mode = False
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 's', ['help'])
+		opts, args = getopt.getopt(sys.argv[1:], 's', ['xi=','help'])
 	except getopt.GetoptError as err:
 		# print help information and exit:
 		print(err)  # will print something like "option -a not recognized"
 		usage()
 		sys.exit()
 
+	xi = None
+
 	for o, a in opts:
 		if o in ('--help'):
 			usage()
 			sys.exit()
-		if o in ('-s'):
+		elif o in ('-s'):
 			save_mode = True
+		elif o in ('--xi'):
+			try:
+				xi = float(a)
+			except:
+				print("Characteristic length xi must be a number.")
+				sys.exit()
+			if not xi > 0:
+				print("Characteristic length must be positive.")
+				sys.exit()
 		else:
 			assert False, "unhandled option"
 
-	try:
-		float(sys.argv[-1])
-	except:
-		print("Radius must be float.")
-		sys.exit()
-	R = float(sys.argv[-1])
-	if not R > 0:
-		print("Radius must be positive.")
+	if xi is None:
+		print("Must specify characteristic length xi. Use option --xi to specify.")
 		sys.exit()
 
-	file = sys.argv[-2]
+	file = args[0]
 	if not file.endswith('.yml'):
 		print("Constants file must end in '.yml'.")
 		sys.exit()
 	file_name = file.split('.yml')[0]
 
-
-	with open(f'constants/{file}') as constants_file:
+	with open(file) as constants_file:
 		constants_dict = yaml.load(constants_file, Loader=yaml.Loader)
-	constants_dict = nondimensionalize(constants_dict,R)
+	constants_dict = nondimensionalize(constants_dict, xi)
 
 	print("")
 	print(yaml.dump(constants_dict))
 
 	if save_mode:
-		if os.path.exists(f'constants/{file_name}_nd.yml'):
+		if os.path.exists(f'{file_name}.nd.yml'):
 			while True:
-				answer = input(f"Constants file '{file_name}_nd.yml' already exists. Overwrite? (y/n) ")
+				answer = input(f"Constants file '{file_name}.nd.yml' already exists. Overwrite? (y/n) ")
 				if answer in ('y','Y'):
 					break
 				if answer in ('n','N'):
 					print("No file overwritten.")
 					sys.exit()
-		with open(f'constants/{file_name}_nd.yml','w') as constants_file:
+		with open(f'{file_name}.nd.yml','w') as constants_file:
 			constants_file.write(yaml.dump(constants_dict))
-		print(f"File successfully saved as '{file_name}_nd.yml'.")
+		print(f"File successfully saved as '{file_name}.nd.yml'.")
 
 if __name__ == '__main__':
 	main()
