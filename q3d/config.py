@@ -38,35 +38,6 @@ def process_constants(c: FromDict) -> None:
     # the following should be deprecated (from settings) in future
     c.dt = settings.time.step
 
-def nondimensionalize(c:FromDict,R:float):
-    """ For a constants dictionary const and a length R (for a sphere-like mesh,
-    the radius), returns the non-dimensionalized version of these constants """
-
-    from math import sqrt
-
-    # Define auxiliary constants
-
-    AM = max(c.A,c.B,c.C)
-    LM = max(c.L1,c.L2,c.L3)
-
-    # Define non-dimensionalized constants
-
-    c.A /= AM
-    c.B /= AM
-    c.C /= AM
-    c.L1 /= LM
-    c.L2 /= LM
-    c.L3 /= LM
-    c.W0 *= (R/LM)
-    c.W1 *= (R/LM)
-    c.W2 *= (R/LM)
-    c.q0 *= R
-    c.ep = sqrt(LM/AM)/R
-    try:
-        c.beta
-    except AttributeError:
-        c.beta = 1
-
 def initialize(settings_path, constants_path=None, *, supersessions={}):
     from q3d.loaddump import load_yml
 
@@ -97,18 +68,7 @@ def initialize(settings_path, constants_path=None, *, supersessions={}):
     # load constants as FromDict
     constants = FromDict(load_yml(constants_path))
 
-    # nondimensionalize if needed
-    if settings.options.nondim:
-        nondimensionalize(constants,settings.mesh.radius)
-
     # process constants
     process_constants(constants)
 
     return settings, constants
-
-def main():
-    initialize('settings/settings.yml','constants/5cb.yml')
-    print(constants)
-
-if __name__ == '__main__':
-    main()
