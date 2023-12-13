@@ -23,14 +23,10 @@ def process_settings(s: FromDict) -> None:
     pass
 
 def process_constants(c: FromDict) -> None:
-    """ Takes the constants FromDict (c) and adds L0, S0, and dt.
+    """ Takes the constants FromDict (c) and adds S0, and dt.
     Note that this function may only be called AFTER calling process_settings(). """
 
-    from math import sqrt, ceil
-
-    # set L0 if not explicitly set
-    if c.L0 == 'auto':
-        c.L0 = ceil(2*(c.A+c.B**2/c.C))
+    from math import sqrt
 
     # set S0 as minimum of double well
     c.S0 = (c.B + sqrt(c.B**2 + 24.0*c.A*c.C))/(4.0*c.C)

@@ -35,7 +35,6 @@ def nondimensionalize(const,R):
 
 	# Define non-dimensionalized constants
 
-	nd_const['L0'] = const['L0']
 	nd_const['A'] = const['A']/C0
 	nd_const['B'] = const['B']/C0
 	nd_const['C'] = const['C']/C0
