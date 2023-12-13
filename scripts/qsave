@@ -13,10 +13,8 @@ default_ymls = {}
 default_ymls['settings'] = """mesh:
   source: builtin # builtin, local, global, or legacy
   name: BoxMesh 10 10 10 1 1 1
-  radius: 1 # the characteristic length for non-dimensionalization
   refs: 0
 options:
-  nondim: false
   strong_boundary: [5,6] # plane z == 0 and z == Lz
   weak_boundary: none
 pde:
@@ -40,14 +38,12 @@ vis:
 default_ymls['constants'] = """A: 7.502103740308257
 B: 60.97581316589323
 C: 66.51906890824715
-L0: 552.2309672093506
 L1: 1.0
 L2: 0
 L3: 0
 W0: 1.0
 W1: 0
 W2: 0
-beta: 0
 ep: 1.0
 q0: 0"""
 
