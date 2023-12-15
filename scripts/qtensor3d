@@ -180,6 +180,11 @@ def run(path, *, overwrite=False, supersessions={}):
 def auto_run(path, *, overwrite=False, supersessions):
     check_if_valid_save(path)
 
+    pr.info('Starting AUTO RUN', spaced=True)
+
+    timer_autorun = Timer()
+    timer_autorun.start()
+
     # default supersessions given here, may be overriden on command line
     supersessions['dt'] = supersessions.get('dt', 0.001)
     supersessions['num-steps'] = supersessions.get('num-steps', 50)
@@ -202,6 +207,9 @@ def auto_run(path, *, overwrite=False, supersessions):
         if completed == 'direct-solve': break
         # turn off overwrite mode after iteration i == 0 is completed
         overwrite = False
+    
+    timer_autorun.stop()
+    pr.info(f'AUTO RUN completed in {timer_autorun.str_time}')
 
 def main():
     sys_argv = sys.argv[1:]
