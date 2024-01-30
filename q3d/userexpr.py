@@ -4,7 +4,7 @@ from sympyplus import *
 import yaml
 from q3d.loaddump import *
 
-constructors = ('SpatialVector','FromTensor','FromVector','FromDirector',
+constructors = ('SpatialVector','FromTensor','FromVector','FromDirector','FromSphericalDirector',
     'FromTensorStrongF','FromVectorStrongF','FromDirectorStrongF',
     'FromTensorStrongG','FromVectorStrongG','FromDirectorStrongG')
 
@@ -94,6 +94,40 @@ class FromDirector(FromSympy):
             S0 = 1
         
         n = Matrix(self)
+        n = n/sqrt(n[0]**2+n[1]**2+n[2]**2)
+        M = S0*(outerp(n,n) - 1/3*eye(3))
+        m = vectorfy(M)
+        return m
+    def __repr__(self):
+        return f'FromDirector {self.result}'
+
+class FromSphericalDirector(FromSympy):
+    @property
+    def per_se_expr(self):
+        try:
+            from q3d.config import constants
+            S0 = constants.S0
+        except ImportError:
+            S0 = 1
+        
+        r, theta, phi = symbols('r,theta,phi')
+
+        r_theta_phi = Matrix(self) # get r, theta, and phi coord of initial condition
+        r_theta_phi = r_theta_phi.subs(r, sqrt(x[0]**2+x[1]**2+x[2]**2))
+        r_theta_phi = r_theta_phi.subs(theta, acos(x[2]/sqrt(x[0]**2+x[1]**2+x[2]**2)))
+        r_theta_phi = r_theta_phi.subs(phi, sign(x[1])*acos(x[0]/sqrt(x[0]**2+x[1]**2)))
+
+        # spherical basis vectors
+        e_r = Matrix([x[0], x[1], x[2]])/sqrt(x[0]**2+x[1]**2+x[2]**2)
+        e_theta = Matrix([x[0]*x[2], x[1]*x[2], -(x[0]**2+x[1]**2)])/sqrt((x[0]**2+x[1]**2+x[2]**2)*(x[0]**2+x[1]**2))
+        e_phi = Matrix([-x[1], x[0], 0])/sqrt(x[0]**2+x[1]**2)
+
+        e_theta.reshape(3,1)
+        e_phi.reshape(3,1)
+
+        # define n as a linear combination of the three basis vectors and scalars
+        n = r_theta_phi[0]*e_r + r_theta_phi[1]*e_theta + r_theta_phi[2]*e_phi
+
         n = n/sqrt(n[0]**2+n[1]**2+n[2]**2)
         M = S0*(outerp(n,n) - 1/3*eye(3))
         m = vectorfy(M)
