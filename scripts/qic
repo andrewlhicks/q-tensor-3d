@@ -6,7 +6,8 @@ import sys
 
 from firedrake import COMM_WORLD as comm
 from firedrake import Function, SpatialCoordinate, VectorFunctionSpace
-from ufl.operators import *  # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
+from q3d.ufloperatorsplus import *  # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
+from ufl.classes import *
 
 import q3d.saves as saves
 import q3d.uflcache as uflcache

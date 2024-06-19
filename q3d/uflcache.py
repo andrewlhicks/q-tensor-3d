@@ -4,6 +4,8 @@ controls the PDE to be solved. """
 import sys
 from q3d.loaddump import *
 from q3d.userexpr import *
+from q3d.ufloperatorsplus import *
+import re
 
 userexpr_types = ('initcond','w_bdy_nu','s_bdy','manu_q','forcing_f','forcing_g')
 
@@ -25,6 +27,11 @@ def process_condition(dictionary):
             raise KeyError(f'Dict keys for user expression may only be "simple" or "piecewise", not "{key}".')
 
     if 'simple' in dictionary.keys():
+        tensor_object = dictionary['simple']
+        if isinstance(tensor_object, ListTensor):
+            string = repr(tensor_object)
+            string = re.sub(r'<ufl.domain.AbstractDomain object at 0[xX][0-9a-fA-F]+?>', 'mesh', string)
+            return string
         return dictionary['simple'].uflfy()
 
     # If nothing is returned, assume piecewise

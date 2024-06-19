@@ -11,7 +11,7 @@ from q3d.misc import Timer
 import q3d.printoff as pr
 import q3d.plot as plot
 import q3d.saves as saves
-from ufl.operators import * # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
+from q3d.ufloperatorsplus import * # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
 
 def solve_PDE(msh,ref_lvl='Not specified'):
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
