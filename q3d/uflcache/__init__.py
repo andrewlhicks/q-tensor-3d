@@ -3,9 +3,12 @@ controls the PDE to be solved. """
 
 import sys
 from q3d.loaddump import *
-from q3d.uflcache.userexpr import *
+from q3d.uflcache.userexpr import add_sympy_constructors, add_ufl_constructors
 from q3d.ufloperatorsplus import *
 import re
+
+add_sympy_constructors()
+add_ufl_constructors()
 
 userexpr_types = ('initcond','w_bdy_nu','s_bdy','manu_q','forcing_f','forcing_g')
 
