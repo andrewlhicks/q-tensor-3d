@@ -3,7 +3,7 @@ controls the PDE to be solved. """
 
 import sys
 from q3d.loaddump import *
-from q3d.userexpr import *
+from q3d.uflcache.userexpr import *
 from q3d.ufloperatorsplus import *
 import re
 
