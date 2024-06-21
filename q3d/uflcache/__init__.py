@@ -31,7 +31,7 @@ def process_condition(dictionary):
 
     if 'simple' in dictionary.keys():
         tensor_object = dictionary['simple']
-        if isinstance(tensor_object, ListTensor):
+        if tensor_object.__module__[0:4] == 'ufl.':
             string = repr(tensor_object)
             string = re.sub(r'<ufl.domain.AbstractDomain object at 0[xX][0-9a-fA-F]+?>', 'mesh', string)
             return string

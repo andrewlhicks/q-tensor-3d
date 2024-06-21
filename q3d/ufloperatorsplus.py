@@ -4,9 +4,13 @@ from ufl import Identity, AbstractDomain
 domain = AbstractDomain(3,3)
 x0, x1, x2 = SpatialCoordinate(domain)
 
-def smooth_transition(x, a, b):
-    """ A smooth transition function in the variable x wih the
-    value of 0 at x=a and 1 at x=b """
+def smooth_transition(x, *, I: list[int | float]):
+    """ A smooth transition function in the variable x on the
+    interval I = [a,b], with the value of 0 at x=a and 1 at x=b """
+
+    a = I[0]
+    b = I[1]
+
     # smooth function f defined by the exponential
     def f(x):
         return conditional(gt(x,0), exp(-1/x), 0)
