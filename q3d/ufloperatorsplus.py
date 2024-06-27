@@ -1,4 +1,5 @@
 from ufl.operators import *
+from ufl.classes import *
 from ufl import Identity, AbstractDomain
 
 domain = AbstractDomain(3,3)
