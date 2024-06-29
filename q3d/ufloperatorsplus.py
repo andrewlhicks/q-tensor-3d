@@ -1,6 +1,7 @@
 from ufl.operators import *
 from ufl.classes import *
 from ufl import Identity, AbstractDomain
+from firedrake.ufl_expr import *
 
 domain = AbstractDomain(3,3)
 x0, x1, x2 = SpatialCoordinate(domain)
