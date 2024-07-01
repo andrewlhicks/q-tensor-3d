@@ -6,7 +6,16 @@ from firedrake.ufl_expr import *
 domain = AbstractDomain(3,3)
 x0, x1, x2 = SpatialCoordinate(domain)
 
+def from_director(director: list | ListTensor | Zero) -> ListTensor | Zero:
+    """ vector3d -> qvector """
+    return vectorfy(qtensor_from_director(as_vector(director)))
+
+def from_spherical_director(director: list | ListTensor | Zero) -> ListTensor:
+    """ vector3d -> qvector """
+    return vectorfy(qtensor_from_director(spherical_to_cartesian(as_vector(director))))
+
 def spherical_to_cartesian(vector_spherical: ListTensor | Zero) -> ListTensor | Zero:
+    """ vector3d -> vector3d """
     from ufl import Constant, replace
 
     if vector_spherical.ufl_shape != (3,):
@@ -37,6 +46,7 @@ def spherical_to_cartesian(vector_spherical: ListTensor | Zero) -> ListTensor | 
     return vector_cartesian
 
 def qtensor_from_director(director: ListTensor) -> ListTensor:
+    """ vector3d -> qtensor """
     try:
         from q3d.config import constants
         S0: float = constants.S0
@@ -55,6 +65,7 @@ def qtensor_from_director(director: ListTensor) -> ListTensor:
     return M
 
 def vectorfy(tensor: ListTensor) -> ListTensor:
+    """ qtensor -> qvector """
     from math import sqrt
 
     a: float = (sqrt(3.0)-3.0)/6.0
