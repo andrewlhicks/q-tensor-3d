@@ -8,11 +8,11 @@ x0, x1, x2 = SpatialCoordinate(domain)
 
 def from_director(director: list | ListTensor | Zero) -> ListTensor | Zero:
     """ vector3d -> qvector """
-    return vectorfy(qtensor_from_director(as_vector(director)))
+    return qvectorfy(qtensor_from_director(as_vector(director)))
 
 def from_spherical_director(director: list | ListTensor | Zero) -> ListTensor:
     """ vector3d -> qvector """
-    return vectorfy(qtensor_from_director(spherical_to_cartesian(as_vector(director))))
+    return qvectorfy(qtensor_from_director(spherical_to_cartesian(as_vector(director))))
 
 def spherical_to_cartesian(vector_spherical: ListTensor | Zero) -> ListTensor | Zero:
     """ vector3d -> vector3d """
