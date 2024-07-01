@@ -4,7 +4,7 @@ controls the PDE to be solved. """
 import sys
 from q3d.loaddump import *
 from q3d.uflcache.userexpr import add_sympy_constructors, add_ufl_constructors
-from q3d.ufloperatorsplus import *
+from q3d.uflplus import *
 import re
 
 add_sympy_constructors()

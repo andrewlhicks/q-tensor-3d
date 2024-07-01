@@ -2,7 +2,7 @@ from firedrake import SpatialCoordinate
 from firedrake import FacetNormal
 from firedrake import interpolate, assemble
 from firedrake import dx, ds
-from q3d.ufloperatorsplus import *
+from q3d.uflplus import *
 import q3d.printoff as pr
 
 class linesearch:

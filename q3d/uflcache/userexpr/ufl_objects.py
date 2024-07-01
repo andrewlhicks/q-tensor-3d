@@ -1,4 +1,4 @@
-from q3d.ufloperatorsplus import *
+from q3d.uflplus import *
 import yaml
 
 __all__ = ('add_ufl_constructors')

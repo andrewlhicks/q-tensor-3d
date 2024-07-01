@@ -1,7 +1,7 @@
 from firedrake import SpatialCoordinate
 from firedrake import VectorFunctionSpace
 from firedrake import interpolate
-from q3d.ufloperatorsplus import *
+from q3d.uflplus import *
 
 def firedrakefy(func,mesh):
     H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5)
