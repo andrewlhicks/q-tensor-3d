@@ -48,7 +48,7 @@ def simple_condition(condition: Expr | FromSympy) -> str:
     elif isinstance(condition, FromSympy):
         return condition.uflfy()
     else:
-        raise TypeError('Conditions be an instance of ufl.core.expr.Expr or FromSympy')
+        raise TypeError('Conditions must be an instance of ufl.core.expr.Expr or FromSympy')
 
 def piecewise_condition(condition):
     if set(condition.keys()) != {'if','then','else'}:
