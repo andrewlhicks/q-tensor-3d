@@ -3,8 +3,9 @@ controls the PDE to be solved. """
 
 import sys
 from q3d.loaddump import *
-from q3d.uflcache.userexpr import add_sympy_constructors, add_ufl_constructors
+from q3d.uflcache.userexpr import *
 from q3d.uflplus import *
+from ufl.core.expr import Expr
 import re
 
 add_sympy_constructors()
@@ -18,35 +19,44 @@ def usage():
   r: file in './saves-remote'"""
     print(usage)
 
-def process_condition(dictionary):
-    if not isinstance(dictionary,dict):
-        raise TypeError('Must be dictionary')
-    if dictionary is None:
+def process_condition(condition):
+    # if not dictionary, return simple condition
+    if not isinstance(condition,dict):
+        return simple_condition(condition)
+    
+    # if dictionary, then go through rigorous checking process
+    if not condition:
         raise ValueError('Empty dict not accepted for user expression.')
-    if len(dictionary) > 1:
+    if len(condition) > 1:
         raise KeyError('Only one dict key accepted for user expression.')
-    for key in dictionary.keys():
+    for key in condition.keys():
         if key not in ('simple','piecewise'):
             raise KeyError(f'Dict keys for user expression may only be "simple" or "piecewise", not "{key}".')
 
-    if 'simple' in dictionary.keys():
-        tensor_object = dictionary['simple']
-        if tensor_object.__module__[0:4] == 'ufl.':
-            string = repr(tensor_object)
-            string = re.sub(r'<ufl.domain.AbstractDomain object at 0[xX][0-9a-fA-F]+?>', 'mesh', string)
-            return string
-        return dictionary['simple'].uflfy()
+    # if 'simple' key is given, return simple condition
+    if 'simple' in condition.keys():
+        return simple_condition(condition['simple'])
 
-    # If nothing is returned, assume piecewise
+    # If nothing is returned, return piecewise
+    return piecewise_condition(condition['piecewise'])
 
-    dictionary = dictionary['piecewise']
+def simple_condition(condition: Expr | FromSympy) -> str:
+    if isinstance(condition, Expr):
+        string = repr(condition)
+        string = re.sub(r'<ufl.domain.AbstractDomain object at 0[xX][0-9a-fA-F]+?>', 'mesh', string)
+        return string
+    elif isinstance(condition, FromSympy):
+        return condition.uflfy()
+    else:
+        raise TypeError('Conditions be an instance of ufl.core.expr.Expr or FromSympy')
 
-    if set(dictionary.keys()) != {'if','then','else'}:
+def piecewise_condition(condition):
+    if set(condition.keys()) != {'if','then','else'}:
         raise KeyError('Keys for a piecewise condition must be "if", "then", and "else".')
 
-    condition = dictionary['if']
-    ufl_a = dictionary['then'].uflfy()
-    ufl_b = dictionary['else'].uflfy()
+    condition = condition['if']
+    ufl_a = condition['then'].uflfy()
+    ufl_b = condition['else'].uflfy()
 
     return f'conditional({condition},{ufl_a},{ufl_b})'
 

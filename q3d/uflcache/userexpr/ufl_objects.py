@@ -1,8 +1,6 @@
 from q3d.uflplus import *
 import yaml
 
-__all__ = ('add_ufl_constructors')
-
 domain = AbstractDomain(3,3) # acts as placeholder domain
 x0, x1, x2 = SpatialCoordinate(domain)
 
