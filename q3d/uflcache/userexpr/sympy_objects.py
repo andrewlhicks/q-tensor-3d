@@ -2,7 +2,6 @@
 
 from sympyplus import *
 import yaml
-from q3d.loaddump import *
 
 constructors = ('SpatialVector','FromTensor','FromVector','FromDirector','FromSphericalDirector',
     'FromTensorStrongF','FromVectorStrongF','FromDirectorStrongF',
@@ -163,8 +162,8 @@ class FromDirectorStrongG(FromDirector,FromSympyStrongG):
     def __repr__(self):
         return f'FromDirectorStrongG {self.result}'
 
-for constructor in constructors:
-    constructor_name = '!' + constructor
-    constructor = eval(constructor)
-    yaml.add_constructor(constructor_name,fs_constructor(constructor))
-    # yaml.add_representer(constructor,fs_representer(constructor_name)) # Won't add since not implemented
+def add_sympy_constructors():
+    for constructor in constructors:
+        constructor_name = '!' + constructor
+        constructor = eval(constructor)
+        yaml.add_constructor(constructor_name,fs_constructor(constructor))

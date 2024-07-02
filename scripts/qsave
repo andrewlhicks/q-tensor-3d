@@ -6,7 +6,6 @@ import shutil
 import sys
 import yaml
 from q3d.loaddump import *
-from q3d.userexpr import * # needed to process userexpr.yml
 
 default_ymls = {}
 
