@@ -1,6 +1,6 @@
 from firedrake import (Function, FunctionSpace, SpatialCoordinate,
-                       TensorFunctionSpace, VectorFunctionSpace, as_vector,
-                       interpolate)
+                       TensorFunctionSpace, VectorFunctionSpace, as_vector, assemble)
+from firedrake.__future__ import interpolate
 
 import q3d.saves as saves
 from q3d.uflplus.fy import qtensorfy
@@ -13,20 +13,20 @@ def visualize(q_vis, mesh, *, write_outward=False, time=None, path=None, mode=No
     x0, x1, x2 = SpatialCoordinate(mesh)
 
     # get tensor form of q_vis
-    Q_vis = interpolate(qtensorfy(q_vis), H1_ten)
+    Q_vis = assemble(interpolate(qtensorfy(q_vis), H1_ten))
 
     # define five elements from which to rebuild Q
-    Q_00 = Function(H1_scl, name='Q_00')
-    Q_10 = Function(H1_scl, name='Q_10')
-    Q_20 = Function(H1_scl, name='Q_20')
-    Q_21 = Function(H1_scl, name='Q_21')
-    Q_22 = Function(H1_scl, name='Q_22')
+    Q_00 = assemble(interpolate(Q_vis[0,0], H1_scl))
+    Q_10 = assemble(interpolate(Q_vis[1,0], H1_scl))
+    Q_20 = assemble(interpolate(Q_vis[2,0], H1_scl))
+    Q_21 = assemble(interpolate(Q_vis[2,1], H1_scl))
+    Q_22 = assemble(interpolate(Q_vis[2,2], H1_scl))
 
-    Q_00.interpolate(Q_vis[0,0])
-    Q_10.interpolate(Q_vis[1,0])
-    Q_20.interpolate(Q_vis[2,0])
-    Q_21.interpolate(Q_vis[2,1])
-    Q_22.interpolate(Q_vis[2,2])
+    Q_00.rename('Q_00')
+    Q_10.rename('Q_10')
+    Q_20.rename('Q_20')
+    Q_21.rename('Q_21')
+    Q_22.rename('Q_22')
 
     # prepare values to write to vis file
     values_to_write = [Q_00, Q_10, Q_20, Q_21, Q_22]
