@@ -1,6 +1,6 @@
 from ufl import conditional, exp, gt
 
-def smooth_transition(x, *, I: list[int | float]):
+def smooth_transition(x, *, I: list):
     """ A smooth transition function in the variable x on the
     interval I = [a,b], with the value of 0 at x=a and 1 at x=b """
 

@@ -40,7 +40,7 @@ def process_condition(condition):
     # If nothing is returned, return piecewise
     return piecewise_condition(condition['piecewise'])
 
-def simple_condition(condition: Expr | FromSympy) -> str:
+def simple_condition(condition) -> str:
     if isinstance(condition, Expr):
         string = repr(condition)
         # string = re.sub(r'<ufl.domain.AbstractDomain object at 0[xX][0-9a-fA-F]+?>', 'mesh', string)
