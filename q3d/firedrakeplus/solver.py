@@ -367,7 +367,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
             if full_hessian:
                 xi = 1
-                diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec),min_moment=initial_guess) - compute_energy(q_newt_prev,min_moment=initial_guess)
+                diff = compute_energy(assemble(q_newt_prev + q_newt_delt), min_moment=initial_guess) - compute_energy(q_newt_prev, min_moment=initial_guess)
                 if diff > 2 * settings.pde.tol:
                     pr.iter_info_verbose(f'would be energy increase of {diff}, will use damp newton', i=ii, j=jj)
                     pr.iter_info_verbose('switching from full newton to damp newton', i=ii, j=jj)
