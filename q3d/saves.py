@@ -1,6 +1,6 @@
 import os
 import yaml
-from firedrake import File, Function, CheckpointFile, DumbCheckpoint, FILE_READ, FILE_CREATE
+from firedrake import VTKFile, Function, CheckpointFile, DumbCheckpoint, FILE_READ, FILE_CREATE
 
 outfile = None
 SaveMode = None
@@ -137,7 +137,7 @@ def save_pvd(*args, time=None, path=None, mode=None):
     # check if outfile already created earlier. If not, create it
     global outfile
     if outfile is None:
-        outfile = File(f'{SavePath}/{path}', mode=mode)
+        outfile = VTKFile(f'{SavePath}/{path}', mode=mode)
     
     # write to outfile
     outfile.write(*args, time=time)
