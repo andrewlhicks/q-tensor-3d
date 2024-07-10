@@ -126,17 +126,17 @@ def _define_bcs(bdy_cond : str):
 
     strong_boundary = settings.options.strong_boundary
 
-    bdy_cond = Function(H1_vec)
-    bdy_cond.interpolate(eval(bdy_cond))
+    bc = Function(H1_vec)
+    bc.interpolate(eval(bdy_cond))
 
     if strong_boundary is None or strong_boundary == 'none':
         bcs = None
     if strong_boundary == 'all':
-        bcs = [DirichletBC(H1_vec, bdy_cond, "on_boundary")]
+        bcs = [DirichletBC(H1_vec, bc, "on_boundary")]
     elif isinstance(strong_boundary,int):
-        bcs = [DirichletBC(H1_vec, bdy_cond, [strong_boundary])]
+        bcs = [DirichletBC(H1_vec, bc, [strong_boundary])]
     elif isinstance(strong_boundary,list):
-        bcs = [DirichletBC(H1_vec, bdy_cond, strong_boundary)]
+        bcs = [DirichletBC(H1_vec, bc, strong_boundary)]
     
     return bcs
 

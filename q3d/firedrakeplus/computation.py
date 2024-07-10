@@ -1,5 +1,4 @@
 from firedrake import SpatialCoordinate, Function, assemble, dx, ds
-from firedrake.__future__ import interpolate
 
 from q3d.uflplus import *
 import q3d.printoff as pr
