@@ -27,7 +27,7 @@ class linesearch:
 
         while xi > 1e-13: # Break the loop when xi becomes small enough for machine error to occur
             q_next = Function(H1_vec)
-            q_next.interpolate(q_prev + xi*time_der) # CHANGE to .assign
+            q_next.assign(q_prev + xi*time_der)
             if compute_energy(q_next) < compute_energy(q_prev):
                 return xi
             xi /= 2
@@ -48,7 +48,7 @@ class linesearch:
         for _ in range(100):
             xi_prev = xi
             q_next = Function(H1_vec)
-            q_next.interpolate(q_prev+xi_prev*time_der) # CHANGE to .assign
+            q_next.assign(q_prev+xi_prev*time_der)
             first_der = compute_energy(q_next,time_der,der=1)
             secnd_der = compute_energy(q_next,time_der,time_der,der=2)
             xi = xi_prev - first_der/secnd_der

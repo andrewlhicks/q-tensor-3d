@@ -1,6 +1,6 @@
 from firedrake import Function, SpatialCoordinate, DirichletBC, ConvergenceError
 from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunction
-from firedrake import solve, interpolate
+from firedrake import solve
 from firedrake import dx, ds
 from q3d.firedrakeplus.math import nrm
 from q3d.firedrakeplus.check import check_energy_decrease, energy_decrease
