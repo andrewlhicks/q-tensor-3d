@@ -65,17 +65,15 @@ class linesearch:
 
         pr.info('starting exact2 polynomial ls')
 
-        H1_vec = q_prev.function_space()
-
         # take five evenly spaced sample points between 0 and 1 and calculate energies at these points
         alphas_lin = np.linspace(0,1,5)
-        energies_lin = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec, min_moment=min_moment) for alpha in alphas_lin]
+        energies_lin = [compute_energy(assemble(q_prev + float(alpha)*search_dir), min_moment=min_moment) for alpha in alphas_lin]
         alpha_lin_min = alphas_lin[np.argmin(energies_lin)]
         energy_lin_min = np.amin(energies_lin)
 
         # take the critical points of a polynomial of degree 4 fitted to the previous alphas/energies and calculate energy at these points
         alphas_poly = critical_pts_of_poly(alphas_lin, energies_lin, 4)
-        energies_poly = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec, min_moment=min_moment) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
+        energies_poly = [compute_energy(assemble(q_prev + float(alpha)*search_dir), min_moment=min_moment) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
         alpha_poly_min = alphas_poly[np.argmin(energies_poly)]
         energy_poly_min = np.amin(energies_poly)
 
@@ -147,17 +145,7 @@ def compute_energy(*functions, der=0, min_moment=None):
     else:
         boundary_integral = 0
 
-    # print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
-
-def compute_interpolate_energy(*args, **kwargs):
-    """ Computes the energy, but also adds interpolation over
-    a function space given by the last arg. """
-
-    H1_vec = args[-1]
-    functions = args[:-1]
-    functions = [assemble(interpolate(function, H1_vec)) for function in functions] # CHANGE to .assign
-    return compute_energy(*functions, **kwargs)
 
 def compute_slope_val(pde_lhs, search_direction):
     from math import sqrt
