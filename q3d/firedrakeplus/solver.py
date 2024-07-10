@@ -126,7 +126,8 @@ def _define_bcs(bdy_cond : str):
 
     strong_boundary = settings.options.strong_boundary
 
-    bdy_cond = interpolate(eval(bdy_cond),H1_vec)
+    bdy_cond = Function(H1_vec)
+    bdy_cond.interpolate(eval(bdy_cond))
 
     if strong_boundary is None or strong_boundary == 'none':
         bcs = None

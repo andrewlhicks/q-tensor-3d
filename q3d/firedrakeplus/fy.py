@@ -1,23 +1,24 @@
-from firedrake import SpatialCoordinate
-from firedrake import VectorFunctionSpace
-from firedrake import interpolate
+from firedrake import SpatialCoordinate, VectorFunctionSpace, Function
 from q3d.uflplus import *
 
-def firedrakefy(func,mesh):
+def firedrakefy(func, mesh): # REMOVE?
     H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5)
     x0, x1, x2 = SpatialCoordinate(mesh)
 
-    return interpolate(eval(func),H1_vec)
+    f = Function(H1_vec)
+    f.interpolate(eval(func))
 
-def RandomFunction(function_space):
-    from numpy import random
-    function = interpolate(as_vector([0,0,0,0,0]),function_space)
+    return f
 
-    for ii in range(len(function.dat.data)):
-        function.dat.data[ii] = random.rand(5)*1e+1
+def RandomFunction(function_space): # CHANGE to mesh instead of func space?
+    f = Function(function_space)
+    f.interpolate(as_vector([0,0,0,0,0]))
 
-    return function
+    for ii in range(len(f.dat.data)):
+        f.dat.data[ii] = f.rand(5)*1e+1
 
-def ManuQ(mesh):
+    return f
+
+def ManuQ(mesh): # REMOVE?
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
-    return firedrakefy(EqnGlobals.manu_q,mesh)
+    return firedrakefy(EqnGlobals.manu_q, mesh)

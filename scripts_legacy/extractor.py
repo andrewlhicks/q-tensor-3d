@@ -64,7 +64,8 @@ def main():
     if options['extrahend'] == 'state':
         q = load_h5(f'{save_path}',vector_space,name='q_soln')
     elif options['extrahend'] == 'mesh':
-        q = interpolate(as_vector([x0,x1,x2,0,0]),VectorFunctionSpace(mesh,'CG',1,5))
+        q = Function(VectorFunctionSpace(mesh,'CG',1,5))
+        q.interpolate(as_vector([x0,x1,x2,0,0]))
 
     for k in range(comm.size):
         if comm.rank == k:

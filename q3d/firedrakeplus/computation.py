@@ -1,7 +1,6 @@
-from firedrake import SpatialCoordinate
-from firedrake import FacetNormal
-from firedrake import interpolate, assemble
-from firedrake import dx, ds
+from firedrake import SpatialCoordinate, Function, assemble, dx, ds
+from firedrake.__future__ import interpolate
+
 from q3d.uflplus import *
 import q3d.printoff as pr
 
@@ -28,7 +27,8 @@ class linesearch:
         xi = 8*alpha # Initial guess for xi, doesn't necessarily have to be 8 times the time step
 
         while xi > 1e-13: # Break the loop when xi becomes small enough for machine error to occur
-            q_next = interpolate(q_prev + xi*time_der,H1_vec)
+            q_next = Function(H1_vec)
+            q_next.interpolate(q_prev + xi*time_der) # CHANGE to .assign
             if compute_energy(q_next) < compute_energy(q_prev):
                 return xi
             xi /= 2
@@ -48,7 +48,8 @@ class linesearch:
 
         for _ in range(100):
             xi_prev = xi
-            q_next = interpolate(q_prev+xi_prev*time_der,H1_vec)
+            q_next = Function(H1_vec)
+            q_next.interpolate(q_prev+xi_prev*time_der) # CHANGE to .assign
             first_der = compute_energy(q_next,time_der,der=1)
             secnd_der = compute_energy(q_next,time_der,time_der,der=2)
             xi = xi_prev - first_der/secnd_der
@@ -156,7 +157,7 @@ def compute_interpolate_energy(*args, **kwargs):
 
     H1_vec = args[-1]
     functions = args[:-1]
-    functions = [interpolate(function, H1_vec) for function in functions]
+    functions = [assemble(interpolate(function, H1_vec)) for function in functions] # CHANGE to .assign
     return compute_energy(*functions, **kwargs)
 
 def compute_slope_val(pde_lhs, search_direction):
