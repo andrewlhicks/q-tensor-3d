@@ -1,6 +1,5 @@
 from firedrake import (Function, FunctionSpace, SpatialCoordinate,
-                       TensorFunctionSpace, VectorFunctionSpace, as_vector,
-                       interpolate)
+                       TensorFunctionSpace, VectorFunctionSpace, as_vector)
 
 import q3d.saves as saves
 from q3d.uflplus.fy import qtensorfy
@@ -13,7 +12,8 @@ def visualize(q_vis, mesh, *, write_outward=False, time=None, path=None, mode=No
     x0, x1, x2 = SpatialCoordinate(mesh)
 
     # get tensor form of q_vis
-    Q_vis = interpolate(qtensorfy(q_vis), H1_ten)
+    Q_vis = Function(H1_ten)
+    Q_vis.interpolate(qtensorfy(q_vis))
 
     # define five elements from which to rebuild Q
     Q_00 = Function(H1_scl, name='Q_00')

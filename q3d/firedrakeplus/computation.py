@@ -1,7 +1,5 @@
-from firedrake import SpatialCoordinate
-from firedrake import FacetNormal
-from firedrake import interpolate, assemble
-from firedrake import dx, ds
+from firedrake import SpatialCoordinate, Function, assemble, dx, ds
+
 from q3d.uflplus import *
 import q3d.printoff as pr
 
@@ -28,7 +26,8 @@ class linesearch:
         xi = 8*alpha # Initial guess for xi, doesn't necessarily have to be 8 times the time step
 
         while xi > 1e-13: # Break the loop when xi becomes small enough for machine error to occur
-            q_next = interpolate(q_prev + xi*time_der,H1_vec)
+            q_next = Function(H1_vec)
+            q_next.assign(q_prev + xi*time_der)
             if compute_energy(q_next) < compute_energy(q_prev):
                 return xi
             xi /= 2
@@ -48,7 +47,8 @@ class linesearch:
 
         for _ in range(100):
             xi_prev = xi
-            q_next = interpolate(q_prev+xi_prev*time_der,H1_vec)
+            q_next = Function(H1_vec)
+            q_next.assign(q_prev+xi_prev*time_der)
             first_der = compute_energy(q_next,time_der,der=1)
             secnd_der = compute_energy(q_next,time_der,time_der,der=2)
             xi = xi_prev - first_der/secnd_der
@@ -65,17 +65,15 @@ class linesearch:
 
         pr.info('starting exact2 polynomial ls')
 
-        H1_vec = q_prev.function_space()
-
         # take five evenly spaced sample points between 0 and 1 and calculate energies at these points
         alphas_lin = np.linspace(0,1,5)
-        energies_lin = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec, min_moment=min_moment) for alpha in alphas_lin]
+        energies_lin = [compute_energy(assemble(q_prev + float(alpha)*search_dir), min_moment=min_moment) for alpha in alphas_lin]
         alpha_lin_min = alphas_lin[np.argmin(energies_lin)]
         energy_lin_min = np.amin(energies_lin)
 
         # take the critical points of a polynomial of degree 4 fitted to the previous alphas/energies and calculate energy at these points
         alphas_poly = critical_pts_of_poly(alphas_lin, energies_lin, 4)
-        energies_poly = [compute_interpolate_energy(q_prev + float(alpha)*search_dir, H1_vec, min_moment=min_moment) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
+        energies_poly = [compute_energy(assemble(q_prev + float(alpha)*search_dir), min_moment=min_moment) for alpha in alphas_poly] # as opposed to the previous, wrong approach: ---> energies_poly = poly(alphas_poly)
         alpha_poly_min = alphas_poly[np.argmin(energies_poly)]
         energy_poly_min = np.amin(energies_poly)
 
@@ -147,17 +145,7 @@ def compute_energy(*functions, der=0, min_moment=None):
     else:
         boundary_integral = 0
 
-    # print(float(domain_integral + boundary_integral))
     return float(domain_integral + boundary_integral)
-
-def compute_interpolate_energy(*args, **kwargs):
-    """ Computes the energy, but also adds interpolation over
-    a function space given by the last arg. """
-
-    H1_vec = args[-1]
-    functions = args[:-1]
-    functions = [interpolate(function, H1_vec) for function in functions]
-    return compute_energy(*functions, **kwargs)
 
 def compute_slope_val(pde_lhs, search_direction):
     from math import sqrt

@@ -1,6 +1,6 @@
 from firedrake import Function, SpatialCoordinate, DirichletBC, ConvergenceError
 from firedrake import VectorFunctionSpace, FacetNormal, TrialFunction, TestFunction
-from firedrake import solve, interpolate
+from firedrake import solve
 from firedrake import dx, ds
 from q3d.firedrakeplus.math import nrm
 from q3d.firedrakeplus.check import check_energy_decrease, energy_decrease
@@ -126,16 +126,17 @@ def _define_bcs(bdy_cond : str):
 
     strong_boundary = settings.options.strong_boundary
 
-    bdy_cond = interpolate(eval(bdy_cond),H1_vec)
+    bc = Function(H1_vec)
+    bc.interpolate(eval(bdy_cond))
 
     if strong_boundary is None or strong_boundary == 'none':
         bcs = None
     if strong_boundary == 'all':
-        bcs = [DirichletBC(H1_vec, bdy_cond, "on_boundary")]
+        bcs = [DirichletBC(H1_vec, bc, "on_boundary")]
     elif isinstance(strong_boundary,int):
-        bcs = [DirichletBC(H1_vec, bdy_cond, [strong_boundary])]
+        bcs = [DirichletBC(H1_vec, bc, [strong_boundary])]
     elif isinstance(strong_boundary,list):
-        bcs = [DirichletBC(H1_vec, bdy_cond, strong_boundary)]
+        bcs = [DirichletBC(H1_vec, bc, strong_boundary)]
     
     return bcs
 
@@ -366,7 +367,7 @@ def _dynamic_solve(q_soln,bcs=None,solver_parameters={},newton_parameters={}):
 
             if full_hessian:
                 xi = 1
-                diff = compute_energy(interpolate(q_newt_prev + q_newt_delt,H1_vec),min_moment=initial_guess) - compute_energy(q_newt_prev,min_moment=initial_guess)
+                diff = compute_energy(assemble(q_newt_prev + q_newt_delt), min_moment=initial_guess) - compute_energy(q_newt_prev, min_moment=initial_guess)
                 if diff > 2 * settings.pde.tol:
                     pr.iter_info_verbose(f'would be energy increase of {diff}, will use damp newton', i=ii, j=jj)
                     pr.iter_info_verbose('switching from full newton to damp newton', i=ii, j=jj)

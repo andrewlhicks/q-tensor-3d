@@ -3,8 +3,8 @@ from firedrake import sqrt, assemble, inner, grad, dot
 from firedrake import dx
 
 class nrm:
-    def inf(function):
-        abs_function = Function(function._function_space).interpolate(abs(function))
+    def inf(function): # REMOVE?
+        abs_function = Function(function._function_space).interpolate(abs(function)) # CHANGE, this code seems sketchy
         with abs_function.dat.vec_ro as v:
             norm = v.max()[1]
         return norm
