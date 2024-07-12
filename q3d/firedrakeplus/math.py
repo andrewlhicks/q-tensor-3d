@@ -2,6 +2,8 @@ from firedrake import Function
 from firedrake import sqrt, assemble, inner, grad, dot
 from firedrake import dx
 
+__all__ = ('nrm','errorH1','errorL2')
+
 class nrm:
     def inf(function): # REMOVE?
         abs_function = Function(function._function_space).interpolate(abs(function)) # CHANGE, this code seems sketchy

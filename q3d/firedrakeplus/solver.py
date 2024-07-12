@@ -13,6 +13,8 @@ import q3d.plot as plot
 import q3d.saves as saves
 from q3d.uflplus import * # this is what allows us to interpolate correctly, otherwise won't recognize UFL code at all
 
+__all__ = ('solve_PDE',)
+
 def solve_PDE(msh,ref_lvl='Not specified'):
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
     from q3d.config import settings

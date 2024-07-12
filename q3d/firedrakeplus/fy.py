@@ -1,6 +1,8 @@
 from firedrake import SpatialCoordinate, VectorFunctionSpace, Function
 from q3d.uflplus import *
 
+__all__ = ('EqnGlobalFunction','RandomFunction')
+
 def EqnGlobalFunction(func_str, func_space_data):
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
 

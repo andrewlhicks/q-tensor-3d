@@ -1,6 +1,8 @@
 from firedrake import Mesh
 from firedrake import BoxMesh
 
+__all__ = ('BuiltinMesh','choose_mesh')
+
 def BuiltinMesh(mesh_str: str,ref_level: int):
     import numpy as np
     # split mesh.name into args, use numpy array

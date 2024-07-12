@@ -3,6 +3,9 @@ from firedrake import SpatialCoordinate, Function, assemble, dx, ds
 from q3d.uflplus import *
 import q3d.printoff as pr
 
+__all__ = ('linesearch','compute_energy','compute_slope_val','compute_res_val',
+           'extract_vector','determine_measure','critical_pts_of_poly')
+
 class linesearch:
     def ls(name,*args,**kwargs):
         names = ('backtrack','exact1','exact2','none')

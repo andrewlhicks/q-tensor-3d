@@ -1,5 +1,7 @@
 import q3d.printoff as pr
 
+__all__ = ('check_energy_decrease','energy_decrease')
+
 def check_energy_decrease(energies,current_time):
     """ Checks for energy decreasee in latest energy iteration. """
     if len(energies) < 2: return # Temporary escape clause until I can fix the EnergyList class
