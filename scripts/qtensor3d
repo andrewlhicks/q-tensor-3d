@@ -6,7 +6,6 @@ import sys
 from time import sleep
 
 from firedrake import COMM_WORLD as comm
-from firedrake import Function, VectorFunctionSpace
 from firedrake.tsfc_interface import TSFCKernel
 from pyop2.global_kernel import GlobalKernel
 
@@ -15,7 +14,7 @@ import q3d.config as config
 import q3d.printoff as pr
 import q3d.saves as saves
 import q3d.uflcache as uflcache
-from q3d.firedrakeplus import (EqnGlobalFunction, choose_mesh, compute_energy, errorH1,
+from q3d.firedrakeplus import (FunctionSpaceData, EqnGlobalFunction, choose_mesh, compute_energy, errorH1,
                                errorL2, set_eqn_globals, solve_PDE)
 from q3d.loaddump import load_json, load_yml
 from q3d.misc import Timer, check, get_range
@@ -135,7 +134,6 @@ def run(path, *, overwrite=False, supersessions={}):
     for refinement_level in get_range(settings.mesh.refs):
         # choose mesh, depending on the mesh source and mesh name, as well as the refinement level
         mesh = choose_mesh(settings.mesh.source, settings.mesh.name, refinement_level=refinement_level)
-        func_space_data = [mesh,'CG',1] # is this the beginning of good things to come?
 
         # set equation globals to initialize
         set_eqn_globals(comp, uflcache_dict)
@@ -145,6 +143,7 @@ def run(path, *, overwrite=False, supersessions={}):
 
         # in case q_soln was loaded with a mesh from checkpoint, use this mesh instead of the other one
         mesh = q_soln.function_space().mesh()
+        func_space_data = FunctionSpaceData(mesh, 'CG', 1)
 
         # if a manufactured solution was specified in userexpr.yml,
         # go ahead and compute its energy, and compare it to the

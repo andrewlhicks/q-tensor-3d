@@ -6,6 +6,7 @@ from firedrake import *
 from q3d.firedrakeplus.eqnglobals import *
 from q3d.firedrakeplus.check import *
 from q3d.firedrakeplus.computation import *
+from q3d.firedrakeplus.functionspacedata import *
 from q3d.firedrakeplus.fy import *
 from q3d.firedrakeplus.math import *
 from q3d.firedrakeplus.mesh import *
