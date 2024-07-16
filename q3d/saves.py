@@ -43,6 +43,10 @@ def repair_save(save_path):
             os.makedirs(directory)
 
 def load_checkpoint(*names):
+    """ Loads a previously saved checkpoint. Returns mesh
+    if no function names are given. Otherwise returns
+    function names specified. """
+    
     path = f'{SavePath}/chk/checkpoint.h5'
 
     if not os.path.exists(path):
@@ -50,12 +54,12 @@ def load_checkpoint(*names):
 
     with CheckpointFile(path,'r') as file:
         mesh = file.load_mesh()
-        functions = []
-        for name in names:
-            function = file.load_function(mesh,name)
-            functions.append(function)
+
+        if len(names) != 0:
+            functions = [file.load_function(mesh, name) for name in names]
+            return (*functions,)
         
-    return (mesh, *functions)
+        return mesh
 
 def save_checkpoint(mesh,*functions):
     path = f'{SavePath}/chk/checkpoint.h5'

@@ -15,7 +15,7 @@ from q3d.uflplus import * # this is what allows us to interpolate correctly, oth
 
 __all__ = ('solve_PDE',)
 
-def solve_PDE(msh,ref_lvl='Not specified'):
+def solve_PDE(msh, ref_lvl='Not specified'): # REMOVE ref_lvl
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
     from q3d.config import settings
 
@@ -25,14 +25,14 @@ def solve_PDE(msh,ref_lvl='Not specified'):
     if saves.SaveMode in ('r','resume'):
         # RESUME MODE : load from previous state
         try:
-            mesh, q_soln, q_prev = saves.load_checkpoint('q_soln','q_prev')
-            H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
+            mesh = saves.load_checkpoint()
+            q_soln, q_prev = saves.load_checkpoint('q_soln','q_prev')
         except FileNotFoundError:
             # if the proper checkpoint file is not found, check to see if a dumb checkpoint exists
             mesh = msh
-            H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
-            q_soln = saves.load_dumb_checkpoint(H1_vec,'q_soln') # load q_soln
-            q_prev = saves.load_dumb_checkpoint(H1_vec,'q_prev') # load q_prev
+            q_soln = saves.load_dumb_checkpoint(VectorFunctionSpace(mesh, 'CG', 1, 5),'q_soln') # load q_soln
+            q_prev = saves.load_dumb_checkpoint(VectorFunctionSpace(mesh, 'CG', 1, 5),'q_prev') # load q_prev
+        H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
         times, energies = saves.load_energies() # load times, energies
         t_init = times.final # initial time set to final time of previous iteration
     else:
