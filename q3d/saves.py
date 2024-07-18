@@ -2,6 +2,8 @@ import os
 import yaml
 from firedrake import VTKFile, Function, CheckpointFile, DumbCheckpoint, FILE_READ, FILE_CREATE
 
+from pathlib import Path
+
 outfile = None
 SaveMode = None
 
@@ -60,6 +62,14 @@ def load_checkpoint(*names):
             return (*functions,)
         
         return mesh
+
+def checkpoint_exists():
+    path = Path(f'{SavePath}/chk/checkpoint.h5')
+
+    if path.exists():
+        return True
+    
+    return False
 
 def save_checkpoint(mesh,*functions):
     path = f'{SavePath}/chk/checkpoint.h5'

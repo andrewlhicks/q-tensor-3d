@@ -5,6 +5,8 @@ from firedrake import dx, ds
 from q3d.firedrakeplus.math import nrm
 from q3d.firedrakeplus.check import check_energy_decrease, energy_decrease
 from q3d.firedrakeplus.computation import compute_energy, compute_res_val, compute_slope_val, determine_measure, linesearch
+from q3d.firedrakeplus.functionspacedata import FunctionSpaceData
+from q3d.firedrakeplus.fy import eval_func_str
 from q3d.firedrakeplus.vis import visualize
 
 from q3d.misc import Timer
@@ -15,48 +17,62 @@ from q3d.uflplus import * # this is what allows us to interpolate correctly, oth
 
 __all__ = ('solve_PDE',)
 
-def solve_PDE(msh, ref_lvl='Not specified'): # REMOVE ref_lvl
+def solve_PDE(func_space_data: FunctionSpaceData, ref_lvl='Not specified'): # REMOVE ref_lvl
     from q3d.firedrakeplus.eqnglobals import EqnGlobals
     from q3d.config import settings
 
     # globalize stuff that needs to be accessed inside other functions, delete later
-    global mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g, times, energies
+    global mesh, refinement_level, H1_vec, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g, times, energies
 
-    if saves.SaveMode in ('r','resume'):
-        # RESUME MODE : load from previous state
-        try:
-            mesh = saves.load_checkpoint()
-            q_soln, q_prev = saves.load_checkpoint('q_soln','q_prev')
-        except FileNotFoundError:
-            # if the proper checkpoint file is not found, check to see if a dumb checkpoint exists
-            mesh = msh
-            q_soln = saves.load_dumb_checkpoint(VectorFunctionSpace(mesh, 'CG', 1, 5),'q_soln') # load q_soln
-            q_prev = saves.load_dumb_checkpoint(VectorFunctionSpace(mesh, 'CG', 1, 5),'q_prev') # load q_prev
-        H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
-        times, energies = saves.load_energies() # load times, energies
-        t_init = times.final # initial time set to final time of previous iteration
+    # RESUME mode (for deprecated 'dumb' checkpoint)
+    if saves.SaveMode in ('r','resume') and not saves.checkpoint_exists():
+        mesh = func_space_data.mesh
+        H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector (must be 1st order Lagrangian)
+
+        q_soln = saves.load_dumb_checkpoint(H1_vec, 'q_soln')
+        q_prev = saves.load_dumb_checkpoint(H1_vec, 'q_prev')
+
+        times, energies = saves.load_energies()
+        t_init = times.final
+    
+    # RESUME mode
+    elif saves.SaveMode in ('r','resume') and saves.checkpoint_exists():
+        q_soln, q_prev = saves.load_checkpoint('q_soln','q_prev')
+
+        mesh = func_space_data.mesh = q_soln.function_space().mesh()
+        H1_vec = VectorFunctionSpace(*func_space_data, 5) # 5d vector
+
+        # function space specified must be same as one from checkpoint, e.g. 1st order Lagrangian
+        if H1_vec != q_soln.function_space():
+            raise ValueError('Function space from checkpoint does not match specified function space')
+        
+        times, energies = saves.load_energies()
+        t_init = times.final
+    
+    # OVERWRITE mode
     else:
-        # OVERWRITE/NONE MODE
-        mesh = msh
-        H1_vec = VectorFunctionSpace(mesh, 'CG', 1, 5) # 5d vector
-        x0, x1, x2 = SpatialCoordinate(mesh)
+        mesh = func_space_data.mesh
+        H1_vec = VectorFunctionSpace(*func_space_data, 5) # 5d vector
+
+        q_init = eval_func_str(EqnGlobals.initial_q, mesh)
+
         q_soln = Function(H1_vec,name='q_soln')
-        q_soln.interpolate(eval(EqnGlobals.initial_q)) # q_soln is q_init
+        q_soln.interpolate(q_init)
         q_prev = Function(H1_vec,name='q_prev')
-        q_prev.assign(q_soln) # q_prev is q_init
-        times, energies = saves.TimeList([]), saves.EnergyList([]) # empty lists
-        t_init = 0 # initial time set to 0
+        q_prev.assign(q_soln)
+
+        times, energies = saves.TimeList([]), saves.EnergyList([])
+        t_init = 0
     
     # define function space, coordinates, and q_soln
     refinement_level = ref_lvl
-    x0, x1, x2 = SpatialCoordinate(mesh)
-    nu = eval(EqnGlobals.w_bdy_nu)
+    nu = eval_func_str(EqnGlobals.w_bdy_nu, mesh)
     q = TrialFunction(H1_vec)
     p = TestFunction(H1_vec)
     q_prev_prev = Function(H1_vec)
     q_newt_prev = Function(H1_vec)
-    f = eval(EqnGlobals.forcing_f)
-    g = eval(EqnGlobals.forcing_g)
+    f = eval_func_str(EqnGlobals.forcing_f, mesh)
+    g = eval_func_str(EqnGlobals.forcing_g, mesh)
 
     pr.iter_info_verbose(f'INITIAL CONDITIONS', f'energy = {compute_energy(q_soln)}', i=len(energies), spaced=True)
 
@@ -92,7 +108,7 @@ def solve_PDE(msh, ref_lvl='Not specified'): # REMOVE ref_lvl
     completed = _g_solve(new_times, q_soln, bcs=bcs, solver_parameters=solver_parameters, newton_parameters=newton_parameters)
     timer.stop()
 
-    del mesh, refinement_level, H1_vec, x0, x1, x2, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
+    del mesh, refinement_level, H1_vec, nu, q, p, q_prev, q_prev_prev, q_newt_prev, f, g
 
     return (q_soln, timer.str_time, times, energies, completed)
 
@@ -129,7 +145,7 @@ def _define_bcs(bdy_cond : str):
     strong_boundary = settings.options.strong_boundary
 
     bc = Function(H1_vec)
-    bc.interpolate(eval(bdy_cond))
+    bc.interpolate(eval_func_str(bdy_cond, mesh))
 
     if strong_boundary is None or strong_boundary == 'none':
         bcs = None
@@ -424,8 +440,11 @@ def _builtin_nonlinear_solve(q_soln,bcs=None,solver_parameters={},newton_paramet
 
     q_soln.assign(q)
 
-def _checkpoint(q_soln,current_time):
+def _checkpoint(q_soln: Function, current_time):
     from q3d.config import settings
+
+    mesh = q_soln.function_space().mesh()
+
     # write eigen-info to Paraview
     visualize(q_soln, mesh, write_outward=settings.vis.write_outward, time=current_time)
 
@@ -433,8 +452,8 @@ def _checkpoint(q_soln,current_time):
     truncated_times = times.truncate(len(energies))
 
     # save checkpoint first
-    saves.save_checkpoint(mesh,q_soln,q_prev)
-    saves.save_energies(truncated_times,energies)
+    saves.save_checkpoint(mesh, q_soln, q_prev)
+    saves.save_energies(truncated_times, energies)
     
     # plot time vs energy
     plot.time_vs_energy(truncated_times,energies,refinement_level=refinement_level)

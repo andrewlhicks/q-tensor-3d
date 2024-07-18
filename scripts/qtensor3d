@@ -138,8 +138,10 @@ def run(path, *, overwrite=False, supersessions={}):
         # set equation globals to initialize
         set_eqn_globals(comp, uflcache_dict)
 
+        func_space_data = FunctionSpaceData(mesh, 'CG', 1)
+
         # solve PDE and get info about it
-        q_soln, time_elapsed, times, energies, completed = solve_PDE(mesh,ref_lvl=refinement_level)
+        q_soln, time_elapsed, times, energies, completed = solve_PDE(func_space_data, ref_lvl=refinement_level)
 
         # in case q_soln was loaded with a mesh from checkpoint, use this mesh instead of the other one
         mesh = q_soln.function_space().mesh()
