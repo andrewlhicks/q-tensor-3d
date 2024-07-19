@@ -242,9 +242,6 @@ def _non_graddesc_solve(times_list, q_soln, bcs, solver_parameters, newton_param
         except ConvergenceError:
             pr.fail('Convergence error')
             return False
-        
-        # add the energy of q_soln to the energies
-        energies.append(compute_energy(q_soln))
 
         # print energy
         pr.iter_info_verbose(f'NON GD SOLVE COMPLETED', f'energy = {energies[-1]}', i=len(energies))
