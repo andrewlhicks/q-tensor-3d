@@ -44,7 +44,7 @@ def simple_condition(condition: Expr | FromSympy) -> str:
     if isinstance(condition, Expr):
         string = repr(condition)
         # string = re.sub(r'<ufl.domain.AbstractDomain object at 0[xX][0-9a-fA-F]+?>', 'mesh', string)
-        string = re.sub(r"Mesh\(VectorElement\(FiniteElement\('Lagrange', tetrahedron, 1\), dim=3\), 1\)", 'mesh', string)
+        string = re.sub(r"Mesh\(VectorElement\(FiniteElement\('Lagrange', tetrahedron, 1\), dim=3\), \d\)", 'mesh', string)
         return string
     elif isinstance(condition, FromSympy):
         return condition.uflfy()
