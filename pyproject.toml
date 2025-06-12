@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "q3d"
+version = "0.0.1"  # You should set your version here explicitly
+description = "An implementation of the Landau-de Gennes Q-tensor model for liquid crystals"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Andrew Hicks", email = "andrew.hicksm@gmail.com" }
+]
+keywords = []
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: Linux"
+]
+dependencies = [
+  "sympyplus",
+  "matplotlib",
+  "mymesh",
+  "pyyaml"
+]
+
+# Use if there are .json, .txt, or other files to include
+# [tool.setuptools]
+# include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
