@@ -7,8 +7,8 @@ from time import sleep
 
 from firedrake import COMM_WORLD as comm
 from firedrake import Function, VectorFunctionSpace
-from firedrake.tsfc_interface import TSFCKernel
-from pyop2.global_kernel import GlobalKernel
+# from firedrake.tsfc_interface import TSFCKernel
+# from pyop2.global_kernel import GlobalKernel
 
 import q3d.compute as compute
 import q3d.config as config
@@ -77,8 +77,8 @@ def run(path, *, overwrite=False, supersessions={}):
         sys.exit()
 
     # clear the cache, otherwise could cause memory to run out in long simulations
-    TSFCKernel._cache.clear()
-    GlobalKernel._cache.clear()
+    # TSFCKernel._cache.clear()
+    # GlobalKernel._cache.clear()
 
     # must initialize q3d.config before q3d.saves, otherwise will break
     settings, constants = config.initialize(f'{path}/settings.yml', f'{path}/constants.yml', supersessions=supersessions)
