@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # clone repositories
 git clone https://github.com/andrewlhicks/mymesh.git
