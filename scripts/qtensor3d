@@ -6,6 +6,7 @@ import sys
 from time import sleep
 
 from firedrake import COMM_WORLD as comm
+# from pyop2.mpi import COMM_WORLD as comm
 from firedrake import Function, VectorFunctionSpace
 # from firedrake.tsfc_interface import TSFCKernel
 # from pyop2.global_kernel import GlobalKernel
@@ -27,13 +28,14 @@ def print0(*args,**kwargs):
 
 def usage():
     usage_str = """usage:
-    qtensor3d [-o] [--no-gd] [--dt={0}step-size{1}] [--num-steps={0}num-steps{1}]
+    qtensor3d [-o] [-a] [--no-gd] [--dt={0}step-size{1}] [--num-steps={0}num-steps{1}]
               [--save-every={0}save-every{1}] {0}save-directory{1}
 
 Opens save at {0}save-directory{1} and solves.
               
 options:
     -o                          overwrite mode
+    -a                          auto run mode
     --no-gd                     turns off gradient descent and directly solves
     --dt={0}step-size{1}              specify the step size of gradient descent
     --num-steps={0}num-steps{1}       specify the number of time steps
