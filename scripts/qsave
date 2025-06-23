@@ -31,6 +31,7 @@ time:
   num: 1
   save_every: 1
   step: 1
+  checkpoints: True
 vis:
   write_outward: True"""
 

@@ -51,6 +51,8 @@ def initialize(settings_path, constants_path=None, *, supersessions={}):
         settings.time.num = int(supersessions['num-steps'])
     if 'save-every' in supersessions:
         settings.time.save_every = int(supersessions['save-every'])
+    if 'no-checkpoints' in supersessions:
+        settings.time.checkpoints = False
 
     # process settings
     process_settings(settings)

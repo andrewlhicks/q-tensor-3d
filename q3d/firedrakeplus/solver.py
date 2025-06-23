@@ -428,7 +428,7 @@ def _checkpoint(q_soln,current_time):
     truncated_times = times.truncate(len(energies))
 
     # save checkpoint first
-    saves.save_checkpoint(mesh,q_soln,q_prev)
+    if settings.time.checkpoints: saves.save_checkpoint(mesh,q_soln,q_prev)
     saves.save_energies(truncated_times,energies)
     
     # plot time vs energy

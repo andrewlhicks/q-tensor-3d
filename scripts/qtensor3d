@@ -37,6 +37,7 @@ options:
     -o                          overwrite mode
     -a                          auto run mode
     --no-gd                     turns off gradient descent and directly solves
+    --no-checkpoints            turns off checkpoints
     --dt={0}step-size{1}              specify the step size of gradient descent
     --num-steps={0}num-steps{1}       specify the number of time steps
     --save-every={0}save-every{1}     specify the number of steps before saving state""".format('\033[4m','\033[0m')
@@ -222,7 +223,7 @@ def main():
         return
 
     try:
-        opts, listargs = getopt.getopt(sys.argv[1:],'oa',['no-gd','dt=','num-steps=','save-every=','help'])
+        opts, listargs = getopt.getopt(sys.argv[1:],'oa',['no-gd','no-checkpoints','dt=','num-steps=','save-every=','help'])
     except getopt.GetoptError as err:
         # print help information and exit:
         print0(err)
@@ -243,7 +244,7 @@ def main():
         # allow for supersessions over what was specified in settings/constants files
         elif o in ('--dt','--num-steps','--save-every'):
             supersessions[o[2:]] = float(a)
-        elif o == '--no-gd':
+        elif o in ('--no-gd','--no-checkpoints'):
             supersessions[o[2:]] = a
         # get help
         elif o in ('--help'):
