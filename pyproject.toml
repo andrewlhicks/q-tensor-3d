@@ -18,10 +18,11 @@ classifiers = [
   "Operating System :: Linux"
 ]
 dependencies = [
-  "sympyplus",
   "matplotlib",
   "mymesh",
-  "pyyaml"
+  "pyyaml",
+  "sympyplus",
+  "vtk"
 ]
 
 # Use if there are .json, .txt, or other files to include
