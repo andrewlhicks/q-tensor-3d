@@ -1,8 +1,5 @@
-# Ignore this first bit
-inputs = []
-output =[]
-
-# copy into Paraview from here forward
+# set OUTWARD to True in order to make the normal vector be the "outward" normal (x,y,z) (for the SHELL)
+# set OUTWARD to False in order to make the normal vector be (0,0,1) (for the SLAB)
 OUTWARD = True
 
 import numpy as np
