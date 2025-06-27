@@ -84,13 +84,13 @@ def add_ufl_constructors():
     def vector_constructor(loader, node):
         def vector(vector3d: ListTensor | Zero) -> ListTensor | Zero:
             if not isinstance(vector3d, ListTensor | Zero):
-                raise TypeError(f'Vectors must be of type ufl.tensors.ListTensor or ufl.constantvalue.Zero, not {type(vector3d)}')
+                raise TypeError(f'Directors must be of type ufl.tensors.ListTensor or ufl.constantvalue.Zero, not {type(vector3d)}')
             if vector3d.ufl_shape != (3,):
-                raise ValueError(f'Vectors must have shape (3,), not {vector3d.ufl_shape}')
+                raise ValueError(f'Directors must have shape (3,), not {vector3d.ufl_shape}')
             return vector3d
         
         ufl_vector_object = eval(loader.construct_scalar(node))
         return vector(ufl_vector_object)
 
     yaml.add_constructor('!qvector', qvector_constructor)
-    yaml.add_constructor('!vector', vector_constructor)
+    yaml.add_constructor('!director', vector_constructor) # TODO: rename vector_constructor to director_constructor

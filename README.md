@@ -10,7 +10,7 @@ qsave -b <savepath>
 ```
 where `<savepath>` is the save folder. This will create a save folder with the default settings, cosntants, and uflexpr files.
 
-## Settings configuration
+## Understanding the settings file
 
 Settings files are in the '.yml' format. Visit [PyYAML](https://pyyaml.org/wiki/PyYAMLDocumentation) for more information.
 
@@ -88,3 +88,80 @@ mesh:
   name: /scratch/username/meshes/mesh
   refs: 0-2
 ```
+
+## Understanding the User Expression file
+
+The file `userexpr.yml` allows the user to input custom expressions for the initial condition _q-vector_ (`initcond`), the weak boundary _director_ (`w_bdy_nu`), the strong boundary _q-vector_ (`sbdy`), the manufactured _q-vector_ (`manu_q`), the forcing right hand side _q-vector_ on the bulk (`forcing_f`), and the forcing right hand side _q-vector_ on the boundary (`forcing_g`).
+
+### Creating user expressions using UFL objects
+
+Using UFL objects is now the preferred method to specify user expressions.
+The two major classes of UFL objects that the user can specify are _q-vectors_ (using the `!qvector` flag) and _directors_ (using the `!director` flag).
+Vector objects (3-dimensional) are only used for the weak boundary director (`w_bdy_nu`), while q-vector objects (5-dimensional) are used for everything else.
+
+Besides the hundreds of already available objects in the standard UFL library, there are several additional functions available to the user, most of which can be nested inside of each other:
+
+#### `as_vector`
+
+Outputs a vector of any dimension; thus can be used to specify a q-vector or a director object.
+
+__Example:__
+```
+initcond: !qvector as_vector([x0**2, x0+x1, x1+x2, 1, 0])
+```
+Another example:
+```
+w_bdy_nu: !director as_vector([0,0,1])
+```
+
+#### `from_director`
+
+Outputs a q-vector from a given director.
+
+__Example:__
+```
+initcond: !qvector from_director([cos(5*x2),sin(5*x2),0])
+```
+
+#### `from_spherical_director`
+
+Outputs a q-vector from a given director with _spherical_ coordinates.
+Equivalent to passing the director through `spherical_to_cartesian` and then to `from_director`.
+
+Example:
+```
+initcond: !qvector from_spherical_director([0,1,0])
+```
+
+#### `spherical_to_cartesian`
+
+This converts a 3-dimensional spherical vector to the corresponding 3-dimensional Cartesian vector.
+It is written as
+```
+spherical_to_cartesian([a,b,c])
+```
+where `a`, `b`, and `c` are arbitrary scalar expressions.
+From here a vector `v` is created:
+```
+v  =  a * e_r  +  b * e_theta  +  c * e_phi
+```
+where
+```
+e_r = as_vector([x0, x1, x2])/sqrt(x0**2+x1**2+x2**2)
+e_theta = as_vector([x0*x2, x1*x2, -(x0**2+x1**2)])/sqrt((x0**2+x1**2+x2**2)*(x0**2+x1**2))
+e_phi = as_vector([-x1, x0, 0])/sqrt(x0**2+x1**2)
+```
+
+### `smooth_transition`
+
+Invoking the function `smooth_transition(x, I=[a,b])` will give a smooth transition (scalar) function in the variable `x` on the interval `I = [a,b]`, with the value of `0` at `x=a` and `1` at `x=b`.
+
+__Example:__ Suppose one wanted to define a function that is equal to `0` at all values of `x2` less than or equal to `-2`, equal to `1` at all values of `x2` greater than or equal to `3`, and with a smooth transition between the two values on the interval `(-2,3)`.
+In this case one would write
+```
+smooth_transition(x2, I=[-2,3])
+```
+
+### Creating user expressions using Sympy objects (deprecated)
+
+Will add documentation later, though please note that this is now deprecated and the preferred method of creating user expressions is through UFL objects.
