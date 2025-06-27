@@ -35,7 +35,7 @@ for n in range(N):
 # [output.PointData.append(evals[:,j], f'eval_{j}') for j in range(3)]
 # [output.PointData.append(evecs[:,:,j], f'evec_{j}') for j in range(3)]
 
-output.PointData.append(evecs[:,0], 'n')
+output.PointData.append(evecs[:,:,0], 'n')
 
 # outward
 outward = input.PointData['outward']
