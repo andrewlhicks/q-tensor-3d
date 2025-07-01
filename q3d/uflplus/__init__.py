@@ -5,4 +5,4 @@ from firedrake.__future__ import interpolate
 from ufl.operators import ListTensor, Zero # used for type hints/checking for UFL objects
 
 from q3d.uflplus.fy import qvectorfy, qtensorfy
-from q3d.uflplus.other import smooth_transition
+from q3d.uflplus.other import smooth_transition, reverse_smooth_transition, gaussian
