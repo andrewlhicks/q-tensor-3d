@@ -69,11 +69,14 @@ def qtensor_from_director(director: ListTensor) -> ListTensor:
     
     return M
 
+# For the following functions, the requirement that the input is a ListTensor or Zero is no longer enforced, since it causes issues
+# when defining UFL objects that are, e.g. _sums_ of ListTensors and Zeros
+
 def add_ufl_constructors():
     def qvector_constructor(loader, node):
-        def qvector(vector5d: ListTensor | Zero) -> ListTensor | Zero:
-            if not isinstance(vector5d, ListTensor | Zero):
-                raise TypeError(f'Qvectors must be of type ufl.tensors.ListTensor or ufl.constantvalue.Zero, not {type(vector5d)}')
+        def qvector(vector5d):
+            # if not isinstance(vector5d, ListTensor | Zero):
+            #     raise TypeError(f'Qvectors must be of type ufl.tensors.ListTensor or ufl.constantvalue.Zero, not {type(vector5d)}')
             if vector5d.ufl_shape != (5,):
                 raise ValueError(f'Qvectors must have shape (5,), not {vector5d.ufl_shape}')
             return vector5d
@@ -82,9 +85,9 @@ def add_ufl_constructors():
         return qvector(ufl_vector_object)
 
     def vector_constructor(loader, node):
-        def vector(vector3d: ListTensor | Zero) -> ListTensor | Zero:
-            if not isinstance(vector3d, ListTensor | Zero):
-                raise TypeError(f'Directors must be of type ufl.tensors.ListTensor or ufl.constantvalue.Zero, not {type(vector3d)}')
+        def vector(vector3d):
+            # if not isinstance(vector3d, ListTensor | Zero):
+            #     raise TypeError(f'Directors must be of type ufl.tensors.ListTensor or ufl.constantvalue.Zero, not {type(vector3d)}')
             if vector3d.ufl_shape != (3,):
                 raise ValueError(f'Directors must have shape (3,), not {vector3d.ufl_shape}')
             return vector3d
