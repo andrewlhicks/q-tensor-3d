@@ -11,6 +11,8 @@ r = Constant(domain)
 theta = Constant(domain)
 phi = Constant(domain)
 
+# UFL objects
+
 def as_vector(vector: list | ListTensor | Zero) -> ListTensor | Zero:
     """ Replaces the UFL as_vector function only in this module """
 
@@ -78,6 +80,29 @@ def qtensor_from_director(director: ListTensor) -> ListTensor:
         M: Zero = Zero((3,3))
     
     return M
+
+# Specific UFL objects
+
+def GreatCircle(*, equator_angle=pi/2, stripe_radius=pi/8):
+    """ Corresponds to the Great Circle, i.e. a stripe running along the circumference of a sphere.
+     
+    Arguments:
+        equator_angle: angle of the equator, default is pi/2 (i.e. the equator of the sphere)
+        stripe_radius: radius of the stripe in terms of angle, default is pi/8
+
+    Returns:
+        A ListTensor representing the Great Circle, which is a director field that is defined as follows:
+        - Outside the stripe, the director is the constant 1 and points in the r-axis (i.e. the outward pointing radial vector).
+        - Inside the stripe, the director is a function of theta, which is the angle from the positive z-axis, and is given by:
+          - cos(scale_factor*theta - equator_angle) along the r-axis
+          - sin(scale_factor*theta - equator_angle) along the theta-axis
+          - 0 along the phi-axis
+          where scale_factor is pi/2 divided by the stripe_radius. This ensures that one fourth of the period of the sine and cosine functions is equal to the stripe_radius.
+     """
+    
+    scale_factor = pi/2 / stripe_radius  # scale factor to convert stripe_radius to the range of theta
+
+    return conditional(ge(abs(theta - equator_angle), stripe_radius), 1, 0) * from_spherical_director([1,0,0]) + conditional(lt(abs(theta - equator_angle), stripe_radius), 1, 0) * from_spherical_director([cos(scale_factor*(theta - equator_angle) + pi/2), sin(scale_factor*(theta - equator_angle) + pi/2),0])
 
 # For the following functions, the requirement that the input is a ListTensor or Zero is no longer enforced, since it causes issues
 # when defining UFL objects that are, e.g. _sums_ of ListTensors and Zeros
