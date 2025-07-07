@@ -1,6 +1,7 @@
 from firedrake import BoxMesh
 from q3d.uflplus import *
 from ufl import as_vector as _as_vector
+from ufl import conditional as _conditional
 import yaml
 
 domain = BoxMesh(1, 1, 1, 1, 1, 1) # acts as completely arbitrary placeholder domain (AbstractDomain fails with spherical coords)
@@ -20,6 +21,15 @@ def as_vector(vector: list | ListTensor | Zero) -> ListTensor | Zero:
     vector = replace(vector, {phi: sign(x1)*acos(x0/sqrt(x0**2+x1**2))})
 
     return vector
+
+def conditional(condition, true_value, false_value):
+    """ Replaces the UFL conditional function only in this module """
+
+    condition = replace(condition, {r: sqrt(x0**2+x1**2+x2**2)})
+    condition = replace(condition, {theta: acos(x2/sqrt(x0**2+x1**2+x2**2))})
+    condition = replace(condition, {phi: sign(x1)*acos(x0/sqrt(x0**2+x1**2))})
+
+    return _conditional(condition, true_value, false_value)
 
 def from_director(director: list | ListTensor | Zero) -> ListTensor | Zero:
     """ vector3d -> qvector """
