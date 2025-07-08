@@ -1,37 +1,7 @@
-from firedrake import BoxMesh
 from q3d.uflplus import *
-from ufl import as_vector as _as_vector
-from ufl import conditional as _conditional
 import yaml
 
-domain = BoxMesh(1, 1, 1, 1, 1, 1) # acts as completely arbitrary placeholder domain (AbstractDomain fails with spherical coords)
-x0, x1, x2 = SpatialCoordinate(domain)
-
-r = Constant(domain)
-theta = Constant(domain)
-phi = Constant(domain)
-
-# UFL objects
-
-def as_vector(vector: list | ListTensor | Zero) -> ListTensor | Zero:
-    """ Replaces the UFL as_vector function only in this module """
-
-    vector = _as_vector(vector)
-
-    vector = replace(vector, {r: sqrt(x0**2+x1**2+x2**2)})
-    vector = replace(vector, {theta: acos(x2/sqrt(x0**2+x1**2+x2**2))})
-    vector = replace(vector, {phi: sign(x1)*acos(x0/sqrt(x0**2+x1**2))})
-
-    return vector
-
-def conditional(condition, true_value, false_value):
-    """ Replaces the UFL conditional function only in this module """
-
-    condition = replace(condition, {r: sqrt(x0**2+x1**2+x2**2)})
-    condition = replace(condition, {theta: acos(x2/sqrt(x0**2+x1**2+x2**2))})
-    condition = replace(condition, {phi: sign(x1)*acos(x0/sqrt(x0**2+x1**2))})
-
-    return _conditional(condition, true_value, false_value)
+# General UFL objects
 
 def from_director(director: list | ListTensor | Zero) -> ListTensor | Zero:
     """ vector3d -> qvector """

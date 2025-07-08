@@ -1,4 +1,6 @@
 from ufl import conditional, exp, gt
+from q3d.uflplus.overwrites import conditional
+from q3d.uflplus.domain import process_spherical_coordinates
 
 def smooth_transition(x, *, I: list[int | float]):
     """ A smooth transition function in the variable x on the
@@ -14,6 +16,8 @@ def smooth_transition(x, *, I: list[int | float]):
     def g(x):
         return f(x)/(f(x)+f(1-x))
     
+    x = process_spherical_coordinates(x)
+
     return g((x-a)/(b-a))
 
 # def reverse_smooth_transition(x, *, I: list[int | float]):
@@ -36,5 +40,12 @@ def reverse_smooth_transition(x, *, I: list[int | float]):
     return 1 - smooth_transition(x, I=I)
 
 def gaussian(x, *, mu=0, sigma=1):
-    """ Gaussian function with mean mu and standard deviation sigma """
+    """ Gaussian function in the variable x with mean mu and standard deviation sigma.
+     Arguments:
+        x: The variable for which the Gaussian function is evaluated.
+        mu: The mean of the Gaussian distribution.
+        sigma: The standard deviation of the Gaussian distribution."""
+
+    x = process_spherical_coordinates(x)
+
     return exp(-(x - mu)**2 / (2 * sigma**2))
