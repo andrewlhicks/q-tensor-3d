@@ -2,6 +2,15 @@ from firedrake import BoxMesh
 from ufl import SpatialCoordinate, Constant, replace, acos, sqrt, sign
 import functools
 
+__all__ = [
+    "x0",
+    "x1",
+    "x2",
+    "r",
+    "theta",
+    "phi"
+]
+
 domain = BoxMesh(1, 1, 1, 1, 1, 1) # acts as completely arbitrary placeholder domain (AbstractDomain fails with spherical coords)
 x0, x1, x2 = SpatialCoordinate(domain)
 

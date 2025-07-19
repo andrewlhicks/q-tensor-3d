@@ -2,6 +2,13 @@ from ufl import conditional, exp, gt
 from q3d.uflplus.overwrites import conditional
 from q3d.uflplus.domain import spherical_compatible
 
+__all__ = [
+    "smooth_transition",
+    "reverse_smooth_transition",
+    "bump_transition",
+    "gaussian"
+]
+
 @spherical_compatible
 def smooth_transition(x, *, I: list[int | float]):
     """ A smooth transition function in the variable x on the

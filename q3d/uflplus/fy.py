@@ -2,6 +2,11 @@ from ufl import as_vector, as_matrix, diag, inner
 from ufl.operators import ListTensor, Zero
 from math import sqrt
 
+__all__ = [
+    "qvectorfy",
+    "qtensorfy"
+]
+
 a: float = (sqrt(3.0)-3.0)/6.0
 b: float = (sqrt(3.0)+3.0)/6.0
 c: float = -sqrt(3.0)/3.0
