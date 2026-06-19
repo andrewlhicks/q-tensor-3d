@@ -23,7 +23,7 @@ pip install -e q-tensor-3d
 PATH=$PATH:$PWD/q-tensor-3d/scripts
 
 # make sure that the scripts are added to your PATH every time you log in
-echo "PATH:$PATH:$PWD/q-tensor-3d/scripts" >> ~/.bashrc
+echo "PATH:\$PATH:$PWD/q-tensor-3d/scripts" >> ~/.bashrc
 ```
 
 To view the various options for the `qtensor3d` script, simply run
