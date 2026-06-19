@@ -2,13 +2,62 @@
 
 "Q-tensor 3D" is an implementation of the Landau-de Gennes Q-tensor model for liquid crystals.
 
+## Installation instructions
+
+This is assuming you install it on a Linux-based system.
+First, make sure Firedrake is installed, and activate the venv associated with your Firedrake install.
+Then go into the folder where you wish to install `q-tensor-3d` and run the following commands:
+
+```
+# clone repos
+git clone https://github.com/andrewlhicks/mymesh.git
+git clone https://github.com/andrewlhicks/sympyplus.git
+git clone https://github.com/andrewlhicks/q-tensor-3d.git
+
+# install repos
+pip install -e mymesh
+pip install -e sympyplus
+pip install -e q-tensor-3d
+
+# add q-tensor-3d scripts to your PATH
+PATH=$PATH:$PWD/q-tensor-3d/scripts
+
+# make sure that the scripts are added to your PATH every time you log in
+echo "PATH:$PATH:$PWD/q-tensor-3d/scripts" >> ~/.bashrc
+```
+
+To view the various options for the `qtensor3d` script, simply run
+
+```
+qtensor3d --help
+```
+
+There are other scripts you can use as well that come with this package. To list them, run
+
+```
+ls q-tensor-3d/scripts
+```
+
 ## Saves
 
 To use qtensor3d, a save folder needs to be created. The easiest way to do this is to use `qsave` in the following manner:
 ```
-qsave -b <savepath>
+qsave -b <save path>
 ```
-where `<savepath>` is the save folder. This will create a save folder with the default settings, cosntants, and uflexpr files.
+where `<save path>` is the save folder. This will create a save folder with the default settings, cosntants, and uflexpr files.
+
+On the other hand, to copy an existing save, run
+```
+qsave -c <old save path> <new save path>
+```
+where `<old save path>` is the name of the old save and `<new save path>` is the name of the new save.
+Changing the `-c` to `-h` will make the copy a "hard" copy and also copy all of the checkpoints and simulation data.
+
+If a save isn't running properly because the `settings.yml` file is missing certain options (i.e. it's "broken"), then run
+```
+qsave -r <save path>
+```
+to "repair" it.
 
 ## Understanding the settings file
 
@@ -165,3 +214,23 @@ smooth_transition(x2, I=[-2,3])
 ### Creating user expressions using Sympy objects (deprecated)
 
 Will add documentation later, though please note that this is now deprecated and the preferred method of creating user expressions is through UFL objects.
+
+## Running a simulation
+
+After you have set up your save by specifying `settings.yml` and `userexpr.yml` to your liking, you can run the simulation by simply going into the save folder and running
+```
+qtensor3d -a -o .
+```
+The `-a` specifies that this will "automatically" run, i.e. every time the specified number of time steps is run, it will rerun the program with a time step that is 10x samaller (unless the solver diverges, in which case the program will be rerun with a time step that is 10x larger), and will rerun the program as many times as it takes to converge to a solution.
+The `-o` specifies that it will overwrite any previous simulation data completely, starting from scratch.
+You can also view additional options by running
+```
+qtensor3d --help
+```
+If you wish to speed up your simulations by running them on multiple processors, you can type `mpiexec -n <num>` in front of `qtensor3d`, where `<num>` is the number of processors that you wish to use.
+This will prove necessary for most non-trivial simulations, especially those that involve large meshes.
+For example, running
+```
+mpiexec -n 12 qtensor3d -a -o .
+```
+will run the `qtensor3d` script with 12 processors.
