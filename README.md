@@ -26,16 +26,15 @@ PATH=$PATH:$PWD/q-tensor-3d/scripts
 echo "PATH:\$PATH:$PWD/q-tensor-3d/scripts" >> ~/.bashrc
 ```
 
-To view the various options for the `qtensor3d` script, simply run
-
-```
-qtensor3d --help
-```
-
 There are other scripts you can use as well that come with this package. To list them, run
 
 ```
 ls q-tensor-3d/scripts
+```
+
+To update `q-tensor-3d` to the latest version, first go into the folder titled `q-tensor-3d` and then run the following command:
+```
+git pull
 ```
 
 ## Saves
