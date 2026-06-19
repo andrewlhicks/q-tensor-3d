@@ -85,6 +85,7 @@ Settings files are in the '.yml' format. Visit [PyYAML](https://pyyaml.org/wiki/
   - `num` - Number of time steps
   - `save_every` - Number of time steps at which to save the simulation
   - `step` - The step size
+  - `checkpoints` - `True` or `False`
 - `vis`:
   - `normal` - `upward` or `outwrd` - which direction the normal vector is pointing
 
